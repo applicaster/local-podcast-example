@@ -312,5 +312,47 @@ describe('CollectionsService queue logic', () => {
 
       expect(queueEntry?.extensions?.entry_action).toBeUndefined();
     });
+
+    it('adds an editCollection action (not a screen navigation) for non-system collections', async () => {
+      const customCollection = await service.createCollection('My Playlist');
+
+      const feed = service.getCollectionsFeed(
+        undefined,
+        'http://localhost:3000',
+      );
+      const customEntry = feed.entry.find(
+        (entry) => entry.id === customCollection.id,
+      );
+      const actions = customEntry?.extensions?.entry_action;
+      const editAction = actions?.find((a) => a.button?.alias === 'edit');
+
+      expect(editAction).toBeDefined();
+      expect(editAction?.actions?.[0]?.type).toBe('editCollection');
+      expect(editAction?.actions?.[0]?.options?.collectionId).toBe(
+        customCollection.id,
+      );
+      expect(editAction?.actions?.[0]?.options?.url).toBe(
+        `http://localhost:3000/user/collections/${customCollection.id}`,
+      );
+      // The edit action must not navigate to a screen by type.
+      expect(
+        actions?.some((a) =>
+          a.actions?.some((inner) => inner.type === 'navigateToScreen'),
+        ),
+      ).toBe(false);
+    });
+
+    it('does not add an editCollection action for system collections', () => {
+      const feed = service.getCollectionsFeed(
+        undefined,
+        'http://localhost:3000',
+      );
+      const systemEntry = feed.entry.find((entry) => entry.id === 'system_gsc');
+      const editAction = systemEntry?.extensions?.entry_action?.find(
+        (a) => a.button?.alias === 'edit',
+      );
+
+      expect(editAction).toBeUndefined();
+    });
   });
 });

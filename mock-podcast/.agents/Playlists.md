@@ -82,6 +82,7 @@ The backend formats responses as feed structures using the `feed-decorators` lib
 *   `GET /user/collections`
     *   Returns a feed-like list of the user's collections.
     *   **Synthetic Item:** In default mode (no `item_id`), a synthetic entry `id = "create_collection"` (type: `action`, title: `Create collection`) is appended to trigger collection creation.
+    *   **Edit Action:** Non-system entries include an `extensions.entry_action` "Edit" item that triggers the `editCollection` action (payload `{ collectionId }`). The client opens a bottom sheet modal to remove/re-order items (client-side implementation added later). This intentionally replaces navigating to an edit screen by type.
     *   **Delete Action:** Non-system entries include `extensions.entry_action` for "Delete collection", triggering `com.applicaster.collection.delete.v1` and `refreshComponent`.
 *   `GET /user/collections?item_id=<song_id>` (Selector Mode)
     *   Used to target collection membership for a specific song.
@@ -95,9 +96,7 @@ The backend formats responses as feed structures using the `feed-decorators` lib
     *   Passes the currently playing song ID in `behavior.current_selection` if requested as read-only.
     *   Each item contains `extensions["continue-watching"].sourceCollectionId = <collection_id>` so that playback events can identify the origin collection.
     *   Each item contains `extensions.entry_action` to "Remove item" (triggers `com.applicaster.collection.remove.v1`).
-    *   Appends a final synthetic edit entry (`type: "collection_edit"`, ID matches the collection's ID) to navigate to the edit screen.
 *   `GET /user/collections/:id?action=remove_item` (Edit Mode)
-    *   Returns items in the collection without appending the synthetic `collection_edit` entry.
     *   Allows direct item removal on cell tap.
 *   `POST /user/collections`
     *   Creates a new collection.

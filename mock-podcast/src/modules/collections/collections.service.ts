@@ -672,6 +672,20 @@ export class CollectionsService implements OnModuleInit {
       }
 
       if (!collection.isSystem) {
+        // Edit collection: opens a bottom sheet modal (client-side, added later)
+        // to remove/re-order items. Emitted as a dedicated action instead of a
+        // screen navigation.
+        const editActions = new ActionsBuilder({}).addAction({
+          type: 'editCollection',
+          options: {
+            collectionId: collection.id,
+            ...(baseUrl && {
+              url: `${baseUrl}/user/collections/${collection.id}`,
+            }),
+          },
+        });
+        builder.addEntryActionByAlias('edit', editActions, false);
+
         const deleteActions = new ActionsBuilder({})
           .sendCloudEvent({
             url: cloudEventsUrl,
