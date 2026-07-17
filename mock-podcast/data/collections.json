@@ -10,29 +10,6 @@
     "isSystem": true
   },
   {
-    "id": "272a9fd9-4bc4-411d-9224-7c03c0db964b",
-    "name": "My Local Playlist",
-    "itemIds": [],
-    "createdAt": "2026-07-09T19:10:06.144Z",
-    "updatedAt": "2026-07-17T08:45:53.914Z",
-    "isSystem": false
-  },
-  {
-    "id": "415faca6-6671-4afe-be46-d331d104f2a0",
-    "name": "Playlist #1",
-    "itemIds": [
-      "slay",
-      "jazz_clementine",
-      "jazz_brejeiro",
-      "jazz_rose_room",
-      "jazz_acid_jazz",
-      "jazz_margie"
-    ],
-    "createdAt": "2026-07-10T16:22:47.991Z",
-    "updatedAt": "2026-07-17T15:21:23.241Z",
-    "isSystem": false
-  },
-  {
     "id": "system_jazz",
     "name": "Jazz Playlist",
     "itemIds": [
@@ -61,8 +38,8 @@
     "isSystem": true
   },
   {
-    "id": "d6322b2e-42f0-431d-9a7b-4acd09efadd1",
-    "name": "Playlist #2",
+    "id": "779784e9-e8d4-4363-81b9-61872e67a146",
+    "name": "Playlist #3",
     "itemIds": [
       "jazz_clementine",
       "jazz_brejeiro",
@@ -70,8 +47,8 @@
       "jazz_acid_jazz",
       "jazz_margie"
     ],
-    "createdAt": "2026-07-17T16:48:35.444Z",
-    "updatedAt": "2026-07-17T16:49:08.894Z",
+    "createdAt": "2026-07-17T16:54:33.177Z",
+    "updatedAt": "2026-07-17T16:55:18.171Z",
     "isSystem": false
   }
 ]

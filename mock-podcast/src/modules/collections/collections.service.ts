@@ -324,15 +324,13 @@ export class CollectionsService implements OnModuleInit {
         cloudEventsUrl,
       );
     } else {
-      // Default mode: add remove entry_action to each entry, append Edit entry
+      // Default mode: add remove entry_action to each entry
       this.decorateEntriesWithRemoveAction(
         entries,
         collection.id,
         cloudEventsUrl,
       );
-      if (!collection.isSystem) {
-        entries.push(this.createEditCollectionEntry(collection.id));
-      }
+
     }
 
     return {
@@ -344,25 +342,6 @@ export class CollectionsService implements OnModuleInit {
     };
   }
 
-  private createEditCollectionEntry(collectionId: string): Entry {
-    return {
-      id: collectionId,
-      type: { value: 'collection_edit' },
-      title: UI_LABELS.ENTRY_TITLES.EDIT,
-      media_group: [
-        {
-          type: 'image',
-          media_item: [
-            { key: 'image_base', src: ACTION_ICON_URLS.EDIT },
-            { key: 'thumb_1', src: null },
-            { key: 'thumb_2', src: null },
-            { key: 'thumb_3', src: null },
-          ],
-        },
-      ],
-      extensions: {},
-    };
-  }
 
   private createCreateCollectionEntry(cloudEventsUrl: string): CollectionEntry {
     return {
