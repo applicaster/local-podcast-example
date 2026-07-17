@@ -183,16 +183,6 @@ export class CollectionsService implements OnModuleInit {
       ? collectionsToRender
           .filter((collection) => collection.itemIds.includes(itemId))
           .map((collection) => collection.id)
-      : collectionId
-      ? collectionsToRender
-          .filter((collection) => {
-            const sourceCol = this.findCollectionByIdOrAlias(collectionId);
-            if (!sourceCol) return false;
-            return sourceCol.itemIds.every((id) =>
-              collection.itemIds.includes(id),
-            );
-          })
-          .map((collection) => collection.id)
       : [];
 
     const entries = collectionsToRender.map((collection) =>
@@ -209,7 +199,7 @@ export class CollectionsService implements OnModuleInit {
       title: UI_LABELS.FEED_TITLES.YOUR_COLLECTIONS,
       entry: entries,
       extensions: {
-        ...((itemId || collectionId) && {
+        ...(itemId && {
           behavior: {
             select_mode: 'multi',
             current_selection: selectedCollectionIds,
