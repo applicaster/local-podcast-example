@@ -219,7 +219,7 @@ describe('CollectionsService queue logic', () => {
       const removeAction = actions?.[0];
 
       expect(actions).toHaveLength(1);
-      expect(removeAction?.button?.title).toBe('Remove item');
+      expect(removeAction?.button?.alias).toBe('remove_item');
       expect(removeAction?.dismiss_on_action).toBe(true);
       expect(removeAction?.actions?.[0]?.type).toBe('sendCloudEvent');
       expect(removeAction?.actions?.[0]?.options?.type).toBe(
@@ -237,7 +237,7 @@ describe('CollectionsService queue logic', () => {
       const removeAction = actions?.[0];
 
       expect(actions).toHaveLength(1);
-      expect(removeAction?.button?.title).toBe('Remove item');
+      expect(removeAction?.button?.alias).toBe('remove_item');
       expect(removeAction?.dismiss_on_action).toBe(true);
       expect(removeAction?.actions?.[0]?.type).toBe('sendCloudEvent');
       expect(removeAction?.actions?.[1]?.type).toBe('refreshComponent');
@@ -285,10 +285,10 @@ describe('CollectionsService queue logic', () => {
         (entry) => entry.id === customCollection.id,
       );
       const actions = customEntry?.extensions?.entry_action;
-      const deleteAction = actions?.find(a => a.button?.title === 'Delete collection');
+      const deleteAction = actions?.find(a => a.button?.alias === 'delete_collection');
 
       expect(actions?.length).toBeGreaterThanOrEqual(1);
-      expect(deleteAction?.button?.title).toBe('Delete collection');
+      expect(deleteAction?.button?.alias).toBe('delete_collection');
       expect(deleteAction?.dismiss_on_action).toBe(true);
       expect(deleteAction?.actions?.[0]?.type).toBe('sendCloudEvent');
       expect(deleteAction?.actions?.[0]?.options?.type).toBe(

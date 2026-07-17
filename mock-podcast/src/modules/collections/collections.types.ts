@@ -13,26 +13,27 @@ export interface CollectionEntry {
   type: { value: string };
   media_group?: Array<{
     type: 'image' | 'video';
-    media_item: Array<{ key: string; src: string | null }>;
+    media_item: Array<{ key: string; src?: string | null; alias?: string }>;
   }>;
   extensions: {
     item_count: number;
     is_system: boolean;
     entry_action?: Array<{
       button: {
-        title: string;
-        iconURL: string;
+        title?: string;
+        iconURL?: string;
+        alias?: string;
       };
       dismiss_on_action: boolean;
       actions: Array<{
         type: string;
-        options: Record<string, unknown>;
+        options?: Record<string, unknown>;
       }>;
     }>;
     tap_actions?: {
       actions: Array<{
         type: string;
-        options: Record<string, unknown>;
+        options?: Record<string, unknown>;
       }>;
     };
   };

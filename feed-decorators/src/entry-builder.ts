@@ -45,6 +45,27 @@ export class EntryBuilder<
   }
 
   /**
+   * Add a cover image referenced by a client-resolved asset alias.
+   *
+   * Instead of embedding an image URL, the backend emits a compact `alias`
+   * that the client resolves into a concrete image `src` (e.g. via a feed
+   * decorator). Interchangeable with {@link addCoverImage}.
+   */
+  addCoverImageByAlias(alias: string, key: string = 'image_base'): this {
+    if (!this.entry.media_group) {
+      this.entry.media_group = [{ type: 'image', media_item: [] }];
+    }
+
+    const mainGroup = this.entry.media_group[0];
+    mainGroup.media_item.push({
+      key,
+      alias,
+    });
+
+    return this;
+  }
+
+  /**
    * Set the stream content of the entry
    */
   setStream(opts: { url: string; type?: string }): this {

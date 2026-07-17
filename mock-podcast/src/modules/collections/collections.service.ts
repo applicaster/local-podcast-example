@@ -14,10 +14,10 @@ import {
 } from './collections.types';
 import { Feed, Entry } from '../../types/feed';
 import { CollectionsPersistenceService } from './persistence.service';
-import { ACTION_ICON_URLS } from '../../constants/action-icons.constants';
 import { CLOUD_EVENT_TYPES } from '../../constants/cloud-event-types.constants';
 import { UI_LABELS } from '../../constants/ui-labels.constants';
 import { SystemCollectionEntryBuilder } from '../../builders/SystemCollectionEntryBuilder';
+import { EntryBuilder, ActionsBuilder } from '@lib/feed-decorators';
 
 @Injectable()
 export class CollectionsService implements OnModuleInit {
@@ -329,43 +329,25 @@ export class CollectionsService implements OnModuleInit {
 
 
   private createCreateCollectionEntry(cloudEventsUrl: string): CollectionEntry {
-    return {
+    const tapActions = new ActionsBuilder({})
+      .sendCloudEvent({
+        url: cloudEventsUrl,
+        type: CLOUD_EVENT_TYPES.COLLECTION_CREATE,
+        subject: 'create_collection',
+        data: {},
+      })
+      .refreshComponent();
+
+    const entry = new EntryBuilder(tapActions, {
       id: 'create_collection',
       type: { value: 'action' },
-      title: UI_LABELS.ENTRY_TITLES.CREATE_COLLECTION,
-      media_group: [
-        {
-          type: 'image',
-          media_item: [
-            { key: 'image_base', src: ACTION_ICON_URLS.EDIT },
-            { key: 'thumb_1', src: null },
-            { key: 'thumb_2', src: null },
-            { key: 'thumb_3', src: null },
-          ],
-        },
-      ],
-      extensions: {
-        item_count: 0,
-        is_system: false,
-        tap_actions: {
-          actions: [
-            {
-              type: 'sendCloudEvent',
-              options: {
-                url: cloudEventsUrl,
-                type: CLOUD_EVENT_TYPES.COLLECTION_CREATE,
-                subject: 'create_collection',
-                data: {},
-              },
-            },
-            {
-              type: 'refreshComponent',
-              options: {},
-            },
-          ],
-        },
-      },
-    };
+    })
+      .setTitle(UI_LABELS.ENTRY_TITLES.CREATE_COLLECTION)
+      .addCoverImageByAlias('create_collection')
+      .addExtension('item_count', 0)
+      .addExtension('is_system', false);
+
+    return entry.build() as unknown as CollectionEntry;
   }
 
   async createCollection(name?: string): Promise<CollectionEntity> {
@@ -586,34 +568,27 @@ export class CollectionsService implements OnModuleInit {
     cloudEventsUrl: string,
   ): void {
     entries.forEach((entry) => {
+      const removeActions = new ActionsBuilder({})
+        .sendCloudEvent({
+          url: cloudEventsUrl,
+          type: CLOUD_EVENT_TYPES.COLLECTION_REMOVE,
+          subject: 'remove_item_from_collection',
+          data: {
+            collectionId,
+            itemId: entry.id,
+          },
+        })
+        .refreshComponent()
+        .build().extensions.tap_actions.actions;
+
       entry.extensions = {
         ...(entry.extensions ?? {}),
         // Collection screen should only expose remove action for items.
         entry_action: [
           {
-            button: {
-              title: UI_LABELS.ACTION_BUTTON_TITLES.REMOVE_ITEM,
-              iconURL: ACTION_ICON_URLS.REMOVE_ITEM,
-            },
+            button: { alias: 'remove_item' },
             dismiss_on_action: true,
-            actions: [
-              {
-                type: 'sendCloudEvent',
-                options: {
-                  url: cloudEventsUrl,
-                  type: CLOUD_EVENT_TYPES.COLLECTION_REMOVE,
-                  subject: 'remove_item_from_collection',
-                  data: {
-                    collectionId,
-                    itemId: entry.id,
-                  },
-                },
-              },
-              {
-                type: 'refreshComponent',
-                options: {},
-              },
-            ],
+            actions: removeActions,
           },
         ],
       };
@@ -645,119 +620,89 @@ export class CollectionsService implements OnModuleInit {
     baseUrl?: string,
     isCollectionMode?: boolean,
   ): CollectionEntry {
-    return {
+    const isQueue = collection.name === CollectionsService.QUEUE_NAME;
+
+    // Build cell tap actions for selector mode (item_id / collection_id).
+    const tapActions = new ActionsBuilder({});
+    if (itemId) {
+      const isMember = collection.itemIds.includes(itemId);
+      tapActions
+        .sendCloudEvent({
+          url: cloudEventsUrl,
+          type: isCollectionMode
+            ? CLOUD_EVENT_TYPES.COLLECTION_ADD_COLLECTION
+            : isMember
+              ? CLOUD_EVENT_TYPES.COLLECTION_REMOVE
+              : CLOUD_EVENT_TYPES.COLLECTION_ADD_ITEM,
+          subject: isCollectionMode
+            ? 'add_collection_to_collection'
+            : isMember
+              ? 'remove_item_from_collection'
+              : 'add_item_to_collection',
+          data: isCollectionMode
+            ? { collectionId: collection.id, sourceCollectionId: itemId }
+            : { collectionId: collection.id, itemId },
+        })
+        .refreshComponent();
+
+      if (isCollectionMode) {
+        tapActions.addAction({ type: 'dismissBottomSheet', options: {} });
+      }
+    }
+
+    const builder = new EntryBuilder(tapActions, {
       id: collection.id,
-      title: collection.name,
       type: { value: itemId ? 'action' : 'collection' },
-      media_group: [
-        {
-          type: 'image',
-          media_item: [
-            { key: 'image_base', src: ACTION_ICON_URLS.COLLECTION_LIST },
-            { key: 'thumb_1', src: null },
-            { key: 'thumb_2', src: null },
-            { key: 'thumb_3', src: null },
-          ],
-        },
-      ],
-      extensions: {
-        item_count: collection.itemIds.length,
-        is_system: collection.isSystem,
-        ...(!itemId && (collection.name !== CollectionsService.QUEUE_NAME && baseUrl || !collection.isSystem) && {
-          entry_action: [
-            ...(collection.name !== CollectionsService.QUEUE_NAME
-              ? [
-                  {
-                    button: {
-                      title: UI_LABELS.ACTION_BUTTON_TITLES.ADD_ALL_TO_QUEUE,
-                      iconURL: ACTION_ICON_URLS.ADD_TO_QUEUE,
-                    },
-                    dismiss_on_action: true,
-                    actions: [
-                      {
-                        type: 'addAllToQueue',
-                        options: {
-                          url: `${baseUrl}/user/collections/${collection.id}`,
-                        },
-                      },
-                    ],
-                  },
-                ]
-              : []),
-            ...(!collection.isSystem
-              ? [
-                  {
-                    button: {
-                      title: UI_LABELS.ACTION_BUTTON_TITLES.DELETE_COLLECTION,
-                      iconURL: ACTION_ICON_URLS.REMOVE_ITEM,
-                    },
-                    dismiss_on_action: true,
-                    actions: [
-                      {
-                        type: 'sendCloudEvent',
-                        options: {
-                          url: cloudEventsUrl,
-                          type: CLOUD_EVENT_TYPES.COLLECTION_DELETE,
-                          subject: 'delete_collection',
-                          data: {
-                            collectionId: collection.id,
-                          },
-                        },
-                      },
-                      {
-                        type: 'refreshComponent',
-                        options: {},
-                      },
-                    ],
-                  },
-                ]
-              : []),
-          ],
-        }),
-        ...(itemId && {
-          tap_actions: {
-            actions: [
-              {
-                type: 'sendCloudEvent',
-                options: {
-                  url: cloudEventsUrl,
-                  type: isCollectionMode
-                    ? CLOUD_EVENT_TYPES.COLLECTION_ADD_COLLECTION
-                    : collection.itemIds.includes(itemId)
-                    ? CLOUD_EVENT_TYPES.COLLECTION_REMOVE
-                    : CLOUD_EVENT_TYPES.COLLECTION_ADD_ITEM,
-                  subject: isCollectionMode
-                    ? 'add_collection_to_collection'
-                    : collection.itemIds.includes(itemId)
-                    ? 'remove_item_from_collection'
-                    : 'add_item_to_collection',
-                  data: isCollectionMode
-                    ? {
-                        collectionId: collection.id,
-                        sourceCollectionId: itemId,
-                      }
-                    : {
-                        collectionId: collection.id,
-                        itemId,
-                      },
-                },
-              },
-              {
-                type: 'refreshComponent',
-                options: {},
-              },
-              ...(isCollectionMode
-                ? [
-                    {
-                      type: 'dismissBottomSheet',
-                      options: {},
-                    },
-                  ]
-                : []),
-            ],
+    })
+      .setTitle(collection.name)
+      .addCoverImageByAlias('collection_list')
+      .addExtension('item_count', collection.itemIds.length)
+      .addExtension('is_system', collection.isSystem);
+
+    // Entry action menu (default mode only).
+    if (!itemId && ((!isQueue && baseUrl) || !collection.isSystem)) {
+      if (!isQueue && baseUrl) {
+        const addAllActions = new ActionsBuilder({}).addAction({
+          type: 'addAllToQueue',
+          options: {
+            url: `${baseUrl}/user/collections/${collection.id}`,
           },
-        }),
-      },
-    };
+        });
+        builder.addEntryActionByAlias('add_all_to_queue', addAllActions, true);
+      }
+
+      if (!collection.isSystem) {
+        const deleteActions = new ActionsBuilder({})
+          .sendCloudEvent({
+            url: cloudEventsUrl,
+            type: CLOUD_EVENT_TYPES.COLLECTION_DELETE,
+            subject: 'delete_collection',
+            data: { collectionId: collection.id },
+          })
+          .refreshComponent();
+        builder.addEntryActionByAlias('delete_collection', deleteActions, true);
+      }
+    }
+
+    return this.finalizeEntry(builder);
+  }
+
+  /**
+   * Builds an entry and removes the empty `tap_actions` block that the
+   * ActionsBuilder always injects, so default-mode cells keep their native
+   * (non-overridden) tap behavior.
+   */
+  private finalizeEntry(builder: EntryBuilder): CollectionEntry {
+    const built = builder.build() as any;
+    const tapActions = built.extensions?.tap_actions;
+    if (
+      tapActions &&
+      Array.isArray(tapActions.actions) &&
+      tapActions.actions.length === 0
+    ) {
+      delete built.extensions.tap_actions;
+    }
+
+    return built as CollectionEntry;
   }
 }
