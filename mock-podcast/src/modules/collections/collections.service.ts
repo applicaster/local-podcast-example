@@ -48,9 +48,17 @@ export class CollectionsService implements OnModuleInit {
     this.collections =
       await this.persistenceService.loadCollections(defaultCollections);
 
-    const systemJazzId = 'system_jazz';
-    const systemFunkId = 'system_funk';
+    const systemGscId = 'system_gsc';
     let needsSave = false;
+
+    // Prune deprecated system_jazz and system_funk collections if loaded from persistence
+    const originalLength = this.collections.length;
+    this.collections = this.collections.filter(
+      (c) => c.id !== 'system_jazz' && c.id !== 'system_funk',
+    );
+    if (this.collections.length !== originalLength) {
+      needsSave = true;
+    }
 
     const existingQueue = this.collections.find(
       (c) => c.isSystem && c.name === UI_LABELS.COLLECTION.QUEUE_NAME,
@@ -60,34 +68,21 @@ export class CollectionsService implements OnModuleInit {
       needsSave = true;
     }
 
-    if (!this.collections.some((c) => c.id === systemJazzId)) {
+    if (!this.collections.some((c) => c.id === systemGscId)) {
       this.collections.push({
-        id: systemJazzId,
-        name: 'Jazz Playlist',
+        id: systemGscId,
+        name: 'Pokémon GSC',
         itemIds: [
-          'jazz_clementine',
-          'jazz_brejeiro',
-          'jazz_rose_room',
-          'jazz_acid_jazz',
-          'jazz_margie',
-        ],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isSystem: true,
-      });
-      needsSave = true;
-    }
-
-    if (!this.collections.some((c) => c.id === systemFunkId)) {
-      this.collections.push({
-        id: systemFunkId,
-        name: 'Funk Playlist',
-        itemIds: [
-          'funk_profi_70s',
-          'funk_super_bubbly',
-          'funk_dance_rocket',
-          'funk_black_samba',
-          'funk_san_diego',
+          'gsc_title_screen',
+          'gsc_new_bark_town',
+          'gsc_elm_lab',
+          'gsc_route_29',
+          'gsc_cherrygrove_city',
+          'gsc_pokemon_center',
+          'gsc_azalea_town',
+          'gsc_goldenrod_city',
+          'gsc_national_park',
+          'gsc_ecruteak_city',
         ],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

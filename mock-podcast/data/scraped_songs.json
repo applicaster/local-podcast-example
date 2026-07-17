@@ -58,5 +58,75 @@
     "stream": "https://upload.wikimedia.org/wikipedia/commons/0/0d/Pierlo_-_05_-_San_Diego_Cruisin.ogg",
     "title": "San Diego Cruisin - Pierlo",
     "homepage": "https://commons.wikimedia.org/wiki/File:Pierlo_-_05_-_San_Diego_Cruisin.ogg"
+  },
+  {
+    "id": "gsc_title_screen",
+    "stream": "https://archive.org/download/pkmn-gsc-soundtrack/Disc%201/1-03.%20Title%20Screen.mp3",
+    "title": "Title Screen",
+    "image": "https://archive.org/download/pkmn-gsc-soundtrack/Cover.jpg",
+    "homepage": "https://archive.org/details/pkmn-gsc-soundtrack"
+  },
+  {
+    "id": "gsc_new_bark_town",
+    "stream": "https://archive.org/download/pkmn-gsc-soundtrack/Disc%201/1-05.%20New%20Bark%20Town.mp3",
+    "title": "New Bark Town",
+    "image": "https://archive.org/download/pkmn-gsc-soundtrack/Cover.jpg",
+    "homepage": "https://archive.org/details/pkmn-gsc-soundtrack"
+  },
+  {
+    "id": "gsc_elm_lab",
+    "stream": "https://archive.org/download/pkmn-gsc-soundtrack/Disc%201/1-07.%20Elm%20Pok%C3%A9mon%20Lab.mp3",
+    "title": "Elm Pokémon Lab",
+    "image": "https://archive.org/download/pkmn-gsc-soundtrack/Cover.jpg",
+    "homepage": "https://archive.org/details/pkmn-gsc-soundtrack"
+  },
+  {
+    "id": "gsc_route_29",
+    "stream": "https://archive.org/download/pkmn-gsc-soundtrack/Disc%201/1-08.%20Route%2029.mp3",
+    "title": "Route 29",
+    "image": "https://archive.org/download/pkmn-gsc-soundtrack/Cover.jpg",
+    "homepage": "https://archive.org/details/pkmn-gsc-soundtrack"
+  },
+  {
+    "id": "gsc_cherrygrove_city",
+    "stream": "https://archive.org/download/pkmn-gsc-soundtrack/Disc%201/1-12.%20Cherrygrove%20City.mp3",
+    "title": "Cherrygrove City",
+    "image": "https://archive.org/download/pkmn-gsc-soundtrack/Cover.jpg",
+    "homepage": "https://archive.org/details/pkmn-gsc-soundtrack"
+  },
+  {
+    "id": "gsc_pokemon_center",
+    "stream": "https://archive.org/download/pkmn-gsc-soundtrack/Disc%201/1-14.%20Pok%C3%A9mon%20Center.mp3",
+    "title": "Pokémon Center",
+    "image": "https://archive.org/download/pkmn-gsc-soundtrack/Cover.jpg",
+    "homepage": "https://archive.org/details/pkmn-gsc-soundtrack"
+  },
+  {
+    "id": "gsc_azalea_town",
+    "stream": "https://archive.org/download/pkmn-gsc-soundtrack/Disc%201/1-32.%20Azalea%20Town.mp3",
+    "title": "Azalea Town",
+    "image": "https://archive.org/download/pkmn-gsc-soundtrack/Cover.jpg",
+    "homepage": "https://archive.org/details/pkmn-gsc-soundtrack"
+  },
+  {
+    "id": "gsc_goldenrod_city",
+    "stream": "https://archive.org/download/pkmn-gsc-soundtrack/Disc%201/1-40.%20Goldenrod%20City.mp3",
+    "title": "Goldenrod City",
+    "image": "https://archive.org/download/pkmn-gsc-soundtrack/Cover.jpg",
+    "homepage": "https://archive.org/details/pkmn-gsc-soundtrack"
+  },
+  {
+    "id": "gsc_national_park",
+    "stream": "https://archive.org/download/pkmn-gsc-soundtrack/Disc%201/1-45.%20National%20Park.mp3",
+    "title": "National Park",
+    "image": "https://archive.org/download/pkmn-gsc-soundtrack/Cover.jpg",
+    "homepage": "https://archive.org/details/pkmn-gsc-soundtrack"
+  },
+  {
+    "id": "gsc_ecruteak_city",
+    "stream": "https://archive.org/download/pkmn-gsc-soundtrack/Disc%201/1-48.%20Ecruteak%20City.mp3",
+    "title": "Ecruteak City",
+    "image": "https://archive.org/download/pkmn-gsc-soundtrack/Cover.jpg",
+    "homepage": "https://archive.org/details/pkmn-gsc-soundtrack"
   }
 ]
