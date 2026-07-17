@@ -102,6 +102,37 @@ export class EntryBuilder<
   }
 
   /**
+   * Build actions for an entry_action menu item using a client-resolved action alias.
+   *
+   * Instead of embedding a label and icon URL in the feed, the backend emits a
+   * compact `alias` that the client resolves into the concrete label and icon
+   * (e.g. via a feed decorator). This keeps presentation resources out of the
+   * backend while remaining interchangeable with {@link addEntryAction}.
+   */
+  addEntryActionByAlias(
+    alias: string,
+    actionBuilder: ActionsBuilder,
+    dismissOnAction: boolean = true,
+  ): this {
+    const tapActions = actionBuilder.build().extensions?.tap_actions;
+    const actions = tapActions ? tapActions.actions : [];
+
+    if (!this.entry.extensions) this.entry.extensions = {};
+    if (!this.entry.extensions.entry_action)
+      this.entry.extensions.entry_action = [];
+
+    this.entry.extensions.entry_action.push({
+      button: {
+        alias,
+      },
+      dismiss_on_action: dismissOnAction,
+      actions,
+    });
+
+    return this;
+  }
+
+  /**
    * Build the final ZappEntry
    */
   build(): ZappEntry {

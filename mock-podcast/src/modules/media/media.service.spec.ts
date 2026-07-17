@@ -35,12 +35,12 @@ describe('MediaService', () => {
     expect(entryActions).toHaveLength(2);
 
     const addPlaylistAction = entryActions?.[0];
-    expect(addPlaylistAction?.button?.title).toBe('Add to Playlist');
+    expect(addPlaylistAction?.button?.alias).toBe('add_to_playlist');
     expect(addPlaylistAction?.dismiss_on_action).toBe(false);
     expect(addPlaylistAction?.actions?.[0]?.type).toBe('openBottomSheet');
 
     const addQueueAction = entryActions?.[1];
-    expect(addQueueAction?.button?.title).toBe('Add to Queue');
+    expect(addQueueAction?.button?.alias).toBe('add_to_queue');
     expect(addQueueAction?.dismiss_on_action).toBe(true);
     expect(addQueueAction?.actions?.[0]?.type).toBe('addToQueue');
   });

@@ -1,13 +1,7 @@
 import { EntryBuilder, ActionsBuilder } from '@lib/feed-decorators';
-import { UI_LABELS } from '../constants/ui-labels.constants';
-import { ACTION_ICON_URLS } from '../constants/action-icons.constants';
 
 export class LiveAudioEntryBuilder extends EntryBuilder {
-  constructor(
-    baseEntry: any,
-    private labels: typeof UI_LABELS = UI_LABELS,
-    private icons: typeof ACTION_ICON_URLS = ACTION_ICON_URLS,
-  ) {
+  constructor(baseEntry: any) {
     super(new ActionsBuilder(baseEntry), baseEntry);
   }
 
@@ -32,12 +26,7 @@ export class LiveAudioEntryBuilder extends EntryBuilder {
       },
     });
 
-    this.addEntryAction(
-      this.labels.ACTION_BUTTON_TITLES.ADD_TO_PLAYLIST,
-      this.icons.ADD_TO_PLAYLIST,
-      actionBuilder,
-      false,
-    );
+    this.addEntryActionByAlias('add_to_playlist', actionBuilder, false);
     return this;
   }
 
@@ -48,12 +37,7 @@ export class LiveAudioEntryBuilder extends EntryBuilder {
       options: {},
     });
 
-    this.addEntryAction(
-      this.labels.ACTION_BUTTON_TITLES.ADD_TO_QUEUE,
-      this.icons.ADD_TO_QUEUE,
-      actionBuilder,
-      true,
-    );
+    this.addEntryActionByAlias('add_to_queue', actionBuilder, true);
     return this;
   }
 }
