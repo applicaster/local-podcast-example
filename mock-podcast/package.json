@@ -1,0 +1,31 @@
+{
+  "name": "@lib/mock-podcast",
+  "version": "1.0.0",
+  "description": "Mock podcast local NestJS server",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node -r tsconfig-paths/register dist/mock-podcast/src/main.js",
+    "start:dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/main.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^9.2.1",
+    "@nestjs/config": "^2.2.0",
+    "@nestjs/core": "^9.2.1",
+    "@nestjs/platform-express": "^9.2.1",
+    "firebase-admin": "11.7.0",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.2.0",
+    "tsconfig-paths": "^4.1.0",
+    "zod": "^3.20.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.17",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.0.0",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.11",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,799 @@
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { MediaService } from '../media/media.service';
+import {
+  CollectionEntity,
+  CollectionEntry,
+  CollectionsFeed,
+} from './collections.types';
+import { Feed, Entry } from '../../types/feed';
+import { CollectionsPersistenceService } from './persistence.service';
+import { ACTION_ICON_URLS } from '../../constants/action-icons.constants';
+import { CLOUD_EVENT_TYPES } from '../../constants/cloud-event-types.constants';
+import { UI_LABELS } from '../../constants/ui-labels.constants';
+import { SystemCollectionEntryBuilder } from '../../builders/SystemCollectionEntryBuilder';
+
+@Injectable()
+export class CollectionsService implements OnModuleInit {
+  private static readonly CLOUD_EVENTS_PATH = '/cloud-events';
+  private static readonly QUEUE_NAME = UI_LABELS.COLLECTION.QUEUE_NAME;
+  private static readonly QUEUE_ALIAS = 'queue';
+  private readonly logger = new Logger(CollectionsService.name);
+
+  private collections: CollectionEntity[] = [];
+
+  constructor(
+    private readonly mediaService: MediaService,
+    private readonly persistenceService: CollectionsPersistenceService,
+  ) {}
+
+  async onModuleInit() {
+    const queueCollection: CollectionEntity = {
+      id: randomUUID(),
+      name: UI_LABELS.COLLECTION.QUEUE_NAME,
+      itemIds: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isSystem: true,
+    };
+    const defaultCollections: CollectionEntity[] = [
+      queueCollection
+    ];
+    this.collections =
+      await this.persistenceService.loadCollections(defaultCollections);
+
+    const systemJazzId = 'system_jazz';
+    const systemFunkId = 'system_funk';
+    let needsSave = false;
+
+    const existingQueue = this.collections.find(
+      (c) => c.isSystem && c.name === UI_LABELS.COLLECTION.QUEUE_NAME,
+    );
+    if (!existingQueue) {
+      this.collections.unshift(queueCollection);
+      needsSave = true;
+    }
+
+    if (!this.collections.some((c) => c.id === systemJazzId)) {
+      this.collections.push({
+        id: systemJazzId,
+        name: 'Jazz Playlist',
+        itemIds: [
+          'jazz_clementine',
+          'jazz_brejeiro',
+          'jazz_rose_room',
+          'jazz_acid_jazz',
+          'jazz_margie',
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isSystem: true,
+      });
+      needsSave = true;
+    }
+
+    if (!this.collections.some((c) => c.id === systemFunkId)) {
+      this.collections.push({
+        id: systemFunkId,
+        name: 'Funk Playlist',
+        itemIds: [
+          'funk_profi_70s',
+          'funk_super_bubbly',
+          'funk_dance_rocket',
+          'funk_black_samba',
+          'funk_san_diego',
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isSystem: true,
+      });
+      needsSave = true;
+    }
+
+    if (needsSave) {
+      await this.persistenceService.saveCollections(this.collections);
+    }
+
+    this.logger.log(
+      `Initialized with ${this.collections.length} collection(s)`,
+    );
+  }
+
+  getSystemCollectionsFeed(baseUrl?: string): CollectionsFeed {
+    const cloudEventsUrl = this.cloudEventsUrl(baseUrl);
+    const systemCollections = this.collections.filter(
+      (c) => c.isSystem && c.name !== CollectionsService.QUEUE_NAME,
+    );
+    const entries = systemCollections.map((collection) => {
+      const baseFeedEntry = this.toFeedEntry(collection, cloudEventsUrl);
+      const builder = new SystemCollectionEntryBuilder(baseFeedEntry);
+
+      // 1. Add all to Queue
+      if (baseUrl) {
+        builder.addAllToQueue(baseUrl, collection.id);
+      }
+
+      // 2. Play All
+      if (collection.itemIds.length > 0) {
+        const firstItemId = collection.itemIds[0];
+        const firstEntryArray = this.mediaService.getEntriesForIds([firstItemId]);
+        if (firstEntryArray.length > 0) {
+          const firstEntry = firstEntryArray[0];
+          this.decorateEntriesWithPlaybackSource([firstEntry], collection.id);
+          if (baseUrl) {
+            const playNextUrl = this.getPlayNextUrl(
+              collection.id,
+              collection.itemIds,
+              firstItemId,
+              baseUrl,
+            );
+            if (playNextUrl) {
+              firstEntry.extensions = {
+                ...firstEntry.extensions,
+                play_next_feed_url: playNextUrl,
+              };
+            }
+          }
+
+          builder.playAll(firstEntry);
+        }
+      }
+
+      // 3. Add all to Playlist
+      if (baseUrl) {
+        builder.addAllToPlaylist(baseUrl, collection.id);
+      }
+
+      return builder.build() as CollectionEntry;
+    });
+
+    return {
+      id: randomUUID(),
+      type: { value: 'feed' },
+      title: 'System Collections',
+      entry: entries,
+      extensions: {},
+    };
+  }
+
+  getCollectionsFeed(
+    itemId?: string,
+    baseUrl?: string,
+    collectionId?: string,
+  ): CollectionsFeed {
+    const cloudEventsUrl = this.cloudEventsUrl(baseUrl);
+
+    const collectionsToRender = (itemId || collectionId)
+      ? this.collections.filter(
+          (collection) =>
+            !(
+              collection.isSystem &&
+              collection.name === CollectionsService.QUEUE_NAME
+            ),
+        )
+      : this.collections;
+
+    const selectedCollectionIds = itemId
+      ? collectionsToRender
+          .filter((collection) => collection.itemIds.includes(itemId))
+          .map((collection) => collection.id)
+      : collectionId
+      ? collectionsToRender
+          .filter((collection) => {
+            const sourceCol = this.findCollectionByIdOrAlias(collectionId);
+            if (!sourceCol) return false;
+            return sourceCol.itemIds.every((id) =>
+              collection.itemIds.includes(id),
+            );
+          })
+          .map((collection) => collection.id)
+      : [];
+
+    const entries = collectionsToRender.map((collection) =>
+      this.toFeedEntry(collection, cloudEventsUrl, itemId || collectionId, baseUrl, !!collectionId),
+    );
+
+    if (!itemId && !collectionId) {
+      entries.push(this.createCreateCollectionEntry(cloudEventsUrl));
+    }
+
+    return {
+      id: randomUUID(),
+      type: { value: 'feed' },
+      title: UI_LABELS.FEED_TITLES.YOUR_COLLECTIONS,
+      entry: entries,
+      extensions: {
+        ...((itemId || collectionId) && {
+          behavior: {
+            select_mode: 'multi',
+            current_selection: selectedCollectionIds,
+          },
+        }),
+      },
+    };
+  }
+
+  private getPlayNextUrl(
+    collectionId: string,
+    collectionItemIds: string[],
+    currentItemId: string,
+    baseUrl: string,
+  ): string | undefined {
+    const currentIndex = collectionItemIds.indexOf(currentItemId);
+    if (currentIndex !== -1 && currentIndex < collectionItemIds.length - 1) {
+      const nextItemId = collectionItemIds[currentIndex + 1];
+      return `${baseUrl}/user/collections/${collectionId}/play_next/${nextItemId}`;
+    }
+    return undefined;
+  }
+
+  getPlayNextFeed(
+    collectionId: string,
+    itemId: string,
+    baseUrl?: string,
+  ): Feed {
+    const collection = this.findCollectionByIdOrAlias(collectionId);
+    if (!collection) {
+      throw new NotFoundException(`Collection ${collectionId} was not found`);
+    }
+
+    const entries = this.mediaService.getEntriesForIds([itemId]);
+    if (entries.length === 0) {
+      throw new NotFoundException(`Item ${itemId} was not found`);
+    }
+
+    this.decorateEntriesWithPlaybackSource(entries, collection.id);
+
+    if (baseUrl) {
+      const playNextUrl = this.getPlayNextUrl(
+        collection.id,
+        collection.itemIds,
+        itemId,
+        baseUrl,
+      );
+      if (playNextUrl) {
+        entries[0].extensions = {
+          ...entries[0].extensions,
+          play_next_feed_url: playNextUrl,
+        };
+      }
+    }
+
+    return {
+      id: randomUUID(),
+      type: { value: 'feed' },
+      title: entries[0].title,
+      entry: entries,
+      extensions: {},
+    };
+  }
+
+  async addAllItemsToCollection(
+    sourceCollectionId: string,
+    targetCollectionId: string,
+  ): Promise<CollectionEntity> {
+    const sourceCollection = this.findCollectionByIdOrAlias(sourceCollectionId);
+    if (!sourceCollection) {
+      throw new NotFoundException(
+        `Source collection ${sourceCollectionId} was not found`,
+      );
+    }
+
+    const targetCollection = this.findCollectionByIdOrAlias(targetCollectionId);
+    if (!targetCollection) {
+      throw new NotFoundException(
+        `Target collection ${targetCollectionId} was not found`,
+      );
+    }
+
+    const newItemIds = [...targetCollection.itemIds];
+    sourceCollection.itemIds.forEach((id) => {
+      if (!newItemIds.includes(id)) {
+        newItemIds.push(id);
+      }
+    });
+
+    targetCollection.itemIds = newItemIds;
+    targetCollection.updatedAt = new Date().toISOString();
+
+    await this.persistenceService.saveCollections(this.collections);
+    return targetCollection;
+  }
+
+  getCollectionFeedById(id: string, action?: string, baseUrl?: string): Feed {
+    const cloudEventsUrl = this.cloudEventsUrl(baseUrl);
+    const collection = this.findCollectionByIdOrAlias(id);
+    if (!collection) {
+      throw new NotFoundException(`Collection ${id} was not found`);
+    }
+
+    const entries = this.mediaService.getEntriesForIds(collection.itemIds);
+    this.decorateEntriesWithPlaybackSource(entries, collection.id);
+
+    if (action === 'remove_item') {
+      // Edit mode: expose remove item action in entry action menu
+      this.decorateEntriesWithRemoveAction(
+        entries,
+        collection.id,
+        cloudEventsUrl,
+      );
+    } else {
+      // Default mode: add remove entry_action to each entry, append Edit entry
+      this.decorateEntriesWithRemoveAction(
+        entries,
+        collection.id,
+        cloudEventsUrl,
+      );
+      if (!collection.isSystem) {
+        entries.push(this.createEditCollectionEntry(collection.id));
+      }
+    }
+
+    return {
+      id: randomUUID(),
+      type: { value: 'feed' },
+      title: collection.name,
+      entry: entries,
+      extensions: {},
+    };
+  }
+
+  private createEditCollectionEntry(collectionId: string): Entry {
+    return {
+      id: collectionId,
+      type: { value: 'collection_edit' },
+      title: UI_LABELS.ENTRY_TITLES.EDIT,
+      media_group: [
+        {
+          type: 'image',
+          media_item: [
+            { key: 'image_base', src: ACTION_ICON_URLS.EDIT },
+            { key: 'thumb_1', src: null },
+            { key: 'thumb_2', src: null },
+            { key: 'thumb_3', src: null },
+          ],
+        },
+      ],
+      extensions: {},
+    };
+  }
+
+  private createCreateCollectionEntry(cloudEventsUrl: string): CollectionEntry {
+    return {
+      id: 'create_collection',
+      type: { value: 'action' },
+      title: UI_LABELS.ENTRY_TITLES.CREATE_COLLECTION,
+      media_group: [
+        {
+          type: 'image',
+          media_item: [
+            { key: 'image_base', src: ACTION_ICON_URLS.EDIT },
+            { key: 'thumb_1', src: null },
+            { key: 'thumb_2', src: null },
+            { key: 'thumb_3', src: null },
+          ],
+        },
+      ],
+      extensions: {
+        item_count: 0,
+        is_system: false,
+        tap_actions: {
+          actions: [
+            {
+              type: 'sendCloudEvent',
+              options: {
+                url: cloudEventsUrl,
+                type: CLOUD_EVENT_TYPES.COLLECTION_CREATE,
+                subject: 'create_collection',
+                data: {},
+              },
+            },
+            {
+              type: 'refreshComponent',
+              options: {},
+            },
+          ],
+        },
+      },
+    };
+  }
+
+  async createCollection(name?: string): Promise<CollectionEntity> {
+    const trimmedName = name?.trim();
+    const collectionName =
+      trimmedName && trimmedName.length > 0
+        ? trimmedName
+        : this.nextDefaultName();
+
+    const now = new Date().toISOString();
+    const newCollection: CollectionEntity = {
+      id: randomUUID(),
+      name: collectionName,
+      itemIds: [],
+      createdAt: now,
+      updatedAt: now,
+      isSystem: false,
+    };
+
+    this.collections.push(newCollection);
+    await this.persistenceService.saveCollections(this.collections);
+    return newCollection;
+  }
+
+  async deleteCollection(id: string): Promise<{ deleted: true; id: string }> {
+    const collection = this.findCollectionByIdOrAlias(id);
+    if (!collection) {
+      throw new NotFoundException(`Collection ${id} was not found`);
+    }
+
+    const index = this.collections.findIndex(
+      (item) => item.id === collection.id,
+    );
+    if (index === -1) {
+      throw new NotFoundException(`Collection ${id} was not found`);
+    }
+
+    if (this.collections[index].isSystem) {
+      throw new BadRequestException('System collections cannot be deleted');
+    }
+
+    this.collections.splice(index, 1);
+    await this.persistenceService.saveCollections(this.collections);
+    return { deleted: true, id: collection.id };
+  }
+
+  async addItemToCollection(
+    collectionId: string,
+    itemId: string,
+  ): Promise<CollectionEntity> {
+    const collection = this.findCollectionByIdOrAlias(collectionId);
+    if (!collection) {
+      throw new NotFoundException(`Collection ${collectionId} was not found`);
+    }
+
+    if (!collection.itemIds.includes(itemId)) {
+      collection.itemIds.push(itemId);
+      collection.updatedAt = new Date().toISOString();
+      await this.persistenceService.saveCollections(this.collections);
+    }
+
+    return collection;
+  }
+
+  async toggleItemInCollection(
+    collectionId: string,
+    itemId: string,
+  ): Promise<CollectionEntity> {
+    const collection = this.findCollectionByIdOrAlias(collectionId);
+    if (!collection) {
+      throw new NotFoundException(`Collection ${collectionId} was not found`);
+    }
+
+    const itemIndex = collection.itemIds.indexOf(itemId);
+    if (itemIndex === -1) {
+      collection.itemIds.push(itemId);
+    } else {
+      collection.itemIds.splice(itemIndex, 1);
+    }
+
+    collection.updatedAt = new Date().toISOString();
+    await this.persistenceService.saveCollections(this.collections);
+    return collection;
+  }
+
+  async removeItemFromCollection(
+    collectionId: string,
+    itemId: string,
+  ): Promise<CollectionEntity> {
+    const collection = this.findCollectionByIdOrAlias(collectionId);
+    if (!collection) {
+      throw new NotFoundException(`Collection ${collectionId} was not found`);
+    }
+
+    const itemIndex = collection.itemIds.indexOf(itemId);
+    if (itemIndex !== -1) {
+      collection.itemIds.splice(itemIndex, 1);
+    }
+
+    collection.updatedAt = new Date().toISOString();
+    await this.persistenceService.saveCollections(this.collections);
+    return collection;
+  }
+
+  async handleVideoStarted(
+    videoId: string,
+    sourceCollectionId?: string,
+  ): Promise<void> {
+    const queue = this.getQueueCollection();
+    if (!queue) {
+      this.logger.warn(
+        'Queue collection was not found while handling video started event',
+      );
+      return;
+    }
+
+    if (sourceCollectionId) {
+      const sourceCollection =
+        this.findCollectionByIdOrAlias(sourceCollectionId);
+      if (!sourceCollection) {
+        this.logger.warn(
+          `Source collection "${sourceCollectionId}" was not found for video started event`,
+        );
+      } else if (sourceCollection.id !== queue.id) {
+        const sourceItemIndex = sourceCollection.itemIds.indexOf(videoId);
+        if (sourceItemIndex === -1) {
+          this.logger.warn(
+            `Video "${videoId}" was not found in source collection "${sourceCollection.id}"; queue was not updated`,
+          );
+          return;
+        }
+
+        queue.itemIds = sourceCollection.itemIds.slice(sourceItemIndex);
+        queue.updatedAt = new Date().toISOString();
+        await this.persistenceService.saveCollections(this.collections);
+        return;
+      }
+    }
+
+    const currentItemIndex = queue.itemIds.indexOf(videoId);
+    if (currentItemIndex <= 0) {
+      return;
+    }
+
+    queue.itemIds.splice(0, currentItemIndex);
+    queue.updatedAt = new Date().toISOString();
+    await this.persistenceService.saveCollections(this.collections);
+  }
+
+  async handleVideoStopped(videoId: string, status?: string): Promise<void> {
+    if (status !== 'COMPLETED') {
+      return;
+    }
+
+    const queue = this.getQueueCollection();
+    if (!queue) {
+      this.logger.warn(
+        'Queue collection was not found while handling video stopped event',
+      );
+      return;
+    }
+
+    const filteredItemIds = queue.itemIds.filter(
+      (itemId) => itemId !== videoId,
+    );
+    if (filteredItemIds.length === queue.itemIds.length) {
+      return;
+    }
+
+    queue.itemIds = filteredItemIds;
+    queue.updatedAt = new Date().toISOString();
+    await this.persistenceService.saveCollections(this.collections);
+  }
+
+  private nextDefaultName(): string {
+    const defaultNamePattern = new RegExp(
+      `^${UI_LABELS.COLLECTION.DEFAULT_PLAYLIST_PREFIX}(\\d+)$`,
+    );
+    const maxCurrentNumber = this.collections.reduce((acc, item) => {
+      const match = item.name.match(defaultNamePattern);
+      if (!match) {
+        return acc;
+      }
+
+      return Math.max(acc, Number(match[1]));
+    }, 0);
+
+    return `${UI_LABELS.COLLECTION.DEFAULT_PLAYLIST_PREFIX}${
+      maxCurrentNumber + 1
+    }`;
+  }
+
+  private getQueueCollection(): CollectionEntity | undefined {
+    return this.collections.find(
+      (collection) =>
+        collection.isSystem &&
+        collection.name === CollectionsService.QUEUE_NAME,
+    );
+  }
+
+  private decorateEntriesWithPlaybackSource(
+    entries: Entry[],
+    sourceCollectionId: string,
+  ): void {
+    entries.forEach((entry) => {
+      entry.extensions = {
+        ...(entry.extensions ?? {}),
+        'continue-watching': {
+          sourceCollectionId,
+        },
+      };
+    });
+  }
+
+  private decorateEntriesWithRemoveAction(
+    entries: Entry[],
+    collectionId: string,
+    cloudEventsUrl: string,
+  ): void {
+    entries.forEach((entry) => {
+      entry.extensions = {
+        ...(entry.extensions ?? {}),
+        // Collection screen should only expose remove action for items.
+        entry_action: [
+          {
+            button: {
+              title: UI_LABELS.ACTION_BUTTON_TITLES.REMOVE_ITEM,
+              iconURL: ACTION_ICON_URLS.REMOVE_ITEM,
+            },
+            dismiss_on_action: true,
+            actions: [
+              {
+                type: 'sendCloudEvent',
+                options: {
+                  url: cloudEventsUrl,
+                  type: CLOUD_EVENT_TYPES.COLLECTION_REMOVE,
+                  subject: 'remove_item_from_collection',
+                  data: {
+                    collectionId,
+                    itemId: entry.id,
+                  },
+                },
+              },
+              {
+                type: 'refreshComponent',
+                options: {},
+              },
+            ],
+          },
+        ],
+      };
+    });
+  }
+
+  private cloudEventsUrl(baseUrl?: string): string {
+    return `${baseUrl}${CollectionsService.CLOUD_EVENTS_PATH}`;
+  }
+
+  private isQueueAlias(idOrAlias: string): boolean {
+    return idOrAlias.trim().toLowerCase() === CollectionsService.QUEUE_ALIAS;
+  }
+
+  private findCollectionByIdOrAlias(
+    idOrAlias: string,
+  ): CollectionEntity | undefined {
+    if (this.isQueueAlias(idOrAlias)) {
+      return this.getQueueCollection();
+    }
+
+    return this.collections.find((collection) => collection.id === idOrAlias);
+  }
+
+  private toFeedEntry(
+    collection: CollectionEntity,
+    cloudEventsUrl: string,
+    itemId?: string,
+    baseUrl?: string,
+    isCollectionMode?: boolean,
+  ): CollectionEntry {
+    return {
+      id: collection.id,
+      title: collection.name,
+      type: { value: itemId ? 'action' : 'collection' },
+      media_group: [
+        {
+          type: 'image',
+          media_item: [
+            { key: 'image_base', src: ACTION_ICON_URLS.COLLECTION_LIST },
+            { key: 'thumb_1', src: null },
+            { key: 'thumb_2', src: null },
+            { key: 'thumb_3', src: null },
+          ],
+        },
+      ],
+      extensions: {
+        item_count: collection.itemIds.length,
+        is_system: collection.isSystem,
+        ...(!itemId && (collection.name !== CollectionsService.QUEUE_NAME && baseUrl || !collection.isSystem) && {
+          entry_action: [
+            ...(collection.name !== CollectionsService.QUEUE_NAME
+              ? [
+                  {
+                    button: {
+                      title: UI_LABELS.ACTION_BUTTON_TITLES.ADD_ALL_TO_QUEUE,
+                      iconURL: ACTION_ICON_URLS.ADD_TO_QUEUE,
+                    },
+                    dismiss_on_action: true,
+                    actions: [
+                      {
+                        type: 'addAllToQueue',
+                        options: {
+                          url: `${baseUrl}/user/collections/${collection.id}`,
+                        },
+                      },
+                    ],
+                  },
+                ]
+              : []),
+            ...(!collection.isSystem
+              ? [
+                  {
+                    button: {
+                      title: UI_LABELS.ACTION_BUTTON_TITLES.DELETE_COLLECTION,
+                      iconURL: ACTION_ICON_URLS.REMOVE_ITEM,
+                    },
+                    dismiss_on_action: true,
+                    actions: [
+                      {
+                        type: 'sendCloudEvent',
+                        options: {
+                          url: cloudEventsUrl,
+                          type: CLOUD_EVENT_TYPES.COLLECTION_DELETE,
+                          subject: 'delete_collection',
+                          data: {
+                            collectionId: collection.id,
+                          },
+                        },
+                      },
+                      {
+                        type: 'refreshComponent',
+                        options: {},
+                      },
+                    ],
+                  },
+                ]
+              : []),
+          ],
+        }),
+        ...(itemId && {
+          tap_actions: {
+            actions: [
+              {
+                type: 'sendCloudEvent',
+                options: {
+                  url: cloudEventsUrl,
+                  type: isCollectionMode
+                    ? CLOUD_EVENT_TYPES.COLLECTION_ADD_COLLECTION
+                    : collection.itemIds.includes(itemId)
+                    ? CLOUD_EVENT_TYPES.COLLECTION_REMOVE
+                    : CLOUD_EVENT_TYPES.COLLECTION_ADD_ITEM,
+                  subject: isCollectionMode
+                    ? 'add_collection_to_collection'
+                    : collection.itemIds.includes(itemId)
+                    ? 'remove_item_from_collection'
+                    : 'add_item_to_collection',
+                  data: isCollectionMode
+                    ? {
+                        collectionId: collection.id,
+                        sourceCollectionId: itemId,
+                      }
+                    : {
+                        collectionId: collection.id,
+                        itemId,
+                      },
+                },
+              },
+              {
+                type: 'refreshComponent',
+                options: {},
+              },
+              ...(isCollectionMode
+                ? [
+                    {
+                      type: 'dismissBottomSheet',
+                      options: {},
+                    },
+                  ]
+                : []),
+            ],
+          },
+        }),
+      },
+    };
+  }
+}

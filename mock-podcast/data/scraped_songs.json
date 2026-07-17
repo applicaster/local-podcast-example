@@ -1,0 +1,62 @@
+[
+  {
+    "id": "jazz_clementine",
+    "stream": "https://upload.wikimedia.org/wikipedia/commons/d/d9/%22Clementine%22_%281927%29%2C_by_Jean_Goldkette_%26_His_Orchestra%2C_featuring_Bix_Beiderbecke.oga",
+    "title": "Clementine (1927) - Jean Goldkette & His Orchestra",
+    "homepage": "https://commons.wikimedia.org/wiki/File:%22Clementine%22_(1927),_by_Jean_Goldkette_%26_His_Orchestra,_featuring_Bix_Beiderbecke.oga"
+  },
+  {
+    "id": "jazz_brejeiro",
+    "stream": "https://upload.wikimedia.org/wikipedia/commons/3/34/%22Brejeiro%22_%281914%29%2C_by_Ernesto_Nazareth.oga",
+    "title": "Brejeiro (1914) - Ernesto Nazareth",
+    "homepage": "https://commons.wikimedia.org/wiki/File:%22Brejeiro%22_(1914),_by_Ernesto_Nazareth.oga"
+  },
+  {
+    "id": "jazz_rose_room",
+    "stream": "https://upload.wikimedia.org/wikipedia/commons/1/12/%22Rose_Room%22_%281936%29%2C_by_Jack_Hylton.mp3",
+    "title": "Rose Room (1936) - Jack Hylton",
+    "homepage": "https://commons.wikimedia.org/wiki/File:%22Rose_Room%22_(1936),_by_Jack_Hylton.mp3"
+  },
+  {
+    "id": "jazz_acid_jazz",
+    "stream": "https://upload.wikimedia.org/wikipedia/commons/2/26/Kevin_MacLeod_-_AcidJazz.ogg",
+    "title": "Acid Jazz - Kevin MacLeod",
+    "homepage": "https://commons.wikimedia.org/wiki/File:Kevin_MacLeod_-_AcidJazz.ogg"
+  },
+  {
+    "id": "jazz_margie",
+    "stream": "https://upload.wikimedia.org/wikipedia/commons/1/1e/%22Margie%22_%281921%29%2C_by_Eddie_Cantor.ogg",
+    "title": "Margie (1921) - Eddie Cantor",
+    "homepage": "https://commons.wikimedia.org/wiki/File:%22Margie%22_(1921),_by_Eddie_Cantor.ogg"
+  },
+  {
+    "id": "funk_profi_70s",
+    "stream": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Pierlo_-_02_-_Profi_70s.ogg",
+    "title": "Profi 70s - Pierlo",
+    "homepage": "https://commons.wikimedia.org/wiki/File:Pierlo_-_02_-_Profi_70s.ogg"
+  },
+  {
+    "id": "funk_super_bubbly",
+    "stream": "https://upload.wikimedia.org/wikipedia/commons/1/10/Jesse_Spillane_-_01_-_Super_Bubbly.ogg",
+    "title": "Super Bubbly - Jesse Spillane",
+    "homepage": "https://commons.wikimedia.org/wiki/File:Jesse_Spillane_-_01_-_Super_Bubbly.ogg"
+  },
+  {
+    "id": "funk_dance_rocket",
+    "stream": "https://upload.wikimedia.org/wikipedia/commons/6/6e/Jesse_Spillane_-_03_-_Dance_Rocket.ogg",
+    "title": "Dance Rocket - Jesse Spillane",
+    "homepage": "https://commons.wikimedia.org/wiki/File:Jesse_Spillane_-_03_-_Dance_Rocket.ogg"
+  },
+  {
+    "id": "funk_black_samba",
+    "stream": "https://upload.wikimedia.org/wikipedia/commons/9/98/Juanitos_-_03_-_Black_Samba.ogg",
+    "title": "Black Samba - Juanitos",
+    "homepage": "https://commons.wikimedia.org/wiki/File:Juanitos_-_03_-_Black_Samba.ogg"
+  },
+  {
+    "id": "funk_san_diego",
+    "stream": "https://upload.wikimedia.org/wikipedia/commons/0/0d/Pierlo_-_05_-_San_Diego_Cruisin.ogg",
+    "title": "San Diego Cruisin - Pierlo",
+    "homepage": "https://commons.wikimedia.org/wiki/File:Pierlo_-_05_-_San_Diego_Cruisin.ogg"
+  }
+]
