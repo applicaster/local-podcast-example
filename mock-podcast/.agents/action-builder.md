@@ -60,9 +60,16 @@ import { ActionsBuilder } from 'feed-decorators';
 export class UserCollectionAODItemBuilder extends ActionsBuilder {
     
     addToPlaylist(opts: { itemId: string }) {
-        // Hides complex logic behind semantic name
-        this.navigateToScreen({
-            typeMapping: 'toggle_song_in_collections'
+        this.openBottomSheet({
+            modal_presentation: {
+                type: 'bottom_sheet',
+                style_variant: 'modal_bottom_sheet',
+            },
+            content: {
+                title: 'Your Collections',
+                itemsUrl: `http://localhost:3000/user/collections?item_id=${opts.itemId}`,
+                items: [],
+            },
         });
         return this;
     }

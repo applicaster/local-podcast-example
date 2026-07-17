@@ -76,7 +76,7 @@ The backend formats responses as feed structures using the `feed-decorators` lib
 *   `GET /media/collections/radio`
     *   Loads static data from `radio.csv` on startup, converts it to a Feed+Entry structure, and caches the result.
     *   **CSV Mapping:** Maps columns: `id` → `entry.id`, `stream` → `content.src`, `image` → `media_group`, `homepage` → `extensions`.
-    *   **Actions:** Each entry contains `extensions.entry_action` with an "Add to Playlist" action that triggers `navigateToScreen` (with `typeMapping: "toggle_song_in_collections"`, `navigationAction: "push"`, and navigation payload `@{entry/}`).
+    *   **Actions:** Each entry contains `extensions.entry_action` with an "Add to Playlist" action that triggers `openBottomSheet` (with `itemsUrl` pointing to `/user/collections?item_id=<itemId>`).
 
 #### 2. User Collections (Playlists)
 *   `GET /user/collections`

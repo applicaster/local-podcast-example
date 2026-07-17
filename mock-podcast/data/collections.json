@@ -33,54 +33,6 @@
     "isSystem": false
   },
   {
-    "id": "8461afa0-a9ef-47d5-a5c0-50bd98e7d997",
-    "name": "Playlist #2",
-    "itemIds": [
-      "slay"
-    ],
-    "createdAt": "2026-07-10T16:22:54.138Z",
-    "updatedAt": "2026-07-17T08:44:47.933Z",
-    "isSystem": false
-  },
-  {
-    "id": "d5efb816-5c16-4d3b-a335-530e21ec42a8",
-    "name": "Playlist #3",
-    "itemIds": [],
-    "createdAt": "2026-07-17T08:45:15.229Z",
-    "updatedAt": "2026-07-17T08:45:15.229Z",
-    "isSystem": false
-  },
-  {
-    "id": "6762281f-ecc6-4159-8968-a0162f5473ef",
-    "name": "Playlist #4",
-    "itemIds": [
-      "jazz_clementine",
-      "jazz_brejeiro",
-      "jazz_rose_room",
-      "jazz_acid_jazz",
-      "jazz_margie"
-    ],
-    "createdAt": "2026-07-17T08:45:24.155Z",
-    "updatedAt": "2026-07-17T16:19:04.234Z",
-    "isSystem": false
-  },
-  {
-    "id": "b5d96102-1934-448a-9acc-524d04842559",
-    "name": "Playlist #5",
-    "itemIds": [],
-    "createdAt": "2026-07-17T08:45:25.692Z",
-    "updatedAt": "2026-07-17T08:45:25.692Z",
-    "isSystem": false
-  },
-  {
-    "id": "84d37345-4b07-4fbc-bc7f-614af7770222",
-    "name": "Playlist #6",
-    "itemIds": [],
-    "createdAt": "2026-07-17T08:46:14.708Z",
-    "updatedAt": "2026-07-17T08:46:14.708Z",
-    "isSystem": false
-  },
-  {
     "id": "system_jazz",
     "name": "Jazz Playlist",
     "itemIds": [
@@ -107,5 +59,19 @@
     "createdAt": "2026-07-17T15:02:09.775Z",
     "updatedAt": "2026-07-17T15:02:09.775Z",
     "isSystem": true
+  },
+  {
+    "id": "d6322b2e-42f0-431d-9a7b-4acd09efadd1",
+    "name": "Playlist #2",
+    "itemIds": [
+      "jazz_clementine",
+      "jazz_brejeiro",
+      "jazz_rose_room",
+      "jazz_acid_jazz",
+      "jazz_margie"
+    ],
+    "createdAt": "2026-07-17T16:48:35.444Z",
+    "updatedAt": "2026-07-17T16:49:08.894Z",
+    "isSystem": false
   }
 ]
