@@ -1,197 +1,81 @@
 # Podcast Playback Application: Playlists and Collections
 
-This document outlines the domain specifications, functional behavior, and backend technical details for the media collections and playlist management system.
+This document outlines the user-facing capabilities, business rules, and high-level functional behaviors of the playlist and playback queue management system for the Podcast Playback Application.
 
 ---
 
 ## 1. Domain Definitions
 
-The following terms define the core domain concepts used across the application:
+To understand how playlists and media groups work in our application, we define the following core concepts:
 
-*   **Collection (or Playlist):** A generic term for a grouped list of media/audio items. In the system, playlists and collections are synonymous and refer to user-managed or system-managed groups of audio tracks.
-*   **System Collection:** A collection managed by the system rather than directly by the user. System collections are marked with the property `isSystem = true`, which protects them from deletion.
-*   **Queue:** A special system collection representing the current playback queue. The Queue is protected server-side and cannot be deleted.
-*   **Media Items Collection (Radio Feed):** A static, read-only collection of audio tracks preloaded by the backend (e.g., from `radio.csv` to represent live streams or default tracks).
-
----
-
-## 2. Functional Specifications
-
-This section defines the business rules, capabilities, and behaviors of the playlist and collection system.
-
-### Playlist & Collection Management
-*   **Multiple Playlists:** Users can create and maintain multiple playlists (collections).
-*   **Creation & Auto-Naming:**
-    *   Users can create new collections.
-    *   By default, if no name is provided, a collection is named `Playlist #N` (e.g., `Playlist #1`, `Playlist #2`).
-    *   The index `N` is sequential and strictly increasing. It is calculated by scanning existing playlists with default names to determine the largest index and adding `1`.
-    *   Old indices of deleted playlists are not reused.
-*   **Deletion Rules:**
-    *   Users can delete their own custom collections.
-    *   **Constraint:** System collections (specifically the Queue) cannot be deleted. The option to delete is blocked.
-*   **Contextual Selection Highlight:**
-    *   When viewing lists of collections to add a song, the system highlights which collections already contain that specific song (selector mode).
-
-### Item Membership (Adding & Removing)
-*   **Explicit Add and Remove:**
-    *   Adding or removing a song from a collection is handled via explicit add and remove events rather than a single toggle event.
-    *   *Selector Mode:* When selecting collections for a song (`GET /user/collections?item_id=<song_id>`), the backend dynamically generates a tap action for each collection. If the song is already in the collection, the tap action triggers a remove event (`com.applicaster.collection.remove.v1`). If the song is not in the collection, it triggers an add event (`com.applicaster.collection.add.v1`).
-    *   *Removal from Contents/Edit Mode:* When viewing a collection's contents or in edit mode, the item entry menu triggers a remove event (`com.applicaster.collection.remove.v1`).
-*   **Collection Reordering:**
-    *   *Note:* Collection item reordering is not currently implemented in the codebase.
-
-### Playback Queue Lifecycle & Updates
-The Queue updates dynamically based on playback events (Continue Watching triggers) and handles playback progression:
-*   **Playback Started Event (`started`):**
-    *   The event must convey the source collection from which playback was initiated.
-    *   *Case A (Playback from Queue):* If the playback is initiated from the Queue itself, the system removes the "head" of the queue (all items preceding the first occurrence of the started item).
-    *   *Case B (Playback from non-Queue Collection):* If the playback is initiated from another collection (e.g., a user playlist or the radio collection), the system replaces the Queue's current contents with the items from that source collection, starting from the selected item and including all items following it.
-*   **Playback Stopped Event (`stopped`):**
-    *   If the playback status is `"COMPLETED"`, the completed item is automatically removed from the Queue. This ensures that the item is cleared, particularly when it is the last remaining item.
-*   **Queue Synonyms:**
-    *   The identifier `queue` is supported globally as a synonym for the Queue collection's GUID. It can be used in place of a collection ID in any endpoint request or cloud event payload.
+*   **Collection (or Playlist):** A grouped list of audio tracks or media items. Playlists can be system-provided (read-only and protected) or user-created (customizable).
+*   **System Collection:** A predefined collection managed by the system. These collections are marked as `isSystem` and cannot be deleted or re-named by the user.
+*   **Queue:** A special, persistent system collection representing the user's active playback queue. The Queue cannot be deleted.
+*   **Live Radio Feed:** A static, read-only collection of live audio stations preloaded by the application (e.g., from our live radio registry).
 
 ---
 
-## 3. Technical Implementation Details
+## 2. Functional Specifications & User Experience
 
-This section details the backend architecture, API endpoints, data models, and event flows.
+This section describes the system's business rules and user-facing behaviors as experienced in the app.
 
-### Tech Stack & Architecture
-*   **Framework:** NestJS + TypeScript.
-*   **Storage & Persistence:** In-memory store with persistence capability.
-*   **Location:** `/podcast-server` (adjacent to the `feed-decorators` library).
-*   **Execution Command:** `npm run start:dev` (executed inside the `/podcast-server` directory).
-*   **Default Port:** 3000.
+### A. Playlist & Collection Management
 
-### Feed & Action Patterns
-The backend formats responses as feed structures using the `feed-decorators` library, utilizing two primary interaction mechanisms:
-*   `tap_actions`: Executed on one-tap row interactions (e.g., toggling collection membership in selector mode).
-*   `entry_action`: Renders action menus (e.g., `...` menu actions like adding/removing/deleting).
-*   **Dynamic Resolvers:** Highlights and actions use behavior blocks with `@{...}` resolvers (e.g., `@{entry/}`) for dynamic value injection.
+*   **Multiple Playlists:** Users can create and maintain multiple custom playlists to organize their favorite tracks.
+*   **Creation & Automatic Naming:**
+    *   Users can create new empty playlists.
+    *   If the user does not provide a custom name during creation, the system automatically names it `Playlist #N` (e.g., `Playlist #1`, `Playlist #2`).
+    *   The index `N` is sequential (strictly increasing) and calculated by scanning existing custom playlists. Even if older playlists are deleted, their names and indices are not recycled (ensuring strict continuity).
+*   **System Playlists:**
+    *   **Pokémon GSC**: A system playlist preloaded with 10 legendary Pokémon Gold, Silver, and Crystal game soundtrack tracks.
+    *   System playlists do not show "Delete collection" options.
+*   **Playlist Actions & Options**:
+    *   Viewing a list of custom playlists exposes a menu (`...`) with options to **Edit** or **Delete** the playlist.
+    *   **Edit Playlist**: Tapping "Edit" triggers a native client action (`editCollection`) that passes the playlist's identifier and its contents feed URL. This allows the client to display an interactive bottom-sheet interface for reordering or removing items.
+    *   **Delete Playlist**: Tapping this deletes the custom playlist entirely.
+    *   **Add all to Queue**: Non-queue playlists expose an action to bulk-add all their tracks to the back of the active playback queue.
 
-### REST API Endpoints
+### B. Adding & Removing Tracks (Membership)
 
-#### 1. Media Collections
-*   `GET /media/collections/radio`
-    *   Loads static data from `radio.csv` on startup, converts it to a Feed+Entry structure, and caches the result.
-    *   **CSV Mapping:** Maps columns: `id` → `entry.id`, `stream` → `content.src`, `image` → `media_group`, `homepage` → `extensions`.
-    *   **Actions:** Each entry contains `extensions.entry_action` with an "Add to Playlist" action that triggers `openBottomSheet` (with `itemsUrl` pointing to `/user/collections?item_id=<itemId>`).
+*   **Explicit Actions**: Adding or removing tracks from any playlist is handled via deliberate, context-aware operations:
+    *   **Add to Playlist (Selector Mode)**: When selecting "Add to Playlist" on a track, the client opens a bottom sheet showing all available customs and system playlists. The system dynamically highlights which playlists already contain that specific track.
+    *   **One-Tap Toggle**: Within this selection sheet, tapping a playlist that doesn't contain the track will add it. Tapping a playlist that already contains the track will instantly remove it, reloading the selection states immediately.
+    *   **Remove from Within a Playlist**: When viewing the tracks inside a playlist, a track's individual action menu (`...`) exposes a "Remove item" option which discards the track from that collection.
 
-#### 2. User Collections (Playlists)
-*   `GET /user/collections`
-    *   Returns a feed-like list of the user's collections.
-    *   **Synthetic Item:** In default mode (no `item_id`), a synthetic entry `id = "create_collection"` (type: `action`, title: `Create collection`) is appended to trigger collection creation.
-    *   **Edit Action:** Non-system entries include an `extensions.entry_action` "Edit" item that triggers the `editCollection` action (payload `{ collectionId }`). The client opens a bottom sheet modal to remove/re-order items (client-side implementation added later). This intentionally replaces navigating to an edit screen by type.
-    *   **Delete Action:** Non-system entries include `extensions.entry_action` for "Delete collection", triggering `com.applicaster.collection.delete.v1` and `refreshComponent`.
-*   `GET /user/collections?item_id=<song_id>` (Selector Mode)
-    *   Used to target collection membership for a specific song.
-    *   Does not include the synthetic `create_collection` item.
-    *   Includes behavior tags:
-        *   `extensions.behavior.select_mode = "multi"`
-        *   `extensions.behavior.current_selection = [<collection_ids_containing_song>]`
-    *   Each collection entry has `extensions.tap_actions` that execute `sendCloudEvent` (sends either `com.applicaster.collection.add.v1` or `com.applicaster.collection.remove.v1` dynamically based on current membership) followed by `refreshComponent` to reload selection states.
-*   `GET /user/collections/:id`
-    *   Returns the contents of a specific collection as a feed.
-    *   Passes the currently playing song ID in `behavior.current_selection` if requested as read-only.
-    *   Each item contains `extensions["continue-watching"].sourceCollectionId = <collection_id>` so that playback events can identify the origin collection.
-    *   Each item contains `extensions.entry_action` to "Remove item" (triggers `com.applicaster.collection.remove.v1`).
-*   `GET /user/collections/:id?action=remove_item` (Edit Mode)
-    *   Allows direct item removal on cell tap.
-*   `POST /user/collections`
-    *   Creates a new collection.
-*   `DELETE /user/collections/:id`
-    *   Deletes a collection. (Blocked server-side for the Queue collection).
+### C. Active Queue Lifecycle & Playback Progression
 
-### Cloud Events Handling
-Cloud events are sent to `POST /cloud-events`. The URL is dynamically constructed using the current request host (obtained via the NestJS `@CurrentRoute()` decorator or Request context fallback).
+The playback queue updates automatically based on user engagement and playback state transitions:
 
-#### 1. Add Item to Collection
-*   **Type:** `com.applicaster.collection.add.v1`
-*   **Payload:**
-    ```json
-    {
-      "collectionId": "string",
-      "itemId": "string"
-    }
-    ```
-*   **Behavior:** Adds the specified item to the collection if it is not already present.
-
-#### 2. Remove Item from Collection
-*   **Type:** `com.applicaster.collection.remove.v1`
-*   **Payload:**
-    ```json
-    {
-      "collectionId": "string",
-      "itemId": "string"
-    }
-    ```
-*   **Behavior:** Removes the specified item from the collection.
-
-#### 3. Toggle Item in Collection (Fallback)
-*   **Type:** Any event type where both `collectionId` and `itemId` are present in the payload (excluding explicit add/remove types).
-*   **Payload:**
-    ```json
-    {
-      "collectionId": "string",
-      "itemId": "string"
-    }
-    ```
-*   **Behavior:** Toggles the song's membership in the specified collection in memory (adds it if absent; removes it if present).
-
-#### 4. Create Collection
-*   **Type:** `com.applicaster.collection.create.v1`
-*   **Payload:**
-    ```json
-    {
-      "name": "string" // Optional name. If omitted or empty, auto-names to "Playlist #N"
-    }
-    ```
-*   **Behavior:** Triggers new collection creation, generating the next sequential default name if no name is provided.
-
-#### 5. Delete Collection
-*   **Type:** `com.applicaster.collection.delete.v1`
-*   **Payload:**
-    ```json
-    {
-      "collectionId": "string"
-    }
-    ```
-*   **Behavior:** Deletes the specified collection. (Blocked server-side for the system Queue collection).
-
-#### 6. Playback Started (Continue Watching)
-*   **Type:** `com.applicaster.video.started.v1`
-*   **Payload:**
-    ```json
-    {
-      "videoId": "string",
-      "sourceCollectionId": "string" // Optional. See resolved paths below.
-    }
-    ```
-*   **Behavior:** Updates the Queue collection. If `sourceCollectionId` is provided and is not the Queue, replaces the Queue content with the source collection items starting from the started video below. Otherwise, removes the "head" of the Queue up to the first occurrence of the started video.
-*   **Source Collection Resolution:** The `sourceCollectionId` can be passed in any of the following payload locations:
-    1. `data.sourceCollectionId`
-    2. `data['continue-watching'].sourceCollectionId`
-    3. `data.continueWatching.sourceCollectionId`
-    4. `data.entry.extensions['continue-watching'].sourceCollectionId`
-    5. `data.entry.extensions.continueWatching.sourceCollectionId`
-
-#### 7. Playback Stopped/Completed
-*   **Type:** `com.applicaster.video.stopped.v1`
-*   **Payload:**
-    ```json
-    {
-      "videoId": "string",
-      "status": "string" // "COMPLETED" is required to trigger action
-    }
-    ```
-*   **Behavior:** If status is `"COMPLETED"`, removes the specified video from the Queue.
+*   **Initiating Playback from a Playlist**:
+    *   When a user taps a track inside a playlist (either custom or system), the application clears the existing active Queue and replaces it with a new queue containing that selected track, followed by all subsequent tracks in that playlist.
+*   **Initiating Playback from the Queue**:
+    *   If the user triggers playback directly from within the Queue itself, the queue removes its "head" — discarding all tracks preceding the clicked track so playback advances forward cleanly.
+*   **Track Completion**:
+    *   As soon as a track completes playback (`COMPLETED` status), it is automatically removed from the Queue. This keeps the queue tidy, especially when playing the final remaining track.
+*   **Queue Synonyms**:
+    *   To simplify lookups across the system, the identifier `queue` is recognized globally as a direct link to the user's active playback queue.
 
 ---
 
-## 4. UI (Frontend) Specifications
+## 3. High-Level Technical Architecture
 
-> [!NOTE]
-> *Placeholder Section*
->
-> This section will cover the user interface implementation, detailing how each functional flow and API interaction is represented on the screen (such as cell layouts, action sheet menus, playlist creation modals, and reordering controls) and how user gestures trigger these flows.
+For technical teams, this section summarizes how these behaviors map to the application codebase:
+
+### Abstract Asset and Label Resolution (Client-Side)
+The backend does not hardcode image URLs or button titles for collection actions. Instead, the backend emits abstract event/action **aliases** (such as `add_to_playlist`, `add_to_queue`, `remove_item`, `delete_collection`, `edit`, or `collection_list`). 
+
+On the client side, a feed decorator intercepts the feeds and merges these aliases with current localized assets and strings, keeping design resources decoupled from backend service code:
+*   Old hardcoded images/labels are supported side-by-side to prevent legacy clients from breaking.
+*   The system uses event-driven communication (Cloud Events) to register track additions, deletions, playlist creations, and playback status updates.
+
+### API Summary
+
+| Endpoint | Method | Purpose | Default Mode Payload/Behavior |
+| :--- | :--- | :--- | :--- |
+| `/user/collections` | `GET` | Retrieve playlist feeds | Returns list of playlists. Appends a synthetic "Create collection" option in default view. |
+| `/user/collections?item_id=<id>` | `GET` | Selector Mode | Returns playlists with selection highlighting and dynamic add/remove tap actions for the given track ID. |
+| `/user/collections/:id` | `GET` | Playlist Tracks | Returns the list of tracks belonging to collection `:id`. |
+| `/user/collections` | `POST` | Create Playlist | Creates a new playlist (optionally accepts custom name). |
+| `/user/collections/:id` | `DELETE` | Delete Playlist | Deletes playlist `:id` (fails for system collections / Queue). |
+| `/cloud-events` | `POST` | Event Router | Ingests playback events (`started`, `stops`) and collection mutations (`add`, `remove`, `toggle`). |
+
