@@ -18,7 +18,7 @@ export class MediaService {
   private readonly logger = new Logger(MediaService.name);
   private radioData: RadioItem[] = [];
   private playlistItems: RadioItem[] = [];
-  private defaultFeedCache: Feed | null = null;
+  private defaultFeedCaches = new Map<string, Feed>();
 
   constructor() {
     this.loadRadioCollection();
@@ -101,16 +101,17 @@ export class MediaService {
   /**
    * Get radio collection feed
    */
-  getRadioFeed(): Feed {
-    if (this.defaultFeedCache) {
-      return this.defaultFeedCache;
+  getRadioFeed(baseUrl?: string): Feed {
+    const cacheKey = baseUrl || 'http://localhost:3000';
+    if (this.defaultFeedCaches.has(cacheKey)) {
+      return this.defaultFeedCaches.get(cacheKey) as Feed;
     }
 
     const entries: Entry[] = this.radioData.map((radio) =>
-      this.radioItemToEntry(radio),
+      this.radioItemToEntry(radio, 'audio', baseUrl),
     );
 
-    this.defaultFeedCache = {
+    const feed: Feed = {
       id: this.generateUUID(),
       type: { value: 'feed' },
       title: UI_LABELS.FEED_TITLES.LIVE_RADIO,
@@ -118,17 +119,25 @@ export class MediaService {
       extensions: {},
     };
 
-    return this.defaultFeedCache;
+    this.defaultFeedCaches.set(cacheKey, feed);
+    return feed;
   }
 
   /**
    * Convert RadioItem to Feed Entry
    */
-  private radioItemToEntry(radio: RadioItem, entryType = 'audio'): Entry {
-    const entry = new LiveAudioEntryBuilder({
-      id: radio.id,
-      type: { value: entryType },
-    })
+  private radioItemToEntry(
+    radio: RadioItem,
+    entryType = 'audio',
+    baseUrl?: string,
+  ): Entry {
+    const entry = new LiveAudioEntryBuilder(
+      {
+        id: radio.id,
+        type: { value: entryType },
+      },
+      baseUrl,
+    )
       .setTitle(radio.title || radio.id)
       .setStream({ url: radio.stream, type: 'application/octet' })
       .addCoverImage({ url: radio.image || null, key: 'image_base' })

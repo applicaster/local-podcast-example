@@ -1,11 +1,15 @@
 import { EntryBuilder, ActionsBuilder } from '@lib/feed-decorators';
 
 export class UserCollectionAODItemBuilder extends EntryBuilder {
-  constructor(baseEntry: any) {
+  private readonly baseUrl: string;
+
+  constructor(baseEntry: any, baseUrl?: string) {
     super(new ActionsBuilder(baseEntry), baseEntry);
+    this.baseUrl = baseUrl || 'http://localhost:3000';
   }
 
-  addToPlaylist(opts?: { itemId?: string }) {
+  addToPlaylist(opts?: { itemId?: string; baseUrl?: string }) {
+    const activeBaseUrl = opts?.baseUrl || this.baseUrl;
     const actionBuilder = new ActionsBuilder({});
     actionBuilder.addAction({
       type: 'openBottomSheet',
@@ -20,7 +24,7 @@ export class UserCollectionAODItemBuilder extends EntryBuilder {
         },
         content: {
           title: 'Your Collections',
-          itemsUrl: `http://localhost:3000/user/collections?item_id=${opts?.itemId || this.entry.id}`,
+          itemsUrl: `${activeBaseUrl}/user/collections?item_id=${opts?.itemId || this.entry.id}`,
           items: [],
         },
       },
@@ -30,9 +34,10 @@ export class UserCollectionAODItemBuilder extends EntryBuilder {
     return this;
   }
 
-  addToQueue(opts?: { itemId?: string }) {
+  addToQueue(opts?: { itemId?: string; baseUrl?: string }) {
+    const activeBaseUrl = opts?.baseUrl || this.baseUrl;
     this.actionBuilder.sendCloudEvent({
-      url: 'http://localhost:3000/cloud-events',
+      url: `${activeBaseUrl}/cloud-events`,
       type: 'com.applicaster.collection.add.item.v1',
       data: {
         collectionId: 'queue',

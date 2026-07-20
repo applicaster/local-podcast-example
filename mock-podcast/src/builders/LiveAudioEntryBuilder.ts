@@ -1,11 +1,15 @@
 import { EntryBuilder, ActionsBuilder } from '@lib/feed-decorators';
 
 export class LiveAudioEntryBuilder extends EntryBuilder {
-  constructor(baseEntry: any) {
+  private readonly baseUrl: string;
+
+  constructor(baseEntry: any, baseUrl?: string) {
     super(new ActionsBuilder(baseEntry), baseEntry);
+    this.baseUrl = baseUrl || 'http://localhost:3000';
   }
 
-  addToPlaylist() {
+  addToPlaylist(baseUrl?: string) {
+    const activeBaseUrl = baseUrl || this.baseUrl;
     const actionBuilder = new ActionsBuilder({});
     actionBuilder.addAction({
       type: 'openBottomSheet',
@@ -20,7 +24,7 @@ export class LiveAudioEntryBuilder extends EntryBuilder {
         },
         content: {
           title: 'Your Collections',
-          itemsUrl: `http://localhost:3000/user/collections?item_id=${this.entry.id}`,
+          itemsUrl: `${activeBaseUrl}/user/collections?item_id=${this.entry.id}`,
           items: [],
         },
       },
