@@ -344,6 +344,45 @@ To do: Owned keys concept (“named key set”)
 
 ## UI actions
 
+### openBottomSheet
+
+Opens a bottom sheet menu surface specified by header and content options.
+
+```json
+{
+  "type": "openBottomSheet",
+  "options": {
+    "modal_presentation": {
+      "type": "bottom_sheet",
+      "style_variant": "modal_bottom_sheet"
+    },
+    "header": {
+      "title": "Edit Playlist",
+      "subtitle": "My Playlist"
+    },
+    "content": {
+      "title": "My Playlist",
+      "itemsUrl": "https://server.com/user/collections/123?editable=true",
+      "items": []
+    }
+  }
+}
+```
+
+### editCollectionName
+
+Triggers a flow or dialog to edit a collection's display name.
+
+```json
+{
+  "type": "editCollectionName",
+  "options": {
+    "collectionId": "playlist-123",
+    "name": "Current Playlist Name"
+  }
+}
+```
+
 ### confirmDialog
 
 Shows a confirmation dialog with provided message and title. If the user confirms, next action in the array will be executed. If the user cancels, execution chain will be cancelled without generating error.
@@ -521,6 +560,34 @@ Old format with explicit `behavior` block to indicate selection mode (QB 13).
 
 Value is taken from entry `extensions.tag` if present, or entry id otherwise.
 Passing `selector` to generated behavior is not currently supported.
+
+### collection_selector
+
+Used for feeds where the user selects items or collections (e.g., choice lists or playlist selection). Works with a `behavior` block defining `select_mode` (`single` | `multi`) and `current_selection`.
+
+```json
+"extensions": {
+  "role": "collection_selector",
+  "behavior": {
+    "select_mode": "multi",
+    "current_selection": ["playlist-1"]
+  }
+}
+```
+
+### dynamic_collection
+
+Declares an editable collection feed (e.g., custom playlists, playback queue) where items can be managed dynamically (reordered, removed, added, deleted).
+
+```json
+"extensions": {
+  "role": "dynamic_collection",
+  "dynamic_collection_options": {
+    "postUrl": "https://server.com/cloud-events",
+    "operations": "remove,reorder"
+  }
+}
+```
 
 # Preferences screen with Apply button
 

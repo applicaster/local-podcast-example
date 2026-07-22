@@ -30,16 +30,17 @@ This section describes the system's business rules and user-facing behaviors as 
     *   **Pokémon GSC**: A system playlist preloaded with 10 legendary Pokémon Gold, Silver, and Crystal game soundtrack tracks.
     *   System playlists do not show "Delete collection" options.
 *   **Playlist Actions & Options**:
-    *   Viewing a list of custom playlists exposes a menu (`...`) with options to **Edit** or **Delete** the playlist.
-    *   **Edit Playlist**: Tapping "Edit" triggers a native client action (`editCollection`) that passes the playlist's identifier and its contents feed URL. This allows the client to display an interactive bottom-sheet interface for reordering or removing items.
-    *   **Delete Playlist**: Tapping this deletes the custom playlist entirely.
+    *   Viewing a list of custom playlists exposes entry action options to **Edit Playlist**, **Edit Name**, or **Delete** the playlist.
+    *   **Edit Playlist**: Entry action (`alias: "edit"`) triggers an `openBottomSheet` action with header `"Edit Playlist"` and `itemsUrl` set to `${baseUrl}/user/collections/${id}?editable=true`. This returns a feed declared with `role: "dynamic_collection"` and `dynamic_collection_options: { postUrl, operations: "remove,reorder" }`, allowing the client bottom sheet renderer to manage items dynamically.
+    *   **Edit Name**: Entry action (`alias: "edit_name"`) triggers `editCollectionName` with `{ collectionId, name }` to launch the client rename workflow.
+    *   **Delete Playlist**: Tapping this deletes the custom playlist entirely (emits `com.applicaster.collection.delete.v1` Cloud Event).
     *   **Add all to Queue**: Non-queue playlists expose an action to bulk-add all their tracks to the back of the active playback queue.
 
 ### B. Adding & Removing Tracks (Membership)
 
 *   **Explicit Actions**: Adding or removing tracks from any playlist is handled via deliberate, context-aware operations:
-    *   **Add to Playlist (Selector Mode)**: When selecting "Add to Playlist" on a track, the client opens a bottom sheet showing all available customs and system playlists. The system dynamically highlights which playlists already contain that specific track.
-    *   **One-Tap Toggle**: Within this selection sheet, tapping a playlist that doesn't contain the track will add it. Tapping a playlist that already contains the track will instantly remove it, reloading the selection states immediately.
+    *   **Add to Playlist (Selector Mode)**: When selecting "Add to Playlist" on a track, the client opens a bottom sheet with `itemsUrl: ${baseUrl}/user/collections?item_id=${trackId}`. This feed is emitted with `role: "collection_selector"` and `behavior: { select_mode: "multi", current_selection: [...] }`.
+    *   **One-Tap Toggle**: Within this selection sheet, tapping a playlist that doesn't contain the track will add it. Tapping a playlist that already contains the track will instantly remove it, reloading the selection states immediately via Cloud Events.
     *   **Remove from Within a Playlist**: When viewing the tracks inside a playlist, a track's individual action menu (`...`) exposes a "Remove item" option which discards the track from that collection.
 
 ### C. Active Queue Lifecycle & Playback Progression
@@ -62,7 +63,7 @@ The playback queue updates automatically based on user engagement and playback s
 For technical teams, this section summarizes how these behaviors map to the application codebase:
 
 ### Abstract Asset and Label Resolution (Client-Side)
-The backend does not hardcode image URLs or button titles for collection actions. Instead, the backend emits abstract event/action **aliases** (such as `add_to_playlist`, `add_to_queue`, `remove_item`, `delete_collection`, `edit`, or `collection_list`). 
+The backend does not hardcode image URLs or button titles for collection actions. Instead, the backend emits abstract event/action **aliases** (such as `add_to_playlist`, `add_to_queue`, `remove_item`, `delete_collection`, `edit`, `edit_name`, or `collection_list`). 
 
 On the client side, a feed decorator intercepts the feeds and merges these aliases with current localized assets and strings, keeping design resources decoupled from backend service code:
 *   Old hardcoded images/labels are supported side-by-side to prevent legacy clients from breaking.
@@ -73,9 +74,11 @@ On the client side, a feed decorator intercepts the feeds and merges these alias
 | Endpoint | Method | Purpose | Default Mode Payload/Behavior |
 | :--- | :--- | :--- | :--- |
 | `/user/collections` | `GET` | Retrieve playlist feeds | Returns list of playlists. Appends a synthetic "Create collection" option in default view. |
-| `/user/collections?item_id=<id>` | `GET` | Selector Mode | Returns playlists with selection highlighting and dynamic add/remove tap actions for the given track ID. |
+| `/user/collections?editable=true` | `GET` | Editable Collections List | Returns list of playlists with `role: "dynamic_collection"` and `dynamic_collection_options: { postUrl, operations: "remove,reorder" }`. |
+| `/user/collections?item_id=<id>` | `GET` | Selector Mode | Returns playlists with `role: "collection_selector"` and `behavior: { select_mode: "multi", current_selection: [...] }`. |
 | `/user/collections/:id` | `GET` | Playlist Tracks | Returns the list of tracks belonging to collection `:id`. |
+| `/user/collections/:id?editable=true` | `GET` | Editable Collection Tracks | Returns tracks belonging to collection `:id` with `role: "dynamic_collection"` and `dynamic_collection_options: { postUrl, operations: "remove,reorder" }`. |
 | `/user/collections` | `POST` | Create Playlist | Creates a new playlist (optionally accepts custom name). |
 | `/user/collections/:id` | `DELETE` | Delete Playlist | Deletes playlist `:id` (fails for system collections / Queue). |
-| `/cloud-events` | `POST` | Event Router | Ingests playback events (`started`, `stops`) and collection mutations (`add`, `remove`, `toggle`). |
+| `/cloud-events` | `POST` | Event Router | Ingests playback events (`started`, `stopped`) and collection mutations (`add`, `remove`, `toggle`, `delete`). |
 

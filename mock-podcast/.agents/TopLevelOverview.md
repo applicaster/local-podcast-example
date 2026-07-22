@@ -116,3 +116,21 @@ Trade-offs:
 - Cleaner architecture (no hidden UI component used for data sync).
 - Centralized and reusable across screens.
 - Depends on platform/plugin support for runtime URL behavior.
+
+### Role/Behavior-Driven Rendering & Dynamic Collections (Phase 3 Backend Contract)
+
+The backend drives UI presentation by declaring semantic **`role`**, **`behavior`**, and **`dynamic_collection_options`** extensions on feeds:
+
+1. **Source-Driven Semantics**:
+   - The backend specifies **`role`** (`collection_selector`, `preference_editor`, `dynamic_collection`).
+   - The client renderer owns visual presentation (cell widgets, icons, controls).
+   - **`style_variant` is not a rendering input** — row layout and affordances are driven exclusively by `role` and `behavior`.
+
+2. **Orthogonality of Selection & Editing**:
+   - **Selection (`behavior`)**: Controls choice UI widgets (`select_mode`: `single` | `multi`, `current_selection`, `selector`).
+   - **Editing (`dynamic_collection`)**: Controls collection mutation capabilities via `dynamic_collection_options`:
+     - `postUrl`: Remote endpoint for dispatching Cloud Events on mutations.
+     - `operations`: Allowed operations string (e.g. `"remove,reorder"`).
+
+3. **Cloud Event Synchronization**:
+   - Remote-backed dynamic collections dispatch Cloud Events (`com.applicaster.collection.remove.v1`, `com.applicaster.collection.delete.v1`, etc.) to `postUrl`.
