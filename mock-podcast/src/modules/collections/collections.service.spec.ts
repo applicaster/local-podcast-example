@@ -350,7 +350,7 @@ describe('CollectionsService queue logic', () => {
         customCollection.id,
       );
       expect(editAction?.actions?.[0]?.options?.url).toBe(
-        `http://localhost:3000/user/collections/${customCollection.id}`,
+        `http://localhost:3000/user/collections/${customCollection.id}?editable=true`,
       );
       // The edit action must not navigate to a screen by type.
       expect(
@@ -371,6 +371,41 @@ describe('CollectionsService queue logic', () => {
       );
 
       expect(editAction).toBeUndefined();
+    });
+  });
+
+  describe('editable collections feeds', () => {
+    it('returns role: "dynamic_collection" and dynamic_collection_options for collections list when editable=true', () => {
+      const feed = service.getCollectionsFeed(
+        undefined,
+        'http://localhost:3000',
+        undefined,
+        true,
+        true,
+      );
+
+      expect(feed.extensions?.role).toBe('dynamic_collection');
+      expect(feed.extensions?.dynamic_collection_options).toEqual({
+        postUrl: 'http://localhost:3000/cloud-events',
+        operations: 'remove,reorder',
+      });
+    });
+
+    it('returns role: "dynamic_collection" and item operations for single collection feed when editable=true', async () => {
+      const customCollection = await service.createCollection('My Playlist');
+      const feed = service.getCollectionFeedById(
+        customCollection.id,
+        undefined,
+        'http://localhost:3000',
+        true,
+        true,
+      );
+
+      expect(feed.extensions?.role).toBe('dynamic_collection');
+      expect(feed.extensions?.dynamic_collection_options).toEqual({
+        postUrl: 'http://localhost:3000/cloud-events',
+        operations: 'remove,reorder',
+      });
     });
   });
 

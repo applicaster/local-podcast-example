@@ -162,7 +162,9 @@ export class CollectionsService implements OnModuleInit {
     baseUrl?: string,
     collectionId?: string,
     isLoggedIn = true,
+    editable = false,
   ): CollectionsFeed {
+    const cloudEventsUrl = this.cloudEventsUrl(baseUrl);
     if (!isLoggedIn) {
       return {
         id: randomUUID(),
@@ -170,18 +172,24 @@ export class CollectionsService implements OnModuleInit {
         title: UI_LABELS.FEED_TITLES.YOUR_COLLECTIONS,
         entry: [],
         extensions: {
-          ...((itemId || collectionId) && {
-            role: 'collection_selector',
-            behavior: {
-              select_mode: 'multi',
-              current_selection: [],
-            },
-          }),
+          ...(editable
+            ? {
+                role: 'dynamic_collection',
+                dynamic_collection_options: {
+                  postUrl: cloudEventsUrl,
+                  operations: 'remove,reorder',
+                },
+              }
+            : (itemId || collectionId) && {
+                role: 'collection_selector',
+                behavior: {
+                  select_mode: 'multi',
+                  current_selection: [],
+                },
+              }),
         },
       };
     }
-
-    const cloudEventsUrl = this.cloudEventsUrl(baseUrl);
 
     const collectionsToRender = (itemId || collectionId)
       ? this.collections.filter(
@@ -213,13 +221,21 @@ export class CollectionsService implements OnModuleInit {
       title: UI_LABELS.FEED_TITLES.YOUR_COLLECTIONS,
       entry: entries,
       extensions: {
-        ...((itemId || collectionId) && {
-          role: 'collection_selector',
-          behavior: {
-            select_mode: 'multi',
-            current_selection: selectedCollectionIds,
-          },
-        }),
+        ...(editable
+          ? {
+              role: 'dynamic_collection',
+              dynamic_collection_options: {
+                postUrl: cloudEventsUrl,
+                operations: 'remove,reorder',
+              },
+            }
+          : (itemId || collectionId) && {
+              role: 'collection_selector',
+              behavior: {
+                select_mode: 'multi',
+                current_selection: selectedCollectionIds,
+              },
+            }),
       },
     };
   }
@@ -317,6 +333,7 @@ export class CollectionsService implements OnModuleInit {
     action?: string,
     baseUrl?: string,
     isLoggedIn = false,
+    editable = false,
   ): Feed {
     const cloudEventsUrl = this.cloudEventsUrl(baseUrl);
     const collection = this.findCollectionByIdOrAlias(id);
@@ -327,7 +344,9 @@ export class CollectionsService implements OnModuleInit {
     const entries = this.mediaService.getEntriesForIds(collection.itemIds, isLoggedIn);
     this.decorateEntriesWithPlaybackSource(entries, collection.id);
 
-    if (action === 'remove_item') {
+    const isEditMode = editable || action === 'remove_item';
+
+    if (isEditMode) {
       // Edit mode: expose remove item action in entry action menu
       this.decorateEntriesWithRemoveAction(
         entries,
@@ -349,7 +368,15 @@ export class CollectionsService implements OnModuleInit {
       type: { value: 'feed' },
       title: collection.name,
       entry: entries,
-      extensions: {},
+      extensions: {
+        ...(isEditMode && {
+          role: 'dynamic_collection',
+          dynamic_collection_options: {
+            postUrl: cloudEventsUrl,
+            operations: 'remove,reorder',
+          },
+        }),
+      },
     };
   }
 
@@ -706,7 +733,7 @@ export class CollectionsService implements OnModuleInit {
           options: {
             collectionId: collection.id,
             ...(baseUrl && {
-              url: `${baseUrl}/user/collections/${collection.id}`,
+              url: `${baseUrl}/user/collections/${collection.id}?editable=true`,
             }),
           },
         });

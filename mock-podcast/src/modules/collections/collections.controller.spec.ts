@@ -45,6 +45,7 @@ describe('Controllers Authorization Checks', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
         unauthReq,
       );
 
@@ -52,6 +53,7 @@ describe('Controllers Authorization Checks', () => {
         undefined,
         'https://localhost:3000',
         undefined,
+        false,
         false,
       );
       expect(res.entry).toEqual([]);
@@ -63,6 +65,7 @@ describe('Controllers Authorization Checks', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
         authReq,
       );
 
@@ -71,6 +74,7 @@ describe('Controllers Authorization Checks', () => {
         'https://localhost:3000',
         undefined,
         true,
+        false,
       );
       expect(res.entry).toHaveLength(1);
     });

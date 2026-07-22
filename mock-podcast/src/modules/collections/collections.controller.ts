@@ -25,6 +25,7 @@ export class CollectionsController {
   getCollections(
     @Query('item_id') itemId?: string,
     @Query('collection_id') collectionId?: string,
+    @Query('editable') editable?: string,
     @CurrentRoute() baseUrl?: string,
     @Req() req?: Request,
   ) {
@@ -35,6 +36,7 @@ export class CollectionsController {
       cleanBaseUrl,
       collectionId,
       loggedIn,
+      editable === 'true',
     );
   }
 
@@ -72,6 +74,7 @@ export class CollectionsController {
   getCollectionById(
     @Param('id') id: string,
     @Query('action') action?: string,
+    @Query('editable') editable?: string,
     @CurrentRoute() baseUrl?: string,
     @Req() req?: Request,
   ) {
@@ -82,6 +85,7 @@ export class CollectionsController {
       action,
       cleanBaseUrl,
       loggedIn,
+      editable === 'true',
     );
   }
 
