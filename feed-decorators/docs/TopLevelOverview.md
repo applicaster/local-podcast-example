@@ -6,7 +6,7 @@
 
 **Behavior** - description of how feed should be rendered in the component. Currently, the only supported feature is conditional cell highlighting. Later additional options can be added, for example, should component visually indicate that feed is been refreshed (with alpha/tint pulse, for example).
 
-**Role** - domain specific meaning of the feed and its items: languages, push topics, purchasable items, preferences, etc. Roles are interpreted by feed decorators and processors, that inject appropriate actions and behaviors into the original feed to achieve declared role.
+**Role** - domain specific meaning of the feed and its items: preferences (`preference_editor`), collection selection (`collection_selector`), editable collections (`dynamic_collection`), push topics (`push_topic`), languages (`language_selector`), etc. Roles are interpreted by feed decorators and client renderers to pick appropriate cell styles, affordances, actions, and behaviors.
 
 **Resolver** - interface that returns actual value of some variable in some internal or remote state, object or generated values. Value can be string (`ctx/namespace.key`), boolean, number (`random/int`), object (`entry/extensions.channel_id`), string array (`push/topics`) and so on. Resolvers can be used in multiple places: As endpoint params to build HTTP request, analytics event creation and so on. 
 
