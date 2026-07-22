@@ -725,16 +725,23 @@ export class CollectionsService implements OnModuleInit {
       }
 
       if (!collection.isSystem) {
-        // Edit collection: opens a bottom sheet modal (client-side, added later)
-        // to remove/re-order items. Emitted as a dedicated action instead of a
-        // screen navigation.
+        // Edit collection: opens a bottom sheet modal to remove/re-order items.
         const editActions = new ActionsBuilder({}).addAction({
-          type: 'editCollection',
+          type: 'openBottomSheet',
           options: {
-            collectionId: collection.id,
-            ...(baseUrl && {
-              url: `${baseUrl}/user/collections/${collection.id}?editable=true`,
-            }),
+            modal_presentation: {
+              type: 'bottom_sheet',
+              style_variant: 'modal_bottom_sheet',
+            },
+            header: {
+              title: 'Edit Playlist',
+              subtitle: collection.name,
+            },
+            content: {
+              title: collection.name,
+              itemsUrl: `${baseUrl}/user/collections/${collection.id}?editable=true`,
+              items: [],
+            },
           },
         });
         builder.addEntryActionByAlias('edit', editActions, false);

@@ -331,7 +331,7 @@ describe('CollectionsService queue logic', () => {
       expect(queueEntry?.extensions?.entry_action).toBeUndefined();
     });
 
-    it('adds an editCollection action (not a screen navigation) for non-system collections', async () => {
+    it('adds an openBottomSheet edit action for non-system collections', async () => {
       const customCollection = await service.createCollection('My Playlist');
 
       const feed = service.getCollectionsFeed(
@@ -345,11 +345,13 @@ describe('CollectionsService queue logic', () => {
       const editAction = actions?.find((a) => a.button?.alias === 'edit');
 
       expect(editAction).toBeDefined();
-      expect(editAction?.actions?.[0]?.type).toBe('editCollection');
-      expect(editAction?.actions?.[0]?.options?.collectionId).toBe(
-        customCollection.id,
-      );
-      expect(editAction?.actions?.[0]?.options?.url).toBe(
+      expect(editAction?.actions?.[0]?.type).toBe('openBottomSheet');
+      expect(
+        (editAction?.actions?.[0]?.options as any)?.header?.title,
+      ).toBe('Edit Playlist');
+      expect(
+        (editAction?.actions?.[0]?.options as any)?.content?.itemsUrl,
+      ).toBe(
         `http://localhost:3000/user/collections/${customCollection.id}?editable=true`,
       );
       // The edit action must not navigate to a screen by type.
