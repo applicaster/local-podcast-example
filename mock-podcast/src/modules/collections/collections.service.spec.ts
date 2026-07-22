@@ -362,6 +362,31 @@ describe('CollectionsService queue logic', () => {
       ).toBe(false);
     });
 
+    it('adds an editCollectionName action (alias edit_name) for non-system collections', async () => {
+      const customCollection = await service.createCollection('My Playlist');
+
+      const feed = service.getCollectionsFeed(
+        undefined,
+        'http://localhost:3000',
+      );
+      const customEntry = feed.entry.find(
+        (entry) => entry.id === customCollection.id,
+      );
+      const actions = customEntry?.extensions?.entry_action;
+      const editNameAction = actions?.find(
+        (a) => a.button?.alias === 'edit_name',
+      );
+
+      expect(editNameAction).toBeDefined();
+      expect(editNameAction?.actions?.[0]?.type).toBe('editCollectionName');
+      expect(
+        (editNameAction?.actions?.[0]?.options as any)?.collectionId,
+      ).toBe(customCollection.id);
+      expect((editNameAction?.actions?.[0]?.options as any)?.name).toBe(
+        'My Playlist',
+      );
+    });
+
     it('does not add an editCollection action for system collections', () => {
       const feed = service.getCollectionsFeed(
         undefined,

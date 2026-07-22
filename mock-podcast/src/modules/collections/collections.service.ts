@@ -746,6 +746,15 @@ export class CollectionsService implements OnModuleInit {
         });
         builder.addEntryActionByAlias('edit', editActions, false);
 
+        const editNameActions = new ActionsBuilder({}).addAction({
+          type: 'editCollectionName',
+          options: {
+            collectionId: collection.id,
+            name: collection.name,
+          },
+        });
+        builder.addEntryActionByAlias('edit_name', editNameActions, false);
+
         const deleteActions = new ActionsBuilder({})
           .sendCloudEvent({
             url: cloudEventsUrl,
