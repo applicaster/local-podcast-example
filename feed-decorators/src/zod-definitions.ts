@@ -22,19 +22,16 @@ export const ZappEntrySchema = z.object({
 
 // Allow extensions to be either:
 // 1. { role, preference_editor_options } (client will add behavior)
-// 2. { preference_editor_options, behavior } (pre-inflated)
+// 2. { preference_editor_options, behavior, role? } (pre-inflated)
 const ExtensionsWithRole = z.object({
   role: z.string(),
   preference_editor_options: PreferenceEditorOptionsSchema,
 });
-const ExtensionsWithBehavior = z
-  .object({
-    preference_editor_options: PreferenceEditorOptionsSchema,
-    behavior: BehaviorSchema,
-  })
-  .refine((data) => !('role' in data), {
-    message: "'role' field should not exist when 'behavior' is present",
-  });
+const ExtensionsWithBehavior = z.object({
+  role: z.string().optional(),
+  preference_editor_options: PreferenceEditorOptionsSchema,
+  behavior: BehaviorSchema,
+});
 
 export const ZappFeedSchema = z.object({
   id: z.string().optional(),

@@ -1,7 +1,7 @@
 import { ActionsBuilder, ZappEntry, buildPreferenceFeed } from '../index';
 
 describe('buildPreferenceFeed with actionBuilder', () => {
-  it('should pre-inflate actions and omit role:preference_editor', () => {
+  it('should pre-inflate actions and set role:preference_editor', () => {
     const feed = buildPreferenceFeed(
       {},
       {
@@ -13,7 +13,7 @@ describe('buildPreferenceFeed with actionBuilder', () => {
             .build(),
       },
     );
-    expect(feed.extensions?.role).toBeUndefined();
+    expect(feed.extensions?.role).toBe('preference_editor');
     expect(feed.entry?.[0]?.extensions?.tap_actions).toBeDefined();
     expect(
       feed.entry?.[1]?.extensions?.tap_actions?.actions?.[0]?.type,

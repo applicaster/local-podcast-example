@@ -8,9 +8,10 @@ import {
   Post,
   Query,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { CurrentRoute } from '@lib/utils';
+import { CurrentRoute, isUserLoggedIn } from '../../utils';
 import { CollectionsService } from './collections.service';
 
 
@@ -28,7 +29,13 @@ export class CollectionsController {
     @Req() req?: Request,
   ) {
     const cleanBaseUrl = this.extractBaseUrl(baseUrl, req);
-    return this.collectionsService.getCollectionsFeed(itemId, cleanBaseUrl, collectionId);
+    const loggedIn = isUserLoggedIn(req);
+    return this.collectionsService.getCollectionsFeed(
+      itemId,
+      cleanBaseUrl,
+      collectionId,
+      loggedIn,
+    );
   }
 
   @Get('system')
@@ -37,7 +44,11 @@ export class CollectionsController {
     @Req() req?: Request,
   ) {
     const cleanBaseUrl = this.extractBaseUrl(baseUrl, req);
-    return this.collectionsService.getSystemCollectionsFeed(cleanBaseUrl);
+    const loggedIn = isUserLoggedIn(req);
+    return this.collectionsService.getSystemCollectionsFeed(
+      cleanBaseUrl,
+      loggedIn,
+    );
   }
 
   @Get(':collectionId/play_next/:itemId')
@@ -48,7 +59,13 @@ export class CollectionsController {
     @Req() req?: Request,
   ) {
     const cleanBaseUrl = this.extractBaseUrl(baseUrl, req);
-    return this.collectionsService.getPlayNextFeed(collectionId, itemId, cleanBaseUrl);
+    const loggedIn = isUserLoggedIn(req);
+    return this.collectionsService.getPlayNextFeed(
+      collectionId,
+      itemId,
+      cleanBaseUrl,
+      loggedIn,
+    );
   }
 
   @Get(':id')
@@ -59,15 +76,26 @@ export class CollectionsController {
     @Req() req?: Request,
   ) {
     const cleanBaseUrl = this.extractBaseUrl(baseUrl, req);
+    const loggedIn = isUserLoggedIn(req);
     return this.collectionsService.getCollectionFeedById(
       id,
       action,
       cleanBaseUrl,
+      loggedIn,
     );
   }
 
   @Post()
-  createCollection(@Body() body: Record<string, any>) {
+  createCollection(
+    @Req() req: Request,
+    @Body() body: Record<string, any>,
+  ) {
+    if (!isUserLoggedIn(req)) {
+      throw new UnauthorizedException(
+        'Authorization header with Bearer token is required',
+      );
+    }
+
     if (body?.specversion && body?.type) {
       this.logger.warn(
         `Ignoring cloud event mistakenly sent to collections endpoint (type="${body.type}"). ` +
@@ -83,7 +111,13 @@ export class CollectionsController {
   }
 
   @Delete(':id')
-  deleteCollection(@Param('id') id: string) {
+  deleteCollection(@Req() req: Request, @Param('id') id: string) {
+    if (!isUserLoggedIn(req)) {
+      throw new UnauthorizedException(
+        'Authorization header with Bearer token is required',
+      );
+    }
+
     return this.collectionsService.deleteCollection(id);
   }
 
@@ -101,7 +135,10 @@ export class CollectionsController {
       // Fallback: if baseUrl is not a full URL, try to construct from request
       if (req) {
         const protocol = req.protocol || 'https';
-        const host = req.get('host') || 'localhost:3000';
+        const host =
+          (typeof req.get === 'function'
+            ? req.get('host')
+            : (req.headers?.['host'] as string)) || 'localhost:3000';
         return `${protocol}://${host}`;
       }
       return undefined;
@@ -119,7 +156,11 @@ export class SystemCollectionsController {
     @Req() req?: Request,
   ) {
     const cleanBaseUrl = this.extractBaseUrl(baseUrl, req);
-    return this.collectionsService.getSystemCollectionsFeed(cleanBaseUrl);
+    const loggedIn = isUserLoggedIn(req);
+    return this.collectionsService.getSystemCollectionsFeed(
+      cleanBaseUrl,
+      loggedIn,
+    );
   }
 
   private extractBaseUrl(baseUrl?: string, req?: Request): string | undefined {

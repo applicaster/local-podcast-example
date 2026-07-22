@@ -51,4 +51,15 @@ describe('MediaService', () => {
 
     expect(second).toBe(first);
   });
+
+  it('excludes add_to_playlist action but retains add_to_queue action when unauthenticated', () => {
+    const feed = service.getRadioFeed('http://localhost:3000', false);
+    const firstAudioEntry = feed.entry.find(
+      (entry) => entry.type.value === 'audio',
+    );
+    const entryActions = firstAudioEntry?.extensions?.entry_action;
+
+    expect(entryActions).toHaveLength(1);
+    expect(entryActions?.[0]?.button?.alias).toBe('add_to_queue');
+  });
 });

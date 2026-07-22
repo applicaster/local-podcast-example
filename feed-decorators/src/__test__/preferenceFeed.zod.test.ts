@@ -18,6 +18,7 @@ describe('Preference Feed Builder Zod validation', () => {
     );
     expect(validateZappFeed(feed)).toBe(true);
     if (feed.extensions) {
+      expect(feed.extensions.role).toBe('preference_editor');
       expect(
         validatePreferenceEditorOptions(
           feed.extensions.preference_editor_options,
@@ -41,6 +42,7 @@ describe('Preference Feed Builder Zod validation', () => {
     );
     expect(validateZappFeed(feed)).toBe(true); // ZappFeedSchema now allows pre-inflated feeds
     if (feed.extensions) {
+      expect(feed.extensions.role).toBe('preference_editor');
       expect(
         validatePreferenceEditorOptions(
           feed.extensions.preference_editor_options,

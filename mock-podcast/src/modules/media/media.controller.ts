@@ -1,6 +1,6 @@
 import { Controller, Get, Req } from '@nestjs/common';
 import { Request } from 'express';
-import { CurrentRoute } from '@lib/utils';
+import { CurrentRoute, isUserLoggedIn } from '../../utils';
 import { MediaService } from './media.service';
 
 @Controller('media')
@@ -13,7 +13,8 @@ export class MediaController {
     @Req() req?: Request,
   ) {
     const cleanBaseUrl = this.extractBaseUrl(baseUrl, req);
-    return this.mediaService.getRadioFeed(cleanBaseUrl);
+    const loggedIn = isUserLoggedIn(req);
+    return this.mediaService.getRadioFeed(cleanBaseUrl, loggedIn);
   }
 
   private extractBaseUrl(baseUrl?: string, req?: Request): string | undefined {
@@ -30,7 +31,10 @@ export class MediaController {
       // Fallback: if baseUrl is not a full URL, try to construct from request
       if (req) {
         const protocol = req.protocol || 'https';
-        const host = req.get('host') || 'localhost:3000';
+        const host =
+          (typeof req.get === 'function'
+            ? req.get('host')
+            : (req.headers?.['host'] as string)) || 'localhost:3000';
         return `${protocol}://${host}`;
       }
       return undefined;

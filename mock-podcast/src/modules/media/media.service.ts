@@ -5,12 +5,8 @@ import {
   Feed,
   Entry,
   RadioItem,
-  ContentItem,
-  MediaGroup,
 } from '../../types/feed';
-import { ACTION_ICON_URLS } from '../../constants/action-icons.constants';
 import { UI_LABELS } from '../../constants/ui-labels.constants';
-import { EntryBuilder } from '@lib/feed-decorators';
 import { LiveAudioEntryBuilder } from '../../builders/LiveAudioEntryBuilder';
 
 @Injectable()
@@ -29,12 +25,12 @@ export class MediaService {
    */
   private generateUUID(): string {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
-      /[xy]/g,
-      function (c) {
-        const r = (Math.random() * 16) | 0;
-        const v = c === 'x' ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
-      },
+        /[xy]/g,
+        function (c) {
+          const r = (Math.random() * 16) | 0;
+          const v = c === 'x' ? r : (r & 0x3) | 0x8;
+          return v.toString(16);
+        },
     );
   }
 
@@ -60,7 +56,7 @@ export class MediaService {
       });
 
       this.logger.log(
-        `Loaded ${this.radioData.length} radio stations from CSV`,
+          `Loaded ${this.radioData.length} radio stations from CSV`,
       );
     } catch (error) {
       this.logger.error('Failed to load radio.csv', error);
@@ -72,7 +68,7 @@ export class MediaService {
       const songsContent = readFileSync(songsPath, 'utf-8');
       this.playlistItems = JSON.parse(songsContent);
       this.logger.log(
-        `Loaded ${this.playlistItems.length} playlist songs from JSON`,
+          `Loaded ${this.playlistItems.length} playlist songs from JSON`,
       );
     } catch (error) {
       this.logger.error('Failed to load scraped_songs.json', error);
@@ -91,24 +87,24 @@ export class MediaService {
   /**
    * Get audio entries for a list of item IDs (preserves order)
    */
-  getEntriesForIds(ids: string[]): Entry[] {
+  getEntriesForIds(ids: string[], isLoggedIn = true): Entry[] {
     return ids
-      .map((id) => this.radioData.find((r) => r.id === id) || this.playlistItems.find((r) => r.id === id))
-      .filter((r): r is RadioItem => r !== undefined)
-      .map((r) => this.radioItemToEntry(r));
+        .map((id) => this.radioData.find((r) => r.id === id) || this.playlistItems.find((r) => r.id === id))
+        .filter((r): r is RadioItem => r !== undefined)
+        .map((r) => this.radioItemToEntry(r, 'audio', undefined, isLoggedIn));
   }
 
   /**
    * Get radio collection feed
    */
-  getRadioFeed(baseUrl?: string): Feed {
-    const cacheKey = baseUrl || 'http://localhost:3000';
+  getRadioFeed(baseUrl?: string, isLoggedIn = true): Feed {
+    const cacheKey = `${baseUrl || 'http://localhost:3000'}:${isLoggedIn}`;
     if (this.defaultFeedCaches.has(cacheKey)) {
       return this.defaultFeedCaches.get(cacheKey) as Feed;
     }
 
     const entries: Entry[] = this.radioData.map((radio) =>
-      this.radioItemToEntry(radio, 'audio', baseUrl),
+        this.radioItemToEntry(radio, 'audio', baseUrl, isLoggedIn),
     );
 
     const feed: Feed = {
@@ -127,22 +123,27 @@ export class MediaService {
    * Convert RadioItem to Feed Entry
    */
   private radioItemToEntry(
-    radio: RadioItem,
-    entryType = 'audio',
-    baseUrl?: string,
+      radio: RadioItem,
+      entryType = 'audio',
+      baseUrl?: string,
+      isLoggedIn = true,
   ): Entry {
     const entry = new LiveAudioEntryBuilder(
-      {
-        id: radio.id,
-        type: { value: entryType },
-      },
-      baseUrl,
+        {
+          id: radio.id,
+          type: { value: entryType },
+        },
+        baseUrl,
     )
-      .setTitle(radio.title || radio.id)
-      .setStream({ url: radio.stream, type: 'application/octet' })
-      .addCoverImage({ url: radio.image || null, key: 'image_base' })
-      .addToPlaylist()
-      .addToQueue();
+        .setTitle(radio.title || radio.id)
+        .setStream({ url: radio.stream, type: 'application/octet' })
+        .addCoverImage({ url: radio.image || null, key: 'image_base' });
+
+    if (isLoggedIn) {
+      entry.addToPlaylist();
+    }
+
+    entry.addToQueue();
 
     if (radio.homepage) {
       entry.addExtension('homepage', radio.homepage);

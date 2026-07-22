@@ -90,15 +90,13 @@ export function buildPreferenceFeed(
   let extensions: any = {
     ...(feed.extensions || {}),
     preference_editor_options: prefOptions,
+    role: 'preference_editor',
   };
 
   let entries = opts.entries || feed.entry || [];
 
-  // If actionBuilder is provided, pre-inflate actions and add behavior block (no role)
-  if (!opts.actionBuilder) {
-    extensions.role = 'preference_editor';
-    // Do NOT add behavior block if role is present
-  } else {
+  // If actionBuilder is provided, pre-inflate actions and add behavior block
+  if (opts.actionBuilder) {
     entries = entries.map((e) => opts.actionBuilder!(e));
     extensions.behavior = {
       select_mode,

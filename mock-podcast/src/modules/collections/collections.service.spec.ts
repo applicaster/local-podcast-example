@@ -163,6 +163,24 @@ describe('CollectionsService queue logic', () => {
       expect(queueEntry).toBeUndefined();
     });
 
+    it('includes role: "collection_selector" and select_mode behavior in extensions when itemId is provided', () => {
+      const feed = service.getCollectionsFeed('slay');
+      expect(feed.extensions?.role).toBe('collection_selector');
+      expect(feed.extensions?.behavior).toEqual({
+        select_mode: 'multi',
+        current_selection: [],
+      });
+    });
+
+    it('includes role: "collection_selector" and select_mode behavior in extensions when collectionId is provided', () => {
+      const feed = service.getCollectionsFeed(undefined, undefined, 'system_jazz');
+      expect(feed.extensions?.role).toBe('collection_selector');
+      expect(feed.extensions?.behavior).toEqual({
+        select_mode: 'multi',
+        current_selection: [],
+      });
+    });
+
     it('emits add event type when item is not in custom collection', async () => {
       const customCollection = await service.createCollection('My Playlist');
       const feed = service.getCollectionsFeed('slay');
@@ -353,6 +371,35 @@ describe('CollectionsService queue logic', () => {
       );
 
       expect(editAction).toBeUndefined();
+    });
+  });
+
+  describe('unauthenticated behavior', () => {
+    it('returns empty user collections feed when unauthenticated', () => {
+      const feed = service.getCollectionsFeed(
+        undefined,
+        'http://localhost:3000',
+        undefined,
+        false,
+      );
+      expect(feed.entry).toEqual([]);
+    });
+
+    it('excludes add_to_playlist from system collections when unauthenticated', () => {
+      const feed = service.getSystemCollectionsFeed(
+        'http://localhost:3000',
+        false,
+      );
+      const systemEntry = feed.entry.find((entry) => entry.id === 'system_gsc');
+      const playlistAction = systemEntry?.extensions?.entry_action?.find(
+        (a) => a.button?.alias === 'add_to_playlist',
+      );
+      const queueAction = systemEntry?.extensions?.entry_action?.find(
+        (a) => a.button?.alias === 'add_all_to_queue',
+      );
+
+      expect(playlistAction).toBeUndefined();
+      expect(queueAction).toBeDefined();
     });
   });
 });

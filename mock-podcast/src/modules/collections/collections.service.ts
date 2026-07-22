@@ -100,7 +100,7 @@ export class CollectionsService implements OnModuleInit {
     );
   }
 
-  getSystemCollectionsFeed(baseUrl?: string): CollectionsFeed {
+  getSystemCollectionsFeed(baseUrl?: string, isLoggedIn = true): CollectionsFeed {
     const cloudEventsUrl = this.cloudEventsUrl(baseUrl);
     const systemCollections = this.collections.filter(
       (c) => c.isSystem && c.name !== CollectionsService.QUEUE_NAME,
@@ -117,7 +117,7 @@ export class CollectionsService implements OnModuleInit {
       // 2. Play All
       if (collection.itemIds.length > 0) {
         const firstItemId = collection.itemIds[0];
-        const firstEntryArray = this.mediaService.getEntriesForIds([firstItemId]);
+        const firstEntryArray = this.mediaService.getEntriesForIds([firstItemId], isLoggedIn);
         if (firstEntryArray.length > 0) {
           const firstEntry = firstEntryArray[0];
           this.decorateEntriesWithPlaybackSource([firstEntry], collection.id);
@@ -141,7 +141,7 @@ export class CollectionsService implements OnModuleInit {
       }
 
       // 3. Add all to Playlist
-      if (baseUrl) {
+      if (baseUrl && isLoggedIn) {
         builder.addAllToPlaylist(baseUrl, collection.id);
       }
 
@@ -161,7 +161,26 @@ export class CollectionsService implements OnModuleInit {
     itemId?: string,
     baseUrl?: string,
     collectionId?: string,
+    isLoggedIn = true,
   ): CollectionsFeed {
+    if (!isLoggedIn) {
+      return {
+        id: randomUUID(),
+        type: { value: 'feed' },
+        title: UI_LABELS.FEED_TITLES.YOUR_COLLECTIONS,
+        entry: [],
+        extensions: {
+          ...((itemId || collectionId) && {
+            role: 'collection_selector',
+            behavior: {
+              select_mode: 'multi',
+              current_selection: [],
+            },
+          }),
+        },
+      };
+    }
+
     const cloudEventsUrl = this.cloudEventsUrl(baseUrl);
 
     const collectionsToRender = (itemId || collectionId)
@@ -194,7 +213,8 @@ export class CollectionsService implements OnModuleInit {
       title: UI_LABELS.FEED_TITLES.YOUR_COLLECTIONS,
       entry: entries,
       extensions: {
-        ...(itemId && {
+        ...((itemId || collectionId) && {
+          role: 'collection_selector',
           behavior: {
             select_mode: 'multi',
             current_selection: selectedCollectionIds,
@@ -222,13 +242,14 @@ export class CollectionsService implements OnModuleInit {
     collectionId: string,
     itemId: string,
     baseUrl?: string,
+    isLoggedIn = true,
   ): Feed {
     const collection = this.findCollectionByIdOrAlias(collectionId);
     if (!collection) {
       throw new NotFoundException(`Collection ${collectionId} was not found`);
     }
 
-    const entries = this.mediaService.getEntriesForIds([itemId]);
+    const entries = this.mediaService.getEntriesForIds([itemId], isLoggedIn);
     if (entries.length === 0) {
       throw new NotFoundException(`Item ${itemId} was not found`);
     }
@@ -291,14 +312,19 @@ export class CollectionsService implements OnModuleInit {
     return targetCollection;
   }
 
-  getCollectionFeedById(id: string, action?: string, baseUrl?: string): Feed {
+  getCollectionFeedById(
+    id: string,
+    action?: string,
+    baseUrl?: string,
+    isLoggedIn = false,
+  ): Feed {
     const cloudEventsUrl = this.cloudEventsUrl(baseUrl);
     const collection = this.findCollectionByIdOrAlias(id);
     if (!collection) {
       throw new NotFoundException(`Collection ${id} was not found`);
     }
 
-    const entries = this.mediaService.getEntriesForIds(collection.itemIds);
+    const entries = this.mediaService.getEntriesForIds(collection.itemIds, isLoggedIn);
     this.decorateEntriesWithPlaybackSource(entries, collection.id);
 
     if (action === 'remove_item') {
