@@ -425,6 +425,27 @@ export class CollectionsService implements OnModuleInit {
     return newCollection;
   }
 
+  async renameCollection(id: string, name: string): Promise<CollectionEntity> {
+    const collection = this.findCollectionByIdOrAlias(id);
+    if (!collection) {
+      throw new NotFoundException(`Collection ${id} was not found`);
+    }
+
+    if (collection.isSystem) {
+      throw new BadRequestException('System collections cannot be renamed');
+    }
+
+    const trimmedName = name?.trim();
+    if (!trimmedName) {
+      throw new BadRequestException('Collection name cannot be empty');
+    }
+
+    collection.name = trimmedName;
+    collection.updatedAt = new Date().toISOString();
+    await this.persistenceService.saveCollections(this.collections);
+    return collection;
+  }
+
   async deleteCollection(id: string): Promise<{ deleted: true; id: string }> {
     const collection = this.findCollectionByIdOrAlias(id);
     if (!collection) {
@@ -812,7 +833,7 @@ export class CollectionsService implements OnModuleInit {
             type: 'sendCloudEvent',
             options: {
               url: cloudEventsUrl,
-              type: CLOUD_EVENT_TYPES.COLLECTION_CREATE,
+              type: CLOUD_EVENT_TYPES.COLLECTION_RENAME,
               subject: 'edit_collection',
               data: { collectionId: collection.id },
             },

@@ -90,6 +90,19 @@ export class CloudEventsService {
       this.logger.log('Creating collection via cloud event');
       await this.collectionsService.createCollection(data.name);
     } else if (
+      (eventType === CLOUD_EVENT_TYPES.COLLECTION_RENAME ||
+        eventType === 'com.applicaster.collection.rename.v1') &&
+      data.collectionId &&
+      data.name
+    ) {
+      this.logger.log(
+        `Renaming collectionId="${data.collectionId}" to "${data.name}"`,
+      );
+      await this.collectionsService.renameCollection(
+        data.collectionId,
+        data.name,
+      );
+    } else if (
       eventType === CLOUD_EVENT_TYPES.COLLECTION_DELETE &&
       data.collectionId
     ) {

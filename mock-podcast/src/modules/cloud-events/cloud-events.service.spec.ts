@@ -10,6 +10,7 @@ describe('CloudEventsService', () => {
     addAllItemsToCollection: jest.fn(async () => undefined),
     removeItemFromCollection: jest.fn(async () => undefined),
     deleteCollection: jest.fn(async () => undefined),
+    renameCollection: jest.fn(async () => undefined),
     toggleItemInCollection: jest.fn(async () => undefined),
   };
 
@@ -94,6 +95,21 @@ describe('CloudEventsService', () => {
 
     expect(collectionsService.createCollection).toHaveBeenCalledWith(
       'My Playlist',
+    );
+  });
+
+  it('routes collection rename event', async () => {
+    await service.handleEvent({
+      type: 'com.applicaster.collection.rename.v1',
+      data: {
+        collectionId: 'playlist-123',
+        name: 'Renamed Playlist',
+      },
+    });
+
+    expect(collectionsService.renameCollection).toHaveBeenCalledWith(
+      'playlist-123',
+      'Renamed Playlist',
     );
   });
 

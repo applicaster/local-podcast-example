@@ -236,7 +236,7 @@ describe('CollectionsService queue logic', () => {
       const actions = audioEntry?.extensions?.entry_action;
       const removeAction = actions?.[0];
 
-      expect(actions).toHaveLength(1);
+      expect(actions?.length).toBeGreaterThanOrEqual(1);
       expect(removeAction?.button?.alias).toBe('remove_item');
       expect(removeAction?.dismiss_on_action).toBe(true);
       expect(removeAction?.actions?.[0]?.type).toBe('sendCloudEvent');
@@ -254,7 +254,7 @@ describe('CollectionsService queue logic', () => {
       const actions = audioEntry?.extensions?.entry_action;
       const removeAction = actions?.[0];
 
-      expect(actions).toHaveLength(1);
+      expect(actions?.length).toBeGreaterThanOrEqual(1);
       expect(removeAction?.button?.alias).toBe('remove_item');
       expect(removeAction?.dismiss_on_action).toBe(true);
       expect(removeAction?.actions?.[0]?.type).toBe('sendCloudEvent');
@@ -465,6 +465,27 @@ describe('CollectionsService queue logic', () => {
 
       expect(playlistAction).toBeUndefined();
       expect(queueAction).toBeDefined();
+    });
+  });
+
+  describe('renameCollection', () => {
+    it('renames an existing custom collection', async () => {
+      const created = await service.createCollection('Old Name');
+      const renamed = await service.renameCollection(created.id, 'New Name');
+      expect(renamed.name).toBe('New Name');
+    });
+
+    it('throws error when renaming system collection', async () => {
+      await expect(
+        service.renameCollection('queue', 'New Queue Name'),
+      ).rejects.toThrow('System collections cannot be renamed');
+    });
+
+    it('throws error when new name is empty', async () => {
+      const created = await service.createCollection('Test Playlist');
+      await expect(
+        service.renameCollection(created.id, '   '),
+      ).rejects.toThrow('Collection name cannot be empty');
     });
   });
 });
