@@ -3,52 +3,52 @@
     "id": "80141d89-f68c-4aeb-8c9e-78b95616a193",
     "name": "Queue",
     "itemIds": [
-      "slay"
+      "gsc_title_screen",
+      "gsc_new_bark_town",
+      "gsc_elm_lab",
+      "gsc_route_29",
+      "gsc_cherrygrove_city",
+      "gsc_pokemon_center",
+      "gsc_azalea_town",
+      "gsc_goldenrod_city",
+      "gsc_national_park",
+      "gsc_ecruteak_city"
     ],
     "createdAt": "2026-07-09T19:09:45.253Z",
-    "updatedAt": "2026-07-09T20:05:56.777Z",
+    "updatedAt": "2026-07-17T18:53:34.834Z",
     "isSystem": true
   },
   {
-    "id": "system_jazz",
-    "name": "Jazz Playlist",
+    "id": "system_gsc",
+    "name": "Pokémon GSC",
     "itemIds": [
-      "jazz_clementine",
-      "jazz_brejeiro",
-      "jazz_rose_room",
-      "jazz_acid_jazz",
-      "jazz_margie"
+      "gsc_title_screen",
+      "gsc_new_bark_town",
+      "gsc_elm_lab",
+      "gsc_route_29",
+      "gsc_cherrygrove_city",
+      "gsc_pokemon_center",
+      "gsc_azalea_town",
+      "gsc_goldenrod_city",
+      "gsc_national_park",
+      "gsc_ecruteak_city",
+      "slay"
     ],
-    "createdAt": "2026-07-17T15:02:09.775Z",
-    "updatedAt": "2026-07-17T15:02:09.775Z",
+    "createdAt": "2026-07-17T19:12:00.000Z",
+    "updatedAt": "2026-07-23T14:33:02.163Z",
     "isSystem": true
   },
   {
-    "id": "system_funk",
-    "name": "Funk Playlist",
+    "id": "5c480279-6481-425b-9395-48942964cb48",
+    "name": "Playlist #1",
     "itemIds": [
+      "jazz_brejeiro",
+      "funk_san_diego",
       "funk_profi_70s",
-      "funk_super_bubbly",
-      "funk_dance_rocket",
-      "funk_black_samba",
-      "funk_san_diego"
+      "funk_super_bubbly"
     ],
-    "createdAt": "2026-07-17T15:02:09.775Z",
-    "updatedAt": "2026-07-17T15:02:09.775Z",
-    "isSystem": true
-  },
-  {
-    "id": "779784e9-e8d4-4363-81b9-61872e67a146",
-    "name": "Playlist #3",
-    "itemIds": [
-      "jazz_clementine",
-      "jazz_brejeiro",
-      "jazz_rose_room",
-      "jazz_acid_jazz",
-      "jazz_margie"
-    ],
-    "createdAt": "2026-07-17T16:54:33.177Z",
-    "updatedAt": "2026-07-17T16:55:18.171Z",
+    "createdAt": "2026-07-17T17:19:47.736Z",
+    "updatedAt": "2026-07-23T23:02:41.714Z",
     "isSystem": false
   }
 ]

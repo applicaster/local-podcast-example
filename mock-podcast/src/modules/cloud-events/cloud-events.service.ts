@@ -108,7 +108,7 @@ export class CloudEventsService {
         data.sourceCollectionId,
         data.collectionId,
       );
-    } else if (data.collectionId && (data.itemId || data.sourceCollectionId)) {
+    } else if (data.collectionId && (data.itemId || data.sourceCollectionId || (data as any).itemIds || (data as any).fromIndex !== undefined || (data as any).from !== undefined)) {
       if (
         eventType === CLOUD_EVENT_TYPES.COLLECTION_ADD_ITEM ||
         eventType === CLOUD_EVENT_TYPES.COLLECTION_ADD ||
@@ -139,6 +139,39 @@ export class CloudEventsService {
           data.collectionId,
           data.itemId,
         );
+      } else if (
+        (eventType === CLOUD_EVENT_TYPES.COLLECTION_REORDER ||
+          eventType === 'com.applicaster.collection.reorder.v1') &&
+        data.collectionId
+      ) {
+        if (
+          Array.isArray((data as any).itemIds) &&
+          (data as any).itemIds.length > 0
+        ) {
+          this.logger.log(
+            `Updating item order for collectionId="${data.collectionId}" to ${JSON.stringify(
+              (data as any).itemIds,
+            )}`,
+          );
+          await this.collectionsService.updateCollectionItemOrder(
+            data.collectionId,
+            (data as any).itemIds,
+          );
+        } else if (
+          typeof ((data as any).fromIndex ?? (data as any).from) === 'number' &&
+          typeof ((data as any).toIndex ?? (data as any).to) === 'number'
+        ) {
+          const fromIndex = ((data as any).fromIndex ?? (data as any).from)!;
+          const toIndex = ((data as any).toIndex ?? (data as any).to)!;
+          this.logger.log(
+            `Reordering item fromIndex="${fromIndex}" toIndex="${toIndex}" in collectionId="${data.collectionId}"`,
+          );
+          await this.collectionsService.reorderItemInCollection(
+            data.collectionId,
+            fromIndex,
+            toIndex,
+          );
+        }
       } else if (data.itemId) {
         this.logger.log(
           `Toggling itemId="${data.itemId}" in collectionId="${data.collectionId}"`,

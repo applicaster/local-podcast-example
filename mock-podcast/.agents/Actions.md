@@ -369,16 +369,29 @@ Opens a bottom sheet menu surface specified by header and content options.
 }
 ```
 
-### editCollectionName
+### showTextInput
 
-Triggers a flow or dialog to edit a collection's display name.
+Triggers a text input bottom sheet/dialog to create or edit text (e.g. playlist names). Defines UI labels and the CloudEvent/action to invoke on submit.
 
 ```json
 {
-  "type": "editCollectionName",
+  "type": "showTextInput",
   "options": {
-    "collectionId": "playlist-123",
-    "name": "Current Playlist Name"
+    "headerTitle": "Edit Name & Details",
+    "inputLabel": "Name your playlist",
+    "defaultValue": "Summer Hits",
+    "buttonLabel": "Update",
+    "action": {
+      "type": "sendCloudEvent",
+      "options": {
+        "url": "https://server.com/cloud-events",
+        "type": "com.applicaster.collection.create.v1",
+        "subject": "edit_collection",
+        "data": {
+          "collectionId": "playlist-123"
+        }
+      }
+    }
   }
 }
 ```

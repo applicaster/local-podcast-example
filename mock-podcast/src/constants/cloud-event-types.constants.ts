@@ -6,6 +6,7 @@ export const CLOUD_EVENT_TYPES = {
   COLLECTION_ADD_ITEM: 'com.applicaster.collection.add.item.v1',
   COLLECTION_ADD_COLLECTION: 'com.applicaster.collection.add.collection.v1',
   COLLECTION_REMOVE: 'com.applicaster.collection.remove.v1',
+  COLLECTION_REORDER: 'com.applicaster.collection.reorder.v1',
   COLLECTION_DELETE: 'com.applicaster.collection.delete.v1',
   EVENT_RECEIVED: 'com.applicaster.event.received.v1',
 } as const;

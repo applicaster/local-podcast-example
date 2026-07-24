@@ -133,6 +133,24 @@ export class ActionsBuilder {
   }
 
   /**
+   * Adds a showTextInput action to the actions list.
+   * @param opts Options for showTextInput (headerTitle, inputLabel, defaultValue, buttonLabel, action)
+   */
+  showTextInput(opts: {
+    headerTitle?: string;
+    inputLabel?: string;
+    defaultValue?: string;
+    buttonLabel?: string;
+    action?: Action;
+  }) {
+    this.actions.push({
+      type: 'showTextInput',
+      options: opts,
+    });
+    return this;
+  }
+
+  /**
    * Adds a refreshComponent action to the actions list.
    * No options are required for this action.
    */

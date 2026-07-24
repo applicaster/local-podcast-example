@@ -615,6 +615,47 @@ export class CollectionsService implements OnModuleInit {
     });
   }
 
+  async updateCollectionItemOrder(
+    collectionId: string,
+    itemIds: string[],
+  ): Promise<CollectionEntity> {
+    const collection = this.findCollectionByIdOrAlias(collectionId);
+    if (!collection) {
+      throw new NotFoundException(`Collection ${collectionId} was not found`);
+    }
+
+    collection.itemIds = itemIds;
+    collection.updatedAt = new Date().toISOString();
+    await this.persistenceService.saveCollections(this.collections);
+    return collection;
+  }
+
+  async reorderItemInCollection(
+    collectionId: string,
+    fromIndex: number,
+    toIndex: number,
+  ): Promise<CollectionEntity> {
+    const collection = this.findCollectionByIdOrAlias(collectionId);
+    if (!collection) {
+      throw new NotFoundException(`Collection ${collectionId} was not found`);
+    }
+
+    if (
+      fromIndex < 0 ||
+      fromIndex >= collection.itemIds.length ||
+      toIndex < 0 ||
+      toIndex >= collection.itemIds.length
+    ) {
+      throw new BadRequestException('Invalid reorder indices');
+    }
+
+    const [movedId] = collection.itemIds.splice(fromIndex, 1);
+    collection.itemIds.splice(toIndex, 0, movedId);
+    collection.updatedAt = new Date().toISOString();
+    await this.persistenceService.saveCollections(this.collections);
+    return collection;
+  }
+
   private decorateEntriesWithRemoveAction(
     entries: Entry[],
     collectionId: string,
@@ -634,14 +675,30 @@ export class CollectionsService implements OnModuleInit {
         .refreshComponent()
         .build().extensions.tap_actions.actions;
 
+      const reorderActions = new ActionsBuilder({})
+        .sendCloudEvent({
+          url: cloudEventsUrl,
+          type: CLOUD_EVENT_TYPES.COLLECTION_REORDER,
+          subject: 'reorder_item_in_collection',
+          data: {
+            collectionId,
+          },
+        })
+        .refreshComponent()
+        .build().extensions.tap_actions.actions;
+
       entry.extensions = {
         ...(entry.extensions ?? {}),
-        // Collection screen should only expose remove action for items.
         entry_action: [
           {
             button: { alias: 'remove_item' },
             dismiss_on_action: true,
             actions: removeActions,
+          },
+          {
+            button: { alias: 'reorder_item' },
+            dismiss_on_action: false,
+            actions: reorderActions,
           },
         ],
       };
@@ -746,11 +803,19 @@ export class CollectionsService implements OnModuleInit {
         });
         builder.addEntryActionByAlias('edit', editActions, false);
 
-        const editNameActions = new ActionsBuilder({}).addAction({
-          type: 'editCollectionName',
-          options: {
-            collectionId: collection.id,
-            name: collection.name,
+        const editNameActions = new ActionsBuilder({}).showTextInput({
+          headerTitle: 'Edit Name & Details',
+          inputLabel: 'Name your playlist',
+          defaultValue: collection.name,
+          buttonLabel: 'Update',
+          action: {
+            type: 'sendCloudEvent',
+            options: {
+              url: cloudEventsUrl,
+              type: CLOUD_EVENT_TYPES.COLLECTION_CREATE,
+              subject: 'edit_collection',
+              data: { collectionId: collection.id },
+            },
           },
         });
         builder.addEntryActionByAlias('edit_name', editNameActions, false);

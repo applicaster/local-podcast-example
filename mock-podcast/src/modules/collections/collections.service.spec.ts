@@ -362,7 +362,7 @@ describe('CollectionsService queue logic', () => {
       ).toBe(false);
     });
 
-    it('adds an editCollectionName action (alias edit_name) for non-system collections', async () => {
+    it('adds a showTextInput action (alias edit_name) for non-system collections', async () => {
       const customCollection = await service.createCollection('My Playlist');
 
       const feed = service.getCollectionsFeed(
@@ -378,12 +378,15 @@ describe('CollectionsService queue logic', () => {
       );
 
       expect(editNameAction).toBeDefined();
-      expect(editNameAction?.actions?.[0]?.type).toBe('editCollectionName');
-      expect(
-        (editNameAction?.actions?.[0]?.options as any)?.collectionId,
-      ).toBe(customCollection.id);
-      expect((editNameAction?.actions?.[0]?.options as any)?.name).toBe(
-        'My Playlist',
+      expect(editNameAction?.actions?.[0]?.type).toBe('showTextInput');
+      const opts = editNameAction?.actions?.[0]?.options as any;
+      expect(opts?.headerTitle).toBe('Edit Name & Details');
+      expect(opts?.inputLabel).toBe('Name your playlist');
+      expect(opts?.defaultValue).toBe('My Playlist');
+      expect(opts?.buttonLabel).toBe('Update');
+      expect(opts?.action?.type).toBe('sendCloudEvent');
+      expect(opts?.action?.options?.data?.collectionId).toBe(
+        customCollection.id,
       );
     });
 
