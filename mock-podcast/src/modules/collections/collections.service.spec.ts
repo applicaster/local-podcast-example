@@ -181,6 +181,12 @@ describe('CollectionsService queue logic', () => {
       });
     });
 
+    it('excludes the source collection itself when collectionId is provided', () => {
+      const feed = service.getCollectionsFeed(undefined, undefined, 'system_jazz');
+      const sourceEntry = feed.entry.find((e) => e.id === 'system_jazz');
+      expect(sourceEntry).toBeUndefined();
+    });
+
     it('emits add event type when item is not in custom collection', async () => {
       const customCollection = await service.createCollection('My Playlist');
       const feed = service.getCollectionsFeed('slay');

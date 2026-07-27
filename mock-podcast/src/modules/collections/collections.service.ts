@@ -164,7 +164,8 @@ export class CollectionsService implements OnModuleInit {
             !(
               collection.isSystem &&
               collection.name === CollectionsService.QUEUE_NAME
-            ),
+            ) &&
+            (!collectionId || collection.id !== collectionId),
         )
       : this.collections;
 
