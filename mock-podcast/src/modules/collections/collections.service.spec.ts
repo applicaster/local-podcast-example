@@ -176,7 +176,7 @@ describe('CollectionsService queue logic', () => {
       const feed = service.getCollectionsFeed(undefined, undefined, 'system_jazz');
       expect(feed.extensions?.role).toBe('collection_selector');
       expect(feed.extensions?.behavior).toEqual({
-        select_mode: 'multi',
+        select_mode: 'none',
         current_selection: [],
       });
     });
@@ -401,6 +401,58 @@ describe('CollectionsService queue logic', () => {
       );
 
       expect(editAction).toBeUndefined();
+    });
+
+    it('adds add_to_playlist and play_all actions for non-system collections when items exist', async () => {
+      const customCollection = await service.createCollection('My Playlist');
+      await service.addItemToCollection(customCollection.id, 'gsc_title_screen');
+
+      const feed = service.getCollectionsFeed(
+        undefined,
+        'http://localhost:3000',
+        undefined,
+        true,
+      );
+      const customEntry = feed.entry.find(
+        (entry) => entry.id === customCollection.id,
+      );
+      const actions = customEntry?.extensions?.entry_action;
+      const playAllAction = actions?.find((a) => a.button?.alias === 'play_all');
+      const addToPlaylistAction = actions?.find(
+        (a) => a.button?.alias === 'add_to_playlist',
+      );
+
+      expect(playAllAction).toBeDefined();
+      expect(playAllAction?.actions?.[0]?.type).toBe('navigateToScreen');
+      expect(addToPlaylistAction).toBeDefined();
+      expect(addToPlaylistAction?.actions?.[0]?.type).toBe('openBottomSheet');
+      expect(
+        (addToPlaylistAction?.actions?.[0]?.options as any)?.content?.itemsUrl,
+      ).toBe(
+        `http://localhost:3000/user/collections?collection_id=${customCollection.id}`,
+      );
+    });
+
+    it('omits play_all for non-system collection when collection has no items', async () => {
+      const emptyCollection = await service.createCollection('Empty Playlist');
+
+      const feed = service.getCollectionsFeed(
+        undefined,
+        'http://localhost:3000',
+        undefined,
+        true,
+      );
+      const customEntry = feed.entry.find(
+        (entry) => entry.id === emptyCollection.id,
+      );
+      const actions = customEntry?.extensions?.entry_action;
+      const playAllAction = actions?.find((a) => a.button?.alias === 'play_all');
+      const addToPlaylistAction = actions?.find(
+        (a) => a.button?.alias === 'add_to_playlist',
+      );
+
+      expect(playAllAction).toBeUndefined();
+      expect(addToPlaylistAction).toBeDefined();
     });
   });
 

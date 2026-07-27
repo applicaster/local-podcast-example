@@ -34,7 +34,9 @@ This section describes the system's business rules and user-facing behaviors as 
     *   **Edit Playlist**: Entry action (`alias: "edit"`) triggers an `openBottomSheet` action with header `"Edit Playlist"` and `itemsUrl` set to `${baseUrl}/user/collections/${id}?editable=true`. This returns a feed declared with `role: "dynamic_collection"` and `dynamic_collection_options: { postUrl, operations: "remove,reorder" }`, allowing the client bottom sheet renderer to manage items dynamically.
     *   **Edit Name**: Entry action (`alias: "edit_name"`) triggers `showTextInput` with UI labels (`headerTitle`, `inputLabel`, `defaultValue`, `buttonLabel`) and a `sendCloudEvent` action to launch the client rename workflow.
     *   **Delete Playlist**: Tapping this deletes the custom playlist entirely (emits `com.applicaster.collection.delete.v1` Cloud Event).
-    *   **Add all to Queue**: Non-queue playlists expose an action to bulk-add all their tracks to the back of the active playback queue.
+    *   **Add all to Queue**: Non-queue playlists (both system and custom user playlists) expose an action to bulk-add all their tracks to the back of the active playback queue.
+    *   **Play All**: Non-queue playlists with tracks expose an action (`alias: "play_all"`) to start playing the first track of the playlist and chain subsequent tracks via `play_next_feed_url`.
+    *   **Add to Playlist (Add all to Playlist)**: Non-queue playlists expose an action (`alias: "add_to_playlist"`) to open the playlist selector sheet (`itemsUrl: ${baseUrl}/user/collections?collection_id=${id}`), enabling users to bulk-add all tracks from this collection into another target playlist.
 
 ### B. Adding & Removing Tracks (Membership)
 

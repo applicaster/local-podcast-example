@@ -16,7 +16,6 @@ import { Feed, Entry } from '../../types/feed';
 import { CollectionsPersistenceService } from './persistence.service';
 import { CLOUD_EVENT_TYPES } from '../../constants/cloud-event-types.constants';
 import { UI_LABELS } from '../../constants/ui-labels.constants';
-import { SystemCollectionEntryBuilder } from '../../builders/SystemCollectionEntryBuilder';
 import { EntryBuilder, ActionsBuilder } from '@lib/feed-decorators';
 
 @Injectable()
@@ -105,48 +104,16 @@ export class CollectionsService implements OnModuleInit {
     const systemCollections = this.collections.filter(
       (c) => c.isSystem && c.name !== CollectionsService.QUEUE_NAME,
     );
-    const entries = systemCollections.map((collection) => {
-      const baseFeedEntry = this.toFeedEntry(collection, cloudEventsUrl);
-      const builder = new SystemCollectionEntryBuilder(baseFeedEntry);
-
-      // 1. Add all to Queue
-      if (baseUrl) {
-        builder.addAllToQueue(baseUrl, collection.id);
-      }
-
-      // 2. Play All
-      if (collection.itemIds.length > 0) {
-        const firstItemId = collection.itemIds[0];
-        const firstEntryArray = this.mediaService.getEntriesForIds([firstItemId], isLoggedIn);
-        if (firstEntryArray.length > 0) {
-          const firstEntry = firstEntryArray[0];
-          this.decorateEntriesWithPlaybackSource([firstEntry], collection.id);
-          if (baseUrl) {
-            const playNextUrl = this.getPlayNextUrl(
-              collection.id,
-              collection.itemIds,
-              firstItemId,
-              baseUrl,
-            );
-            if (playNextUrl) {
-              firstEntry.extensions = {
-                ...firstEntry.extensions,
-                play_next_feed_url: playNextUrl,
-              };
-            }
-          }
-
-          builder.playAll(firstEntry);
-        }
-      }
-
-      // 3. Add all to Playlist
-      if (baseUrl && isLoggedIn) {
-        builder.addAllToPlaylist(baseUrl, collection.id);
-      }
-
-      return builder.build() as CollectionEntry;
-    });
+    const entries = systemCollections.map((collection) =>
+      this.toFeedEntry(
+        collection,
+        cloudEventsUrl,
+        undefined,
+        baseUrl,
+        false,
+        isLoggedIn,
+      ),
+    );
 
     return {
       id: randomUUID(),
@@ -183,7 +150,7 @@ export class CollectionsService implements OnModuleInit {
             : (itemId || collectionId) && {
                 role: 'collection_selector',
                 behavior: {
-                  select_mode: 'multi',
+                  select_mode: itemId ? 'multi' : 'none',
                   current_selection: [],
                 },
               }),
@@ -232,7 +199,7 @@ export class CollectionsService implements OnModuleInit {
           : (itemId || collectionId) && {
               role: 'collection_selector',
               behavior: {
-                select_mode: 'multi',
+                select_mode: itemId ? 'multi' : 'none',
                 current_selection: selectedCollectionIds,
               },
             }),
@@ -750,6 +717,7 @@ export class CollectionsService implements OnModuleInit {
     itemId?: string,
     baseUrl?: string,
     isCollectionMode?: boolean,
+    isLoggedIn = true,
   ): CollectionEntry {
     const isQueue = collection.name === CollectionsService.QUEUE_NAME;
 
@@ -793,6 +761,7 @@ export class CollectionsService implements OnModuleInit {
     // Entry action menu (default mode only).
     if (!itemId && ((!isQueue && baseUrl) || !collection.isSystem)) {
       if (!isQueue && baseUrl) {
+        // 1. Add all to Queue
         const addAllActions = new ActionsBuilder({}).addAction({
           type: 'addAllToQueue',
           options: {
@@ -800,6 +769,71 @@ export class CollectionsService implements OnModuleInit {
           },
         });
         builder.addEntryActionByAlias('add_all_to_queue', addAllActions, true);
+
+        // 2. Play All
+        if (collection.itemIds.length > 0) {
+          const firstItemId = collection.itemIds[0];
+          const firstEntryArray = this.mediaService.getEntriesForIds(
+            [firstItemId],
+            isLoggedIn,
+          );
+          if (firstEntryArray.length > 0) {
+            const firstEntry = firstEntryArray[0];
+            this.decorateEntriesWithPlaybackSource(
+              [firstEntry],
+              collection.id,
+            );
+            const playNextUrl = this.getPlayNextUrl(
+              collection.id,
+              collection.itemIds,
+              firstItemId,
+              baseUrl,
+            );
+            if (playNextUrl) {
+              firstEntry.extensions = {
+                ...firstEntry.extensions,
+                play_next_feed_url: playNextUrl,
+              };
+            }
+
+            const playAllAction = new ActionsBuilder({}).addAction({
+              type: 'navigateToScreen',
+              options: {
+                typeMapping: firstEntry.type.value,
+                navigationAction: 'push',
+                entry: firstEntry,
+              },
+            });
+            builder.addEntryActionByAlias('play_all', playAllAction, true);
+          }
+        }
+
+        // 3. Add all to Playlist
+        if (isLoggedIn) {
+          const addAllToPlaylistAction = new ActionsBuilder({}).addAction({
+            type: 'openBottomSheet',
+            options: {
+              modal_presentation: {
+                type: 'bottom_sheet',
+                style_variant: 'modal_bottom_sheet',
+              },
+              header: {
+                title: 'Select Playlist',
+                subtitle: 'Add items to playlist',
+              },
+              content: {
+                title: 'Your Collections',
+                itemsUrl: `${baseUrl}/user/collections?collection_id=${collection.id}`,
+                items: [],
+              },
+            },
+          });
+          builder.addEntryActionByAlias(
+            'add_to_playlist',
+            addAllToPlaylistAction,
+            false,
+          );
+        }
       }
 
       if (!collection.isSystem) {
