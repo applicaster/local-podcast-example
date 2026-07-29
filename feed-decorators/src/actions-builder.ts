@@ -297,6 +297,14 @@ export class ActionsBuilder {
   }
 
   /**
+   * Returns the accumulated actions array.
+   * @returns An array of actions.
+   */
+  buildActions(): Action[] {
+    return this.actions;
+  }
+
+  /**
    * Builds the entry with all accumulated actions in tap_actions.
    * @returns The entry object with tap_actions extension.
    */

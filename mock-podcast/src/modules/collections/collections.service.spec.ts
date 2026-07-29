@@ -281,8 +281,12 @@ describe('CollectionsService queue logic', () => {
       expect(createEntry).toBeDefined();
       expect(createEntry?.title).toBe('Create collection');
       expect(createEntry?.type.value).toBe('action');
+      expect(createEntry?.extensions?.tap_actions?.actions?.[0]?.type).toBe(
+        'showTextInput',
+      );
       expect(
-        createEntry?.extensions?.tap_actions?.actions?.[0]?.options?.type,
+        (createEntry?.extensions?.tap_actions?.actions?.[0] as any)?.options
+          ?.action?.options?.type,
       ).toBe('com.applicaster.collection.create.v1');
       expect(createEntry?.extensions?.tap_actions?.actions?.[1]?.type).toBe(
         'refreshComponent',
@@ -296,6 +300,44 @@ describe('CollectionsService queue logic', () => {
       );
 
       expect(createEntry).toBeUndefined();
+    });
+
+    it('returns dynamic_collection_options with operations: add and events.add in selector mode', () => {
+      const feed = service.getCollectionsFeed('slay', 'http://localhost:3000');
+      expect(feed.extensions?.dynamic_collection_options).toEqual({
+        postUrl: 'http://localhost:3000/cloud-events',
+        operations: 'add',
+        events: {
+          add: [
+            {
+              type: 'showTextInput',
+              options: {
+                headerTitle: 'Create New Playlist',
+                inputLabel: 'Name your playlist',
+                defaultValue: '',
+                buttonLabel: 'Create',
+                action: {
+                  type: 'sendCloudEvent',
+                  options: {
+                    url: 'http://localhost:3000/cloud-events',
+                    type: 'com.applicaster.collection.create.v1',
+                    subject: 'create_collection',
+                    data: {
+                      itemId: 'slay',
+                    },
+                  },
+                },
+              },
+            },
+          ],
+        },
+      });
+
+      const firstEntry = feed.entry[0];
+      const createAliasAction = firstEntry?.extensions?.entry_action?.find(
+        (a) => a.button?.alias === 'create_collection',
+      );
+      expect(createAliasAction).toBeUndefined();
     });
 
     it('adds Delete collection action for non-system collections', async () => {
@@ -475,7 +517,29 @@ describe('CollectionsService queue logic', () => {
       expect(feed.extensions?.role).toBe('dynamic_collection');
       expect(feed.extensions?.dynamic_collection_options).toEqual({
         postUrl: 'http://localhost:3000/cloud-events',
-        operations: 'remove,reorder',
+        operations: 'add,remove,reorder',
+        events: {
+          add: [
+            {
+              type: 'showTextInput',
+              options: {
+                headerTitle: 'Create New Playlist',
+                inputLabel: 'Name your playlist',
+                defaultValue: '',
+                buttonLabel: 'Create',
+                action: {
+                  type: 'sendCloudEvent',
+                  options: {
+                    url: 'http://localhost:3000/cloud-events',
+                    type: 'com.applicaster.collection.create.v1',
+                    subject: 'create_collection',
+                    data: {},
+                  },
+                },
+              },
+            },
+          ],
+        },
       });
     });
 
@@ -544,6 +608,38 @@ describe('CollectionsService queue logic', () => {
       await expect(
         service.renameCollection(created.id, '   '),
       ).rejects.toThrow('Collection name cannot be empty');
+    });
+  });
+
+  describe('createCollection with triggering item / source collection', () => {
+    it('creates collection and initializes itemIds with itemId when provided', async () => {
+      const collection = await service.createCollection('My New Playlist', 'retro');
+      expect(collection.name).toBe('My New Playlist');
+      expect(collection.itemIds).toEqual(['retro']);
+    });
+
+    it('creates collection and copies itemIds from sourceCollectionId when provided', async () => {
+      const source = await service.createCollection('Source Playlist', 'item-1');
+      await service.addItemToCollection(source.id, 'item-2');
+      const copy = await service.createCollection('Copied Playlist', undefined, source.id);
+      expect(copy.itemIds).toEqual(['item-1', 'item-2']);
+    });
+
+    it('returns dynamic_collection_options with events.add in item selector mode', async () => {
+      const feed = await service.getCollectionsFeed(
+        'retro',
+        'http://localhost:3000',
+        undefined,
+        true,
+        false,
+      );
+      const eventsAdd = (feed.extensions as any)?.dynamic_collection_options
+        ?.events?.add;
+      expect(eventsAdd).toBeDefined();
+      expect(eventsAdd[0].type).toBe('showTextInput');
+      expect(eventsAdd[0].options.action.options.type).toBe(
+        'com.applicaster.collection.create.v1',
+      );
     });
   });
 });

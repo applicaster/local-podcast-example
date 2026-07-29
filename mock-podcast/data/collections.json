@@ -50,5 +50,25 @@
     "createdAt": "2026-07-17T17:19:47.736Z",
     "updatedAt": "2026-07-23T23:02:41.714Z",
     "isSystem": false
+  },
+  {
+    "id": "773ec668-e219-4f26-af43-4fe47541d10f",
+    "name": "Abc",
+    "itemIds": [
+      "slay"
+    ],
+    "createdAt": "2026-07-28T15:48:02.422Z",
+    "updatedAt": "2026-07-28T15:48:02.422Z",
+    "isSystem": false
+  },
+  {
+    "id": "9b11d9dc-8d9e-4a65-ac22-aff1e849011f",
+    "name": "Test",
+    "itemIds": [
+      "slay"
+    ],
+    "createdAt": "2026-07-28T18:38:40.620Z",
+    "updatedAt": "2026-07-28T18:38:40.620Z",
+    "isSystem": false
   }
 ]

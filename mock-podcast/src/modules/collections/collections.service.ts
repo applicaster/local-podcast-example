@@ -194,7 +194,14 @@ export class CollectionsService implements OnModuleInit {
               role: 'dynamic_collection',
               dynamic_collection_options: {
                 postUrl: cloudEventsUrl,
-                operations: 'remove,reorder',
+                operations: 'add,remove,reorder',
+                events: {
+                  add: this.createCreateCollectionActions(
+                    cloudEventsUrl,
+                    itemId,
+                    collectionId,
+                  ).buildActions(),
+                },
               },
             }
           : (itemId || collectionId) && {
@@ -202,6 +209,17 @@ export class CollectionsService implements OnModuleInit {
               behavior: {
                 select_mode: itemId ? 'multi' : 'none',
                 current_selection: selectedCollectionIds,
+              },
+              dynamic_collection_options: {
+                postUrl: cloudEventsUrl,
+                operations: 'add',
+                events: {
+                  add: this.createCreateCollectionActions(
+                    cloudEventsUrl,
+                    itemId,
+                    collectionId,
+                  ).buildActions(),
+                },
               },
             }),
       },
@@ -349,14 +367,33 @@ export class CollectionsService implements OnModuleInit {
   }
 
 
+  private createCreateCollectionActions(
+    cloudEventsUrl: string,
+    itemId?: string,
+    sourceCollectionId?: string,
+  ): ActionsBuilder {
+    return new ActionsBuilder({}).showTextInput({
+      headerTitle: 'Create New Playlist',
+      inputLabel: 'Name your playlist',
+      defaultValue: '',
+      buttonLabel: 'Create',
+      action: {
+        type: 'sendCloudEvent',
+        options: {
+          url: cloudEventsUrl,
+          type: CLOUD_EVENT_TYPES.COLLECTION_CREATE,
+          subject: 'create_collection',
+          data: {
+            ...(itemId && { itemId }),
+            ...(sourceCollectionId && { sourceCollectionId }),
+          },
+        },
+      },
+    });
+  }
+
   private createCreateCollectionEntry(cloudEventsUrl: string): CollectionEntry {
-    const tapActions = new ActionsBuilder({})
-      .sendCloudEvent({
-        url: cloudEventsUrl,
-        type: CLOUD_EVENT_TYPES.COLLECTION_CREATE,
-        subject: 'create_collection',
-        data: {},
-      })
+    const tapActions = this.createCreateCollectionActions(cloudEventsUrl)
       .refreshComponent();
 
     const entry = new EntryBuilder(tapActions, {
@@ -371,18 +408,32 @@ export class CollectionsService implements OnModuleInit {
     return entry.build() as unknown as CollectionEntry;
   }
 
-  async createCollection(name?: string): Promise<CollectionEntity> {
+  async createCollection(
+    name?: string,
+    itemId?: string,
+    sourceCollectionId?: string,
+  ): Promise<CollectionEntity> {
     const trimmedName = name?.trim();
     const collectionName =
       trimmedName && trimmedName.length > 0
         ? trimmedName
         : this.nextDefaultName();
 
+    let initialItemIds: string[] = [];
+    if (itemId) {
+      initialItemIds = [itemId];
+    } else if (sourceCollectionId) {
+      const source = this.findCollectionByIdOrAlias(sourceCollectionId);
+      if (source) {
+        initialItemIds = [...source.itemIds];
+      }
+    }
+
     const now = new Date().toISOString();
     const newCollection: CollectionEntity = {
       id: randomUUID(),
       name: collectionName,
-      itemIds: [],
+      itemIds: initialItemIds,
       createdAt: now,
       updatedAt: now,
       isSystem: false,

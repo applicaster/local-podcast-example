@@ -95,6 +95,25 @@ describe('CloudEventsService', () => {
 
     expect(collectionsService.createCollection).toHaveBeenCalledWith(
       'My Playlist',
+      undefined,
+      undefined,
+    );
+  });
+
+  it('routes collection create event with itemId and sourceCollectionId', async () => {
+    await service.handleEvent({
+      type: 'com.applicaster.collection.create.v1',
+      data: {
+        name: 'Triggered Playlist',
+        itemId: 'retro',
+        sourceCollectionId: 'src-123',
+      },
+    });
+
+    expect(collectionsService.createCollection).toHaveBeenCalledWith(
+      'Triggered Playlist',
+      'retro',
+      'src-123',
     );
   });
 

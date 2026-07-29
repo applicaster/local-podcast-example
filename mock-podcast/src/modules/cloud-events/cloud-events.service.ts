@@ -88,7 +88,11 @@ export class CloudEventsService {
       );
     } else if (eventType === CLOUD_EVENT_TYPES.COLLECTION_CREATE) {
       this.logger.log('Creating collection via cloud event');
-      await this.collectionsService.createCollection(data.name);
+      await this.collectionsService.createCollection(
+        data.name,
+        data.itemId,
+        data.sourceCollectionId,
+      );
     } else if (
       (eventType === CLOUD_EVENT_TYPES.COLLECTION_RENAME ||
         eventType === 'com.applicaster.collection.rename.v1') &&
