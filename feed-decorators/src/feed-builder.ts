@@ -36,7 +36,7 @@ export interface ZappFeed {
  *   type: "multi",
  *   key: "genres",
  *   entries: [ { id: "horror" }, { id: "comedy" } ],
- *   actionBuilder: entry => new ActionsBuilder(entry).toggleStorageFlag({ key: "genres" }).build()
+ *   actionBuilder: entry => new EntryBuilder(new ActionsBuilder().toggleStorageFlag({ key: "genres" }), entry).build()
  * })
  * ```
  */

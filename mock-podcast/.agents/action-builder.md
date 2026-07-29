@@ -42,10 +42,14 @@ export class EntryBuilder<TActionBuilder extends ActionsBuilder> {
 
     build(): ZappEntry {
         // Merge entry properties with actions built from the actionBuilder
-        const actionsEntry = this.actionBuilder.build();
+        const actions = this.actionBuilder.build();
+        const extensions = { ...(this.entry.extensions || {}) };
+        if (actions.length > 0) {
+            extensions.tap_actions = { actions };
+        }
         return {
             ...this.entry,
-            ...actionsEntry, // Merges extensions.tap_actions etc
+            extensions,
         };
     }
 }
@@ -91,7 +95,7 @@ export class UserCollectionAODItemBuilder extends ActionsBuilder {
 
 ### 3. Usage Example
 ```typescript
-const builder = new UserCollectionAODItemBuilder({ id: 'item1' });
+const builder = new UserCollectionAODItemBuilder();
 
 const entry = new EntryBuilder<UserCollectionAODItemBuilder>(builder)
   .addCoverImage({ url: 'image.jpg', aspect: '16x9' })

@@ -23,11 +23,10 @@ describe('Preference Feed Builder DSL', () => {
   });
 
   it('should build actions for an entry', () => {
-    const entry = new ActionsBuilder({ id: 'horror' })
+    const actions = new ActionsBuilder()
       .toggleStorageFlag({ key: 'genres' })
       .sendCloudEvent({ url: 'https://example.com' })
       .build();
-    const actions = entry.extensions?.tap_actions?.actions ?? [];
     expect(actions.length).toBe(2);
     expect(actions[0]?.type).toMatch(/ToggleFlag/);
     expect(actions[1]?.type).toBe('sendCloudEvent');

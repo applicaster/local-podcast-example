@@ -2,15 +2,14 @@ import { ActionsBuilder, validateActionPayload } from '../index';
 
 describe('toggleStorageFlag action with selector', () => {
   it('should support selector option and validate with Zod', () => {
-    const entry = { id: 'horror', extensions: { genre_tag: 'horror' } };
-    const builder = new ActionsBuilder(entry);
+    const builder = new ActionsBuilder();
     builder.toggleStorageFlag({
       key: 'genres',
       selector: 'extensions.genre_tag',
       maxItems: 3,
     });
-    const built = builder.build();
-    const action = built.extensions.tap_actions.actions[0];
+    const actions = builder.build();
+    const action = actions[0];
     expect(action).toBeDefined();
     if (action && action.options) {
       expect(action.type).toMatch(/ToggleFlag/);
@@ -24,8 +23,8 @@ describe('toggleStorageFlag action with selector', () => {
 
 describe('ActionsBuilder + Zod validation', () => {
   it('should build and validate appRestart action', () => {
-    const entry = new ActionsBuilder({ id: 'test' }).appRestart().build();
-    const action = entry.extensions.tap_actions.actions[0];
+    const actions = new ActionsBuilder().appRestart().build();
+    const action = actions[0];
     expect(action).toBeDefined();
     if (action) {
       expect(action.type).toBe('appRestart');
@@ -36,10 +35,10 @@ describe('ActionsBuilder + Zod validation', () => {
   });
 
   it('should build and validate switchLayout action', () => {
-    const entry = new ActionsBuilder({ id: 'test' })
+    const actions = new ActionsBuilder()
       .switchLayout({ layoutId: 'layout-123' })
       .build();
-    const action = entry.extensions.tap_actions.actions[0];
+    const action = actions[0];
     expect(action).toBeDefined();
     if (action) {
       expect(action.type).toBe('switchLayout');
@@ -48,10 +47,10 @@ describe('ActionsBuilder + Zod validation', () => {
   });
 
   it('should build and validate navigateToScreen action', () => {
-    const entry = new ActionsBuilder({ id: 'test' })
+    const actions = new ActionsBuilder()
       .navigateToScreen({ typeMapping: 'devices' })
       .build();
-    const action = entry.extensions.tap_actions.actions[0];
+    const action = actions[0];
     expect(action).toBeDefined();
     if (action) {
       expect(action.type).toBe('navigateToScreen');
@@ -60,10 +59,10 @@ describe('ActionsBuilder + Zod validation', () => {
   });
 
   it('should build and validate setUILanguage action', () => {
-    const entry = new ActionsBuilder({ id: 'test' })
+    const actions = new ActionsBuilder()
       .setUILanguage({ languageCode: 'en-UK', noConfirmation: true })
       .build();
-    const action = entry.extensions.tap_actions.actions[0];
+    const action = actions[0];
     expect(action).toBeDefined();
     if (action) {
       expect(action.type).toBe('setUILanguage');
@@ -72,8 +71,8 @@ describe('ActionsBuilder + Zod validation', () => {
   });
 
   it('should build and validate completeFTUE action', () => {
-    const entry = new ActionsBuilder({ id: 'test' }).completeFTUE().build();
-    const action = entry.extensions.tap_actions.actions[0];
+    const actions = new ActionsBuilder().completeFTUE().build();
+    const action = actions[0];
     expect(action).toBeDefined();
     if (action) {
       expect(action.type).toBe('completeFTUE');
@@ -84,10 +83,10 @@ describe('ActionsBuilder + Zod validation', () => {
   });
 
   it('should build and validate completeHook action (success)', () => {
-    const entry = new ActionsBuilder({ id: 'test' })
+    const actions = new ActionsBuilder()
       .completeHook({ success: true })
       .build();
-    const action = entry.extensions.tap_actions.actions[0];
+    const action = actions[0];
     expect(action).toBeDefined();
     if (action) {
       expect(action.type).toBe('completeHook');
@@ -96,10 +95,10 @@ describe('ActionsBuilder + Zod validation', () => {
   });
 
   it('should build and validate completeHook action (errorMessage)', () => {
-    const entry = new ActionsBuilder({ id: 'test' })
+    const actions = new ActionsBuilder()
       .completeHook({ errorMessage: 'You shall not pass!' })
       .build();
-    const action = entry.extensions.tap_actions.actions[0];
+    const action = actions[0];
     expect(action).toBeDefined();
     if (action) {
       expect(action.type).toBe('completeHook');
@@ -108,10 +107,10 @@ describe('ActionsBuilder + Zod validation', () => {
   });
 
   it('should fail validation for completeHook with both success:true and errorMessage', () => {
-    const entry = new ActionsBuilder({ id: 'test' })
+    const actions = new ActionsBuilder()
       .completeHook({ success: true, errorMessage: 'Should not be here' })
       .build();
-    const action = entry.extensions.tap_actions.actions[0];
+    const action = actions[0];
     expect(action).toBeDefined();
     if (action) {
       expect(action.type).toBe('completeHook');

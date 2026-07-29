@@ -4,22 +4,9 @@ export type Action = {
 };
 
 export class ActionsBuilder {
-  protected entry: Partial<{
-    id?: string;
-    type?: any;
-    extensions?: Record<string, any>;
-  }>;
   protected actions: Action[] = [];
 
-  constructor(
-    entry: Partial<{
-      id?: string;
-      type?: any;
-      extensions?: Record<string, any>;
-    }>,
-  ) {
-    this.entry = entry;
-  }
+  constructor() {}
 
   /**
    * Pushes a raw action to the builder.
@@ -297,26 +284,18 @@ export class ActionsBuilder {
   }
 
   /**
-   * Returns the accumulated actions array.
-   * @returns An array of actions.
+   * Alias for build(). Returns the accumulated actions array.
+   * @returns An array of Action objects.
    */
   buildActions(): Action[] {
     return this.actions;
   }
 
   /**
-   * Builds the entry with all accumulated actions in tap_actions.
-   * @returns The entry object with tap_actions extension.
+   * Returns the accumulated actions array.
+   * @returns An array of Action objects.
    */
-  build() {
-    return {
-      ...this.entry,
-      extensions: {
-        ...(this.entry.extensions || {}),
-        tap_actions: {
-          actions: this.actions,
-        },
-      },
-    };
+  build(): Action[] {
+    return this.actions;
   }
 }

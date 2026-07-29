@@ -4,13 +4,13 @@ export class UserCollectionAODItemBuilder extends EntryBuilder {
   private readonly baseUrl: string;
 
   constructor(baseEntry: any, baseUrl?: string) {
-    super(new ActionsBuilder(baseEntry), baseEntry);
+    super(new ActionsBuilder(), baseEntry);
     this.baseUrl = baseUrl || 'http://localhost:3000';
   }
 
   addToPlaylist(opts?: { itemId?: string; baseUrl?: string }) {
     const activeBaseUrl = opts?.baseUrl || this.baseUrl;
-    const actionBuilder = new ActionsBuilder({});
+    const actionBuilder = new ActionsBuilder();
     actionBuilder.addAction({
       type: 'openBottomSheet',
       options: {

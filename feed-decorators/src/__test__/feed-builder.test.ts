@@ -1,4 +1,9 @@
-import { ActionsBuilder, ZappEntry, buildPreferenceFeed } from '../index';
+import {
+  ActionsBuilder,
+  EntryBuilder,
+  ZappEntry,
+  buildPreferenceFeed,
+} from '../index';
 
 describe('buildPreferenceFeed with actionBuilder', () => {
   it('should pre-inflate actions and set role:preference_editor', () => {
@@ -8,9 +13,10 @@ describe('buildPreferenceFeed with actionBuilder', () => {
         key: 'genres',
         entries: [{ id: 'horror' }, { id: 'comedy' }],
         actionBuilder: (entry: ZappEntry) =>
-          new ActionsBuilder(entry)
-            .toggleStorageFlag({ key: 'genres' })
-            .build(),
+          new EntryBuilder(
+            new ActionsBuilder().toggleStorageFlag({ key: 'genres' }),
+            entry,
+          ).build(),
       },
     );
     expect(feed.extensions?.role).toBe('preference_editor');

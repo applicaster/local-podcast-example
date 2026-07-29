@@ -372,7 +372,7 @@ export class CollectionsService implements OnModuleInit {
     itemId?: string,
     sourceCollectionId?: string,
   ): ActionsBuilder {
-    return new ActionsBuilder({}).showTextInput({
+    return new ActionsBuilder().showTextInput({
       headerTitle: 'Create New Playlist',
       inputLabel: 'Name your playlist',
       defaultValue: '',
@@ -702,7 +702,7 @@ export class CollectionsService implements OnModuleInit {
     cloudEventsUrl: string,
   ): void {
     entries.forEach((entry) => {
-      const removeActions = new ActionsBuilder({})
+      const removeActions = new ActionsBuilder()
         .sendCloudEvent({
           url: cloudEventsUrl,
           type: CLOUD_EVENT_TYPES.COLLECTION_REMOVE,
@@ -713,9 +713,9 @@ export class CollectionsService implements OnModuleInit {
           },
         })
         .refreshComponent()
-        .build().extensions.tap_actions.actions;
+        .build();
 
-      const reorderActions = new ActionsBuilder({})
+      const reorderActions = new ActionsBuilder()
         .sendCloudEvent({
           url: cloudEventsUrl,
           type: CLOUD_EVENT_TYPES.COLLECTION_REORDER,
@@ -725,7 +725,7 @@ export class CollectionsService implements OnModuleInit {
           },
         })
         .refreshComponent()
-        .build().extensions.tap_actions.actions;
+        .build();
 
       entry.extensions = {
         ...(entry.extensions ?? {}),
@@ -774,7 +774,7 @@ export class CollectionsService implements OnModuleInit {
     const isQueue = collection.name === CollectionsService.QUEUE_NAME;
 
     // Build cell tap actions for selector mode (item_id / collection_id).
-    const tapActions = new ActionsBuilder({});
+    const tapActions = new ActionsBuilder();
     if (itemId) {
       const isMember = collection.itemIds.includes(itemId);
       tapActions
@@ -814,7 +814,7 @@ export class CollectionsService implements OnModuleInit {
     if (!itemId && ((!isQueue && baseUrl) || !collection.isSystem)) {
       if (!isQueue && baseUrl) {
         // 1. Add all to Queue
-        const addAllActions = new ActionsBuilder({}).addAction({
+        const addAllActions = new ActionsBuilder().addAction({
           type: 'addAllToQueue',
           options: {
             url: `${baseUrl}/user/collections/${collection.id}`,
@@ -848,7 +848,7 @@ export class CollectionsService implements OnModuleInit {
               };
             }
 
-            const playAllAction = new ActionsBuilder({}).addAction({
+            const playAllAction = new ActionsBuilder().addAction({
               type: 'navigateToScreen',
               options: {
                 typeMapping: firstEntry.type.value,
@@ -862,7 +862,7 @@ export class CollectionsService implements OnModuleInit {
 
         // 3. Add all to Playlist
         if (isLoggedIn) {
-          const addAllToPlaylistAction = new ActionsBuilder({}).addAction({
+          const addAllToPlaylistAction = new ActionsBuilder().addAction({
             type: 'openBottomSheet',
             options: {
               modal_presentation: {
@@ -890,7 +890,7 @@ export class CollectionsService implements OnModuleInit {
 
       if (!collection.isSystem) {
         // Edit collection: opens a bottom sheet modal to remove/re-order items.
-        const editActions = new ActionsBuilder({}).addAction({
+        const editActions = new ActionsBuilder().addAction({
           type: 'openBottomSheet',
           options: {
             modal_presentation: {
@@ -910,7 +910,7 @@ export class CollectionsService implements OnModuleInit {
         });
         builder.addEntryActionByAlias('edit', editActions, false);
 
-        const editNameActions = new ActionsBuilder({}).showTextInput({
+        const editNameActions = new ActionsBuilder().showTextInput({
           headerTitle: 'Edit Name & Details',
           inputLabel: 'Name your playlist',
           defaultValue: collection.name,
@@ -927,7 +927,7 @@ export class CollectionsService implements OnModuleInit {
         });
         builder.addEntryActionByAlias('edit_name', editNameActions, false);
 
-        const deleteActions = new ActionsBuilder({})
+        const deleteActions = new ActionsBuilder()
           .sendCloudEvent({
             url: cloudEventsUrl,
             type: CLOUD_EVENT_TYPES.COLLECTION_DELETE,
@@ -943,21 +943,9 @@ export class CollectionsService implements OnModuleInit {
   }
 
   /**
-   * Builds an entry and removes the empty `tap_actions` block that the
-   * ActionsBuilder always injects, so default-mode cells keep their native
-   * (non-overridden) tap behavior.
+   * Builds an entry and casts it to a CollectionEntry.
    */
   private finalizeEntry(builder: EntryBuilder): CollectionEntry {
-    const built = builder.build() as any;
-    const tapActions = built.extensions?.tap_actions;
-    if (
-      tapActions &&
-      Array.isArray(tapActions.actions) &&
-      tapActions.actions.length === 0
-    ) {
-      delete built.extensions.tap_actions;
-    }
-
-    return built as CollectionEntry;
+    return builder.build() as CollectionEntry;
   }
 }

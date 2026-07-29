@@ -103,8 +103,7 @@ export class EntryBuilder<
     actionBuilder: ActionsBuilder,
     dismissOnAction: boolean = true,
   ): this {
-    const tapActions = actionBuilder.build().extensions?.tap_actions;
-    const actions = tapActions ? tapActions.actions : [];
+    const actions = actionBuilder.build();
 
     if (!this.entry.extensions) this.entry.extensions = {};
     if (!this.entry.extensions.entry_action)
@@ -135,8 +134,7 @@ export class EntryBuilder<
     actionBuilder: ActionsBuilder,
     dismissOnAction: boolean = true,
   ): this {
-    const tapActions = actionBuilder.build().extensions?.tap_actions;
-    const actions = tapActions ? tapActions.actions : [];
+    const actions = actionBuilder.build();
 
     if (!this.entry.extensions) this.entry.extensions = {};
     if (!this.entry.extensions.entry_action)
@@ -157,16 +155,20 @@ export class EntryBuilder<
    * Build the final ZappEntry
    */
   build(): ZappEntry {
-    // Build the actions which will inject tap_actions (or other actions) into extensions
-    const actionEntryPart = this.actionBuilder.build();
+    const actions = this.actionBuilder.build();
+    const extensions: Record<string, any> = {
+      ...(this.entry.extensions || {}),
+    };
+
+    if (actions.length > 0) {
+      extensions.tap_actions = {
+        actions,
+      };
+    }
 
     return {
       ...this.entry,
-      ...actionEntryPart,
-      extensions: {
-        ...(this.entry.extensions || {}),
-        ...(actionEntryPart.extensions || {}),
-      },
+      extensions,
     };
   }
 }

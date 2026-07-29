@@ -4,13 +4,13 @@ export class LiveAudioEntryBuilder extends EntryBuilder {
   private readonly baseUrl: string;
 
   constructor(baseEntry: any, baseUrl?: string) {
-    super(new ActionsBuilder(baseEntry), baseEntry);
+    super(new ActionsBuilder(), baseEntry);
     this.baseUrl = baseUrl || 'http://localhost:3000';
   }
 
   addToPlaylist(baseUrl?: string) {
     const activeBaseUrl = baseUrl || this.baseUrl;
-    const actionBuilder = new ActionsBuilder({});
+    const actionBuilder = new ActionsBuilder();
     actionBuilder.addAction({
       type: 'openBottomSheet',
       options: {
@@ -35,7 +35,7 @@ export class LiveAudioEntryBuilder extends EntryBuilder {
   }
 
   addToQueue() {
-    const actionBuilder = new ActionsBuilder({});
+    const actionBuilder = new ActionsBuilder();
     actionBuilder.addAction({
       type: "addToQueue",
       options: {},

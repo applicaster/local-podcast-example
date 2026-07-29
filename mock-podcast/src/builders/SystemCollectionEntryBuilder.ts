@@ -2,11 +2,11 @@ import { EntryBuilder, ActionsBuilder } from '@lib/feed-decorators';
 
 export class SystemCollectionEntryBuilder extends EntryBuilder {
   constructor(baseEntry: any) {
-    super(new ActionsBuilder(baseEntry), baseEntry);
+    super(new ActionsBuilder(), baseEntry);
   }
 
   addAllToQueue(baseUrl: string, collectionId: string) {
-    const actionBuilder = new ActionsBuilder({});
+    const actionBuilder = new ActionsBuilder();
     actionBuilder.addAction({
       type: 'addAllToQueue',
       options: {
@@ -19,7 +19,7 @@ export class SystemCollectionEntryBuilder extends EntryBuilder {
   }
 
   playAll(firstEntry: any) {
-    const actionBuilder = new ActionsBuilder({});
+    const actionBuilder = new ActionsBuilder();
     actionBuilder.addAction({
       type: 'navigateToScreen',
       options: {
@@ -34,7 +34,7 @@ export class SystemCollectionEntryBuilder extends EntryBuilder {
   }
 
   addAllToPlaylist(baseUrl: string, collectionId: string) {
-    const actionBuilder = new ActionsBuilder({});
+    const actionBuilder = new ActionsBuilder();
     actionBuilder.addAction({
       type: 'openBottomSheet',
       options: {
