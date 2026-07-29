@@ -55,12 +55,10 @@ For complete technical specifications, UX guidelines, and API references, consul
 
 | Document | Location | Description |
 | :--- | :--- | :--- |
-| **Playlists & Collections Specification** | [`mock-podcast/.agents/Playlists.md`](./mock-podcast/.agents/Playlists.md) | Complete user-facing capabilities, business rules, Cloud Event schemas, and local Queue lifecycle behaviors. |
-| **Architecture & Render Contract** | [`mock-podcast/.agents/TopLevelOverview.md`](./mock-podcast/.agents/TopLevelOverview.md) | Architectural specification of role/behavior-driven rendering, dynamic collections, and content filtering. |
-| **Feed Decorators Overview** | [`feed-decorators/docs/TopLevelOverview.md`](./feed-decorators/docs/TopLevelOverview.md) | Domain definitions (Role, Action, Behavior, Resolver, Entry, Feed) and screen design case studies. |
+| **Client Integration & Consumer Guide** | [`feed-decorators/docs/ConsumerGuide.md`](./feed-decorators/docs/ConsumerGuide.md) | Guide for API consumers and frontend developers on feed decoration, selection modes, and dynamic UI affordances. |
 | **Actions DSL Reference** | [`feed-decorators/docs/Actions.md`](./feed-decorators/docs/Actions.md) | Complete schema reference for Zapp actions (`openBottomSheet`, `showTextInput`, `sendCloudEvent`) and behaviors. |
-| **Mock Podcast README** | [`mock-podcast/README.md`](./mock-podcast/README.md) | Server setup, REST endpoints table, and Cloud Events summary. |
-| **Feed Decorators README** | [`feed-decorators/README.md`](./feed-decorators/README.md) | Library installation, builder code examples, and TypeScript APIs. |
+| **Feed Decorators Package** | [`feed-decorators/README.md`](./feed-decorators/README.md) | Library installation, builder code examples, and TypeScript APIs. |
+| **Mock Podcast Server** | [`mock-podcast/README.md`](./mock-podcast/README.md) | Demo server setup, architecture summary, and Cloud Events reference. |
 
 ---
 

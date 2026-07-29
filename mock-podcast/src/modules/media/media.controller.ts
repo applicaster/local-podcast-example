@@ -7,6 +7,13 @@ import { MediaService } from './media.service';
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
+  /**
+   * GET /media/collections/radio
+   * 
+   * Returns a static feed of live radio stations and audio streams.
+   * 
+   * @returns Standard Zapp DSP Feed with live radio entries.
+   */
   @Get('collections/radio')
   getRadioCollection(
     @CurrentRoute() baseUrl?: string,

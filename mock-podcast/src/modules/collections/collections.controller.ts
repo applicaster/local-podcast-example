@@ -21,6 +21,16 @@ export class CollectionsController {
 
   constructor(private readonly collectionsService: CollectionsService) {}
 
+  /**
+   * GET /user/collections
+   * 
+   * Retrieves custom user collections or selector feeds.
+   * 
+   * @param itemId Optional track ID for "selector mode" (`GET /user/collections?item_id=<id>`), returning collections with `role: "collection_selector"`.
+   * @param collectionId Optional collection ID filter.
+   * @param editable Optional flag (`editable=true`) to tag collections with `role: "dynamic_collection"` for editable list views.
+   * @returns Standard Zapp DSP Feed containing user collections.
+   */
   @Get()
   getCollections(
     @Query('item_id') itemId?: string,
@@ -40,6 +50,13 @@ export class CollectionsController {
     );
   }
 
+  /**
+   * GET /user/collections/system
+   * 
+   * Retrieves read-only preloaded system collections (e.g. curated playlists).
+   * 
+   * @returns Standard Zapp DSP Feed containing system collections.
+   */
   @Get('system')
   getSystemCollections(
     @CurrentRoute() baseUrl?: string,
@@ -53,6 +70,15 @@ export class CollectionsController {
     );
   }
 
+  /**
+   * GET /user/collections/:collectionId/play_next/:itemId
+   * 
+   * Retrieves remaining tracks in collection `:collectionId` after `:itemId` for continuous playback chaining (`play_next_feed_url`).
+   * 
+   * @param collectionId Target collection ID.
+   * @param itemId Current track ID.
+   * @returns Standard Zapp DSP Feed with remaining tracks.
+   */
   @Get(':collectionId/play_next/:itemId')
   getPlayNextItem(
     @Param('collectionId') collectionId: string,
@@ -70,6 +96,16 @@ export class CollectionsController {
     );
   }
 
+  /**
+   * GET /user/collections/:id
+   * 
+   * Retrieves a single collection feed by ID.
+   * 
+   * @param id Collection ID or synonym (`queue`).
+   * @param action Optional action filter (e.g. `remove_item`).
+   * @param editable Optional flag (`editable=true`) to enable `role: "dynamic_collection"` with `operations: "remove,reorder"`.
+   * @returns Standard Zapp DSP Feed for the single collection.
+   */
   @Get(':id')
   getCollectionById(
     @Param('id') id: string,
@@ -89,6 +125,14 @@ export class CollectionsController {
     );
   }
 
+  /**
+   * POST /user/collections
+   * 
+   * Creates a new custom user collection. Requires Bearer Token.
+   * 
+   * @param body Payload `{ name?: string }`.
+   * @returns Newly created collection object.
+   */
   @Post()
   createCollection(
     @Req() req: Request,
@@ -114,6 +158,14 @@ export class CollectionsController {
     return this.collectionsService.createCollection(body?.name);
   }
 
+  /**
+   * DELETE /user/collections/:id
+   * 
+   * Deletes a custom collection by ID. Protected system collections cannot be deleted.
+   * Requires Bearer Token.
+   * 
+   * @param id Collection ID to delete.
+   */
   @Delete(':id')
   deleteCollection(@Req() req: Request, @Param('id') id: string) {
     if (!isUserLoggedIn(req)) {
@@ -133,10 +185,8 @@ export class CollectionsController {
     const url = baseUrl || '';
     try {
       const urlObj = new URL(url);
-      // Return just the origin (protocol + host)
       return urlObj.origin;
     } catch {
-      // Fallback: if baseUrl is not a full URL, try to construct from request
       if (req) {
         const protocol = req.protocol || 'https';
         const host =
@@ -150,10 +200,18 @@ export class CollectionsController {
   }
 }
 
+/**
+ * Controller for system collection feeds.
+ */
 @Controller('system/collections')
 export class SystemCollectionsController {
   constructor(private readonly collectionsService: CollectionsService) {}
 
+  /**
+   * GET /system/collections
+   * 
+   * Retrieves read-only preloaded system collections.
+   */
   @Get()
   getSystemCollections(
     @CurrentRoute() baseUrl?: string,

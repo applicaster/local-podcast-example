@@ -22,7 +22,7 @@ Feed Decorators is a TypeScript library for building, validating, and managing p
 ## Further Reading
 
 - [Actions.md](Actions.md) — Details on supported action types, payload formats, and validation logic.
-- [TopLevelOverview.md](TopLevelOverview.md) — High-level architecture, usage patterns, and integration notes.
+- [ConsumerGuide.md](ConsumerGuide.md) — Client integration guide, usage patterns, and feed decoration semantics.
 
 ---
 

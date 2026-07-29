@@ -29,24 +29,18 @@ It provides a local server that simulates real-world radio and podcast workflows
 
 ---
 
-## 2. API Endpoints Table
+## 2. Controller JSDoc Documentation
 
-| Endpoint | Method | Authentication | Description |
-| :--- | :--- | :--- | :--- |
-| `/user/collections` | `GET` | Optional | Returns the user's collections feed. When unauthenticated, action buttons requiring login are automatically filtered out. Supports query parameters:<br>• `item_id=<id>`: Enables selector mode for track membership.<br>• `collection_id=<id>`: Enables collection copy selector mode.<br>• `editable=true`: Enables dynamic editable mode. |
-| `/user/collections/:id` | `GET` | Optional | Returns items belonging to collection `:id`. Supports `editable=true` and action parameter filters. |
-| `/user/collections/:collectionId/play_next/:itemId` | `GET` | Optional | Returns remaining tracks in collection `:collectionId` starting after `:itemId` for chaining continuous playback. |
-| `/user/collections` | `POST` | Bearer Token Required | Creates a new custom playlist. Body payload: `{ "name": "My Playlist" }`. |
-| `/user/collections/:id` | `DELETE` | Bearer Token Required | Deletes custom collection `:id` (fails with error for system collections or Queue). |
-| `/system/collections` | `GET` | Optional | Returns pre-configured system collections. |
-| `/media/collections/radio` | `GET` | Optional | Returns static live radio audio stream feeds. |
-| `/cloud-events` | `POST` | Bearer Token Required | Ingests Applicaster Cloud Events for playlist mutations and playback tracking. |
+Endpoint routes (`/user/collections`, `/system/collections`, `/cloud-events`) in `mock-podcast` serve as a reference demonstration server. Specific query flags, body schemas, and authorization requirements are documented directly inside the NestJS controller source files via JSDoc comments:
+- [`collections.controller.ts`](src/modules/collections/collections.controller.ts)
+- [`cloud-events.controller.ts`](src/modules/cloud-events/cloud-events.controller.ts)
+- [`media.controller.ts`](src/modules/media/media.controller.ts)
 
 ---
 
 ## 3. Supported Cloud Event Types
 
-The service handles standard Applicaster Cloud Events sent to `POST /cloud-events`. For comprehensive schema and behavior specifications, refer to [Playlists.md](.agents/Playlists.md).
+The service handles standard Applicaster Cloud Events sent to `POST /cloud-events`:
 
 *   `com.applicaster.collection.add.v1` / `com.applicaster.collection.add.item.v1`: Add item to collection.
 *   `com.applicaster.collection.add.collection.v1`: Bulk-copy all items from `sourceCollectionId` into target `collectionId`.
@@ -60,13 +54,10 @@ The service handles standard Applicaster Cloud Events sent to `POST /cloud-event
 
 ---
 
-## 4. Documentation References
+## 4. Customer & Developer Documentation References
 
-For full domain definitions, UX specifications, and business guardrails, consult the documentation:
-*   **Playlists & Collections Specification:** [Playlists.md](.agents/Playlists.md)
-*   **Architecture & Backend Specification:** [TopLevelOverview.md](.agents/TopLevelOverview.md)
-*   **Entry Actions & ActionsBuilder:** [Actions.md](.agents/Actions.md)
-*   **Collections DAO Architecture:** [collections-dao-architecture.md](.agents/collections-dao-architecture.md)
+- **Client Integration & Consumer Guide:** [`../feed-decorators/docs/ConsumerGuide.md`](../feed-decorators/docs/ConsumerGuide.md)
+- **Actions DSL Reference:** [`../feed-decorators/docs/Actions.md`](../feed-decorators/docs/Actions.md)
 
 ---
 
