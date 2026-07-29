@@ -62,5 +62,6 @@ When a user opens an editable playlist or queue screen:
 
 ## 4. Documentation & Schema References
 
+- **Shared Vocabulary & Glossary:** [`Glossary.md`](./Glossary.md)
 - **Actions DSL & Schema Reference:** [`Actions.md`](./Actions.md)
 - **Library API & Builder Usage:** [`../README.md`](../README.md)

@@ -55,6 +55,7 @@ For complete technical specifications, UX guidelines, and API references, consul
 
 | Document | Location | Description |
 | :--- | :--- | :--- |
+| **Shared Vocabulary & Glossary** | [`feed-decorators/docs/Glossary.md`](./feed-decorators/docs/Glossary.md) | Standardized domain terminology and concepts shared between engineering teams and API consumers. |
 | **Client Integration & Consumer Guide** | [`feed-decorators/docs/ConsumerGuide.md`](./feed-decorators/docs/ConsumerGuide.md) | Guide for API consumers and frontend developers on feed decoration, selection modes, and dynamic UI affordances. |
 | **Actions DSL Reference** | [`feed-decorators/docs/Actions.md`](./feed-decorators/docs/Actions.md) | Complete schema reference for Zapp actions (`openBottomSheet`, `showTextInput`, `sendCloudEvent`) and behaviors. |
 | **Feed Decorators Package** | [`feed-decorators/README.md`](./feed-decorators/README.md) | Library installation, builder code examples, and TypeScript APIs. |
