@@ -6,7 +6,7 @@
 
 **Behavior** - description of how feed should be rendered in the component. Currently, the only supported feature is conditional cell highlighting. Later additional options can be added, for example, should component visually indicate that feed is been refreshed (with alpha/tint pulse, for example).
 
-**Role** - domain specific meaning of the feed and its items: languages, push topics, purchasable items, preferences, etc. Roles are interpreted by feed decorators and processors, that inject appropriate actions and behaviors into the original feed to achieve declared role.
+**Role** - domain specific meaning of the feed and its items: preferences (`preference_editor`), collection selection (`collection_selector`), editable collections (`dynamic_collection`), push topics (`push_topic`), languages (`language_selector`), etc. Roles are interpreted by feed decorators and client renderers to pick appropriate cell styles, affordances, actions, and behaviors.
 
 **Resolver** - interface that returns actual value of some variable in some internal or remote state, object or generated values. Value can be string (`ctx/namespace.key`), boolean, number (`random/int`), object (`entry/extensions.channel_id`), string array (`push/topics`) and so on. Resolvers can be used in multiple places: As endpoint params to build HTTP request, analytics event creation and so on. 
 
@@ -31,8 +31,6 @@ Params include:
 Parameters are defined as a list: (value source, parameter type, \[rename\]).
 Resolvers are used to provide actual values for defined parameters during request building process: url inflation and collecting parameters.
 
-**Endpoint tag (`observe_storage`)** - endpoint-level flag that subscribes request dependencies to context/storage keys used by that endpoint. When any observed key is updated, feeds using this endpoint are automatically reloaded.
-
 **Screen**
 Represents single screen in the application. Can display **Components**, be completely custom (Login, WebView screen) or be mix of the two (Storefront utilizes component to present purchase options).
 Can also display some navigation elements: bottom tabs, side menu, top bar.
@@ -47,8 +45,6 @@ A set of parameters describing how a single **entry** from the **feed** is repre
 Configurable widget that can be rendered on the screen. Can be separated into two main families: components that render feeds, and other components.
 Feed based components present entries from the feed as cells using some cell style associated with the component.
 Feed based components can actively observe feed url dependencies and trigger reload (enabled by `observe_storage` **endpoint tag**).
-
-**Remote Context Setter (Runtime URL)** - plugin flow that executes an additional GET request at runtime and writes returned `storage_keys` (session-scoped) and `persistent_keys` (local-storage scoped) to app context. Commonly used to refresh account-dependent keys after login/logout and drive feed reload via `observe_storage`.
 
 **Nav item**
 Interactive or pure visual element in the navigation part of the screen. Can wrap Entry Actions (download, add to favorites and so on), or be application-wide (toggle some setting or execute generic action list).

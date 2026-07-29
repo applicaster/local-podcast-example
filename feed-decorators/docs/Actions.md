@@ -535,14 +535,277 @@ Used for feeds where the user selects items or collections (e.g., choice lists o
 
 ### dynamic_collection
 
-Declares an editable collection feed (e.g., custom playlists, playback queue) where items can be managed dynamically.
+Declares an editable collection feed (e.g., custom playlists, playback queue, or playlist management screens) where items can be managed dynamically (reordered, removed, added, or deleted) by client renderers.
 
+When a feed is tagged with `"role": "dynamic_collection"`, the client UI renderer adapts from a static read-only view to an interactive editable interface driven by `dynamic_collection_options`.
+
+#### 1. Configuration & Properties Table
+
+| Property | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| **`postUrl`** | `string` | **Yes** | The HTTPS endpoint URL where the client renderer dispatches standard Applicaster Cloud Events (`POST`) when the user performs a mutation. |
+| **`operations`** | `string` | **Yes** | A comma-separated string of enabled mutation operations. Supported values:<br>• `"remove"`: Enables row delete/remove affordances (e.g., trash icon, swipe-to-delete).<br>• `"reorder"`: Enables drag-and-drop handles for reordering rows.<br>• `"add"`: Enables an "+ Add" or "+ Create" primary action button in the list header or empty state.<br>• *Combinations:* `"remove,reorder"`, `"add,remove,reorder"`, `"add"`. |
+| **`events`** | `object` | *Optional* | A mapping of interactive event triggers to arrays of Zapp actions.<br>• **`events.add`** (`ActionPayload[]`): An array of actions executed when the user clicks the add/create button (typically opening a `showTextInput` modal that sends a `com.applicaster.collection.create.v1` Cloud Event). |
+
+#### 2. Client Renderer UI Behavior & Affordance Injection
+
+The client renderer inspects the string provided in `operations` to dynamically inject UI controls without requiring dedicated client-side styles or layout variants:
+*   **`remove`**: Adds a delete/remove affordance to each row item (swipe-to-delete gesture, trailing delete icon, or context menu option).
+*   **`reorder`**: Renders drag-and-drop handles on each row item, allowing visual reordering.
+*   **`add`**: Renders a primary create/add button in the UI toolbar, header, or list footer.
+
+#### 3. Required Item-Scoped Entry Actions (`remove_item` and `reorder_item`)
+
+When you declare `"operations": "remove,reorder"` in `dynamic_collection_options` at the **feed level**, the client renderer knows *which UI affordances* to inject (e.g., swipe-to-delete gesture, trash can icon, or drag-and-drop handles). However, to know *what action payload to execute* when the user interacts with an individual row item, **every entry in the feed MUST define corresponding item-scoped actions in `extensions.entry_action` (or `extensions.entry_actions`)**:
+
+*   **`remove` operation** -> requires an entry action with **`alias: "remove_item"`**.
+    *   When the user taps the row delete button or swipes to delete, the client renderer executes the item's `remove_item` action array (typically sending a `sendCloudEvent` action with `com.applicaster.collection.remove.v1` for tracks or `com.applicaster.collection.delete.v1` for playlists).
+*   **`reorder` operation** -> requires an entry action with **`alias: "reorder_item"`**.
+    *   When the user drags and drops a row using the reorder handle, the client renderer executes the item's `reorder_item` action array (typically sending a `sendCloudEvent` action with `com.applicaster.collection.reorder.v1`).
+
+##### Item-Scoped Entry Actions Schema (`extensions.entry_action` on each entry):
+```json
+"entry": [
+  {
+    "id": "song-123",
+    "title": "Retro",
+    "extensions": {
+      "entry_action": [
+        {
+          "button": { "alias": "remove_item" },
+          "dismiss_on_action": true,
+          "actions": [
+            {
+              "type": "sendCloudEvent",
+              "options": {
+                "url": "https://server.com/cloud-events",
+                "type": "com.applicaster.collection.remove.v1",
+                "subject": "remove_item_from_collection",
+                "data": {
+                  "collectionId": "my-playlist-id",
+                  "itemId": "song-123"
+                }
+              }
+            },
+            { "type": "refreshComponent" }
+          ]
+        },
+        {
+          "button": { "alias": "reorder_item" },
+          "dismiss_on_action": false,
+          "actions": [
+            {
+              "type": "sendCloudEvent",
+              "options": {
+                "url": "https://server.com/cloud-events",
+                "type": "com.applicaster.collection.reorder.v1",
+                "subject": "reorder_item_in_collection",
+                "data": {
+                  "collectionId": "my-playlist-id"
+                }
+              }
+            },
+            { "type": "refreshComponent" }
+          ]
+        }
+      ]
+    }
+  }
+]
+```
+
+#### 4. Cloud Event Routing Table (Dispatched by Client)
+
+When an interactive operation occurs, the client renderer dispatches a JSON Cloud Event via HTTP `POST` to `postUrl`. Below are the exact event schemas sent for each operation:
+
+##### Row Removal in a Track/Item List (`operations: "remove"`)
+Dispatches `com.applicaster.collection.remove.v1` to remove an entry from the collection:
+```json
+{
+  "specversion": "1.0",
+  "type": "com.applicaster.collection.remove.v1",
+  "source": "client-app",
+  "data": {
+    "collectionId": "<current_feed_id>",
+    "itemId": "<deleted_entry_id>"
+  }
+}
+```
+
+##### Row Deletion in a Collections List (`operations: "remove"`)
+When viewing a list of playlists, row removal dispatches `com.applicaster.collection.delete.v1` to delete the collection entirely:
+```json
+{
+  "specversion": "1.0",
+  "type": "com.applicaster.collection.delete.v1",
+  "source": "client-app",
+  "data": {
+    "collectionId": "<deleted_collection_id>"
+  }
+}
+```
+
+##### Row Reordering (`operations: "reorder"`)
+Dispatches `com.applicaster.collection.reorder.v1` containing the updated array of item IDs (or from/to index pairs):
+```json
+{
+  "specversion": "1.0",
+  "type": "com.applicaster.collection.reorder.v1",
+  "source": "client-app",
+  "data": {
+    "collectionId": "<current_feed_id>",
+    "itemIds": ["track-1", "track-2", "track-3"]
+  }
+}
+```
+
+##### Triggering Add / Create (`operations: "add"` with `events.add`)
+Clicking the add button executes `events.add`. Typically, this launches a `showTextInput` modal that dispatches `com.applicaster.collection.create.v1` upon submission:
+```json
+{
+  "specversion": "1.0",
+  "type": "com.applicaster.collection.create.v1",
+  "source": "client-app",
+  "data": {
+    "name": "<user_input_title>",
+    "itemId": "<optional_initial_track_id>"
+  }
+}
+```
+
+#### 5. Comprehensive JSON Examples
+
+##### Example A: Editable Playlist Tracks (`remove,reorder` with Item-Scoped Actions)
+Used for single playlist track lists (`GET /user/collections/:id?editable=true`), combining feed-level `dynamic_collection_options` with entry-level `remove_item` and `reorder_item` actions:
+```json
+{
+  "extensions": {
+    "role": "dynamic_collection",
+    "dynamic_collection_options": {
+      "postUrl": "https://server.com/cloud-events",
+      "operations": "remove,reorder"
+    }
+  },
+  "entry": [
+    {
+      "id": "song-101",
+      "title": "Retro Beats",
+      "extensions": {
+        "entry_action": [
+          {
+            "button": { "alias": "remove_item" },
+            "dismiss_on_action": true,
+            "actions": [
+              {
+                "type": "sendCloudEvent",
+                "options": {
+                  "url": "https://server.com/cloud-events",
+                  "type": "com.applicaster.collection.remove.v1",
+                  "subject": "remove_item_from_collection",
+                  "data": {
+                    "collectionId": "playlist-1",
+                    "itemId": "song-101"
+                  }
+                }
+              },
+              { "type": "refreshComponent" }
+            ]
+          },
+          {
+            "button": { "alias": "reorder_item" },
+            "dismiss_on_action": false,
+            "actions": [
+              {
+                "type": "sendCloudEvent",
+                "options": {
+                  "url": "https://server.com/cloud-events",
+                  "type": "com.applicaster.collection.reorder.v1",
+                  "subject": "reorder_item_in_collection",
+                  "data": {
+                    "collectionId": "playlist-1"
+                  }
+                }
+              },
+              { "type": "refreshComponent" }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+##### Example B: Editable Playlists List with Inline Creation (`add,remove,reorder`)
+Used for playlist management screens (`GET /user/collections?editable=true`), allowing deletion, reordering, and inline playlist creation via a text input modal:
 ```json
 "extensions": {
   "role": "dynamic_collection",
   "dynamic_collection_options": {
     "postUrl": "https://server.com/cloud-events",
-    "operations": "remove,reorder"
+    "operations": "add,remove,reorder",
+    "events": {
+      "add": [
+        {
+          "type": "showTextInput",
+          "options": {
+            "headerTitle": "Create New Playlist",
+            "inputLabel": "Playlist Name",
+            "defaultValue": "",
+            "buttonLabel": "Create",
+            "action": {
+              "type": "sendCloudEvent",
+              "options": {
+                "url": "https://server.com/cloud-events",
+                "type": "com.applicaster.collection.create.v1",
+                "subject": "create_collection",
+                "data": {}
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+##### Example C: Selector Mode with "+ Create Playlist" (`collection_selector` + `dynamic_collection_options`)
+`dynamic_collection_options` can be combined with `role: "collection_selector"` so users can create a new playlist directly inside a track's "Add to Playlist" selector modal (`GET /user/collections?item_id=<id>`):
+```json
+"extensions": {
+  "role": "collection_selector",
+  "behavior": {
+    "select_mode": "multi",
+    "current_selection": ["playlist-1"]
+  },
+  "dynamic_collection_options": {
+    "postUrl": "https://server.com/cloud-events",
+    "operations": "add",
+    "events": {
+      "add": [
+        {
+          "type": "showTextInput",
+          "options": {
+            "headerTitle": "Create New Playlist",
+            "inputLabel": "Playlist Name",
+            "defaultValue": "",
+            "buttonLabel": "Create",
+            "action": {
+              "type": "sendCloudEvent",
+              "options": {
+                "url": "https://server.com/cloud-events",
+                "type": "com.applicaster.collection.create.v1",
+                "subject": "create_collection",
+                "data": {
+                  "itemId": "song-123"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
   }
 }
 ```

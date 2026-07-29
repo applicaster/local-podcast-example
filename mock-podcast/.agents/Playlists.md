@@ -9,9 +9,9 @@ This document outlines the user-facing capabilities, business rules, Cloud Event
 To understand how playlists and media groups work in our application, we define the following core concepts:
 
 *   **Collection (or Playlist):** A grouped list of audio tracks or media items. Playlists can be system-provided (read-only and protected) or user-created (customizable).
-*   **System Collection:** A predefined collection managed by the system. These collections are marked as `isSystem` and cannot be deleted or renamed by the user.
+*   **System Collection:** A predefined collection managed by the system (`isSystem: true`). These collections cannot be deleted or renamed by the user. Examples include **Pokémon GSC** and **Queue**.
 *   **Queue:** A special, persistent system collection representing the user's active playback queue. Queue lifecycle and updates are managed locally on the client. The Queue cannot be deleted.
-*   **Live Radio Feed:** A static, read-only collection of live audio stations preloaded by the application (e.g., from our live radio registry).
+*   **Live Radio Feed:** A static, read-only collection of live audio stations preloaded by the application (`/media/collections/radio`).
 
 ---
 
@@ -23,7 +23,7 @@ This section defines the business rules, capabilities, and behaviors of the play
 
 *   **Multiple Playlists:** Users can create and maintain multiple custom playlists to organize their favorite tracks.
 *   **Creation & Automatic Naming:**
-    *   Users can create new empty playlists.
+    *   Users can create new empty playlists or initialize them with a track (`itemId`) or copy from another collection (`sourceCollectionId`).
     *   If the user does not provide a custom name during creation, the system automatically names it `Playlist #N` (e.g., `Playlist #1`, `Playlist #2`).
     *   The index `N` is sequential (strictly increasing) and calculated by scanning existing custom playlists. Even if older playlists are deleted, their names and indices are not recycled (ensuring strict continuity).
 *   **Deletion Rules & Constraints:**
@@ -38,7 +38,7 @@ This section defines the business rules, capabilities, and behaviors of the play
     *   **Delete Playlist:** Tapping this deletes the custom playlist entirely (emits `com.applicaster.collection.delete.v1` Cloud Event).
     *   **Add all to Queue:** Non-queue playlists (both system and custom user playlists) expose an action to bulk-add all their tracks to the back of the active playback queue.
     *   **Play All:** Non-queue playlists with tracks expose an action (`alias: "play_all"`) to start playing the first track of the playlist and chain subsequent tracks via `play_next_feed_url`.
-    *   **Add to Playlist (Add all to Playlist):** Non-queue playlists expose an action (`alias: "add_to_playlist"`) to open the playlist selector sheet (`itemsUrl: ${baseUrl}/user/collections?collection_id=${id}`), enabling users to bulk-add all tracks from this collection into another target playlist.
+    *   **Add to Playlist (Add all to Playlist):** Non-queue playlists expose an action (`alias: "add_to_playlist"`) to open the playlist selector sheet (`itemsUrl: ${baseUrl}/user/collections?collection_id=${id}`), enabling users to bulk-add all tracks from this collection into another target playlist (`com.applicaster.collection.add.collection.v1`).
 
 ### B. Item Membership (Adding & Removing Tracks)
 
@@ -51,8 +51,8 @@ This section defines the business rules, capabilities, and behaviors of the play
 
 ### C. Active Queue Lifecycle & Playback Progression (Local Client Logic)
 
-> [!NOTE]
-> Queue updates and progression logic are executed **locally on the client** (in app local state) based on playback events, keeping playback responsive without backend mutation overhead.
+> [!IMPORTANT]
+> **Queue is Completely Local (No Server Implementation Required):** The active playback Queue is **completely local** to the client application and is managed entirely in client-side memory/storage by the app renderer. **There does not need to be any server-side backend implementation for the Queue.** While the `mock-podcast` reference server includes a mock `/system/collections` Queue and logs playback events for demonstration and testing purposes, production servers are NOT required to implement queue storage, queue endpoints, or queue progression logic.
 
 The Queue updates dynamically based on playback events (`started`, `stopped`) and handles playback progression:
 
@@ -69,7 +69,7 @@ The Queue updates dynamically based on playback events (`started`, `stopped`) an
 
 ## 3. Cloud Events Specifications
 
-Cloud Events are sent via HTTP `POST /cloud-events` (or handled locally for queue events). Below are the defined event schemas and behaviors:
+Cloud Events are sent via HTTP `POST /cloud-events` (or handled locally for queue events). Below are all defined event schemas and behaviors supported by the server and client:
 
 ### 1. Add Item to Collection
 *   **Type:** `com.applicaster.collection.add.v1` (or `com.applicaster.collection.add.item.v1`)
@@ -82,7 +82,18 @@ Cloud Events are sent via HTTP `POST /cloud-events` (or handled locally for queu
     ```
 *   **Behavior:** Adds the specified item to the target collection if it is not already present.
 
-### 2. Remove Item from Collection
+### 2. Bulk Add Collection to Collection
+*   **Type:** `com.applicaster.collection.add.collection.v1`
+*   **Payload:**
+    ```json
+    {
+      "collectionId": "string",
+      "sourceCollectionId": "string"
+    }
+    ```
+*   **Behavior:** Copies and appends all tracks from `sourceCollectionId` into the target `collectionId`. Triggered when selecting a target playlist from the "Add to Playlist" action on a collection.
+
+### 3. Remove Item from Collection
 *   **Type:** `com.applicaster.collection.remove.v1`
 *   **Payload:**
     ```json
@@ -93,7 +104,7 @@ Cloud Events are sent via HTTP `POST /cloud-events` (or handled locally for queu
     ```
 *   **Behavior:** Removes the specified item from the target collection.
 
-### 3. Toggle Item in Collection (Fallback)
+### 4. Toggle Item in Collection (Fallback)
 *   **Type:** `com.applicaster.collection.toggle.v1` (or any event where both `collectionId` and `itemId` are present without an explicit add/remove type)
 *   **Payload:**
     ```json
@@ -104,17 +115,22 @@ Cloud Events are sent via HTTP `POST /cloud-events` (or handled locally for queu
     ```
 *   **Behavior:** Toggles membership of the item in the specified collection (adds if absent, removes if present).
 
-### 4. Create Collection
+### 5. Create Collection
 *   **Type:** `com.applicaster.collection.create.v1`
 *   **Payload:**
     ```json
     {
-      "name": "string"
+      "name": "string",
+      "itemId": "string",
+      "sourceCollectionId": "string"
     }
     ```
-*   **Behavior:** Creates a new custom playlist. If `name` is omitted or empty, auto-names to `Playlist #N`.
+*   **Behavior:** Creates a new custom playlist.
+    *   If `name` is omitted or empty, auto-names to `Playlist #N`.
+    *   If `itemId` is provided, the new collection is initialized containing that single track.
+    *   If `sourceCollectionId` is provided, the new collection is initialized with copies of all tracks from `sourceCollectionId`.
 
-### 5. Delete Collection
+### 6. Delete Collection
 *   **Type:** `com.applicaster.collection.delete.v1`
 *   **Payload:**
     ```json
@@ -124,7 +140,7 @@ Cloud Events are sent via HTTP `POST /cloud-events` (or handled locally for queu
     ```
 *   **Behavior:** Deletes the specified custom collection. Blocked for system collections and the Queue.
 
-### 6. Rename Collection
+### 7. Rename Collection
 *   **Type:** `com.applicaster.collection.rename.v1`
 *   **Payload:**
     ```json
@@ -133,20 +149,28 @@ Cloud Events are sent via HTTP `POST /cloud-events` (or handled locally for queu
       "name": "string"
     }
     ```
-*   **Behavior:** Renames the specified custom collection.
+*   **Behavior:** Renames the specified custom collection to `name`.
 
-### 7. Reorder Collection Items
+### 8. Reorder Collection Items
 *   **Type:** `com.applicaster.collection.reorder.v1`
-*   **Payload:**
+*   **Payload (Array Mode):**
     ```json
     {
       "collectionId": "string",
       "itemIds": ["string"]
     }
     ```
-*   **Behavior:** Updates the ordered track list of the specified collection to match `itemIds`.
+*   **Payload (Index Pair Mode):**
+    ```json
+    {
+      "collectionId": "string",
+      "fromIndex": 0,
+      "toIndex": 2
+    }
+    ```
+*   **Behavior:** Updates the ordered track list of `collectionId`. Supports replacing the full ID order via `itemIds`, or moving a single item via `fromIndex`/`toIndex` (or `from`/`to`).
 
-### 8. Playback Started (Queue Update)
+### 9. Playback Started (Queue Update)
 *   **Type:** `com.applicaster.video.started.v1`
 *   **Payload:**
     ```json
@@ -155,7 +179,7 @@ Cloud Events are sent via HTTP `POST /cloud-events` (or handled locally for queu
       "sourceCollectionId": "string"
     }
     ```
-*   **Behavior:** Handled locally to update the Queue. If `sourceCollectionId` is provided and is not `queue`, replaces Queue content with items from `sourceCollectionId` starting from `videoId`. If `sourceCollectionId` is `queue` (or omitted), removes the head of the Queue up to `videoId`.
+*   **Behavior:** Handled locally on the client to update the Queue. If `sourceCollectionId` is provided and is not `queue`, replaces Queue content with items from `sourceCollectionId` starting from `videoId`. If `sourceCollectionId` is `queue` (or omitted), removes the head of the Queue up to `videoId`.
 *   **Source Collection Resolution Locations:**
     1. `data.sourceCollectionId`
     2. `data['continue-watching'].sourceCollectionId`
@@ -163,7 +187,7 @@ Cloud Events are sent via HTTP `POST /cloud-events` (or handled locally for queu
     4. `data.entry.extensions['continue-watching'].sourceCollectionId`
     5. `data.entry.extensions.continueWatching.sourceCollectionId`
 
-### 9. Playback Stopped / Completed
+### 10. Playback Stopped / Completed
 *   **Type:** `com.applicaster.video.stopped.v1`
 *   **Payload:**
     ```json
@@ -183,7 +207,7 @@ For technical teams, this section summarizes how these behaviors map to the appl
 ### Abstract Asset and Label Resolution (Client-Side)
 The backend does not hardcode image URLs or button titles for collection actions. Instead, the backend emits abstract event/action **aliases** (such as `add_to_playlist`, `add_to_queue`, `remove_item`, `delete_collection`, `edit`, `edit_name`, `play_all`, or `collection_list`). 
 
-On the client side, a feed decorator intercepts the feeds and merges these aliases with current localized assets and strings, keeping design resources decoupled from backend service code:
+On the client side, `@lib/feed-decorators` intercepts the feeds and merges these aliases with current localized assets and strings, keeping design resources decoupled from backend service code:
 *   Old hardcoded images/labels are supported side-by-side to prevent legacy clients from breaking.
 *   The system uses event-driven communication (Cloud Events) to register track additions, deletions, playlist creations, reorders, and playback status updates.
 
@@ -196,6 +220,9 @@ On the client side, a feed decorator intercepts the feeds and merges these alias
 | `/user/collections?item_id=<id>` | `GET` | Selector Mode | Returns playlists with `role: "collection_selector"` and `behavior: { select_mode: "multi", current_selection: [...] }`. |
 | `/user/collections/:id` | `GET` | Playlist Tracks | Returns the list of tracks belonging to collection `:id`. |
 | `/user/collections/:id?editable=true` | `GET` | Editable Collection Tracks | Returns tracks belonging to collection `:id` with `role: "dynamic_collection"` and `dynamic_collection_options: { postUrl, operations: "remove,reorder" }`. |
+| `/user/collections/:collectionId/play_next/:itemId` | `GET` | Play Next Feed | Returns the next tracks in collection `:collectionId` starting after `:itemId` for playback chaining. |
 | `/user/collections` | `POST` | Create Playlist | Creates a new playlist (optionally accepts custom name). |
 | `/user/collections/:id` | `DELETE` | Delete Playlist | Deletes playlist `:id` (fails for system collections / Queue). |
-| `/cloud-events` | `POST` | Event Router | Ingests playback events (`started`, `stopped`) and collection mutations (`add`, `remove`, `toggle`, `delete`, `rename`, `reorder`). |
+| `/system/collections` | `GET` | System Collections | Returns preloaded system collections (e.g., Pokémon GSC, Queue). |
+| `/media/collections/radio` | `GET` | Live Radio Feed | Returns static read-only live audio stations. |
+| `/cloud-events` | `POST` | Event Router | Ingests playback events (`started`, `stopped`) and collection mutations (`add`, `remove`, `toggle`, `delete`, `rename`, `reorder`, `create`, `add.collection`). |

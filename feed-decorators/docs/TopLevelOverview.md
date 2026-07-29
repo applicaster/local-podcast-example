@@ -82,3 +82,51 @@ Internally works the same way as Screen with tabs case.
 Two components.
  - Text input that writes to a key value to screen state.
  - Result component that uses endpoint that has that screen state key as a parameter.
+
+### Subscriber / non-subscriber content filtering
+
+Goal: show or hide content rails based on user entitlement (`subscription` state), and refresh the screen when user logs in, logs out, or account state changes.
+
+#### Solution A: hidden component + observed endpoint key
+
+A hidden feed component is placed near the top of the screen and fetches account data. Its feed/actions write `user_account.subscription` to storage.
+
+Content feeds are migrated to subscription-aware backend paths (for example, filtered playlists or filtered links) and use an endpoint that includes context key `user_account.subscription` plus `observe_storage` tag.
+
+When `user_account.subscription` changes, all dependent feeds reload automatically. Backend returns either filtered data or empty feeds, so UI adapts without dedicated entitlement logic in each component.
+
+Trade-offs:
+- Works even when runtime context setter capabilities are not uniformly available across platforms.
+- Self-contained in layout configuration.
+- Adds a non-obvious hidden dependency and can affect screen composition/positioning if component order is wrong.
+
+#### Solution B: Remote Context Setter Runtime URL
+
+Instead of a hidden component, Context Setter plugin runtime URL calls Get Context API and writes subscription data directly to `storage_keys` or `persistent_keys`.
+
+Same subscription-aware endpoints are used by content feeds, still with `observe_storage`. When auth/state keys change, runtime request is re-fetched and dependent feeds reload with the new `user_account.subscription` value.
+
+Recommended logout behavior: backend returns same user keys with `null` values to explicitly purge user-scoped data.
+
+Trade-offs:
+- Cleaner architecture (no hidden UI component used for data sync).
+- Centralized and reusable across screens.
+- Depends on platform/plugin support for runtime URL behavior.
+
+### Role/Behavior-Driven Rendering & Dynamic Collections (Phase 3 Backend Contract)
+
+The backend drives UI presentation by declaring semantic **`role`**, **`behavior`**, and **`dynamic_collection_options`** extensions on feeds:
+
+1. **Source-Driven Semantics**:
+   - The backend specifies **`role`** (`collection_selector`, `preference_editor`, `dynamic_collection`).
+   - The client renderer owns visual presentation (cell widgets, icons, controls).
+   - **`style_variant` is not a rendering input** — row layout and affordances are driven exclusively by `role` and `behavior`.
+
+2. **Orthogonality of Selection & Editing**:
+   - **Selection (`behavior`)**: Controls choice UI widgets (`select_mode`: `single` | `multi`, `current_selection`, `selector`).
+   - **Editing (`dynamic_collection`)**: Controls collection mutation capabilities via `dynamic_collection_options`:
+     - `postUrl`: Remote endpoint for dispatching Cloud Events on mutations.
+     - `operations`: Allowed operations string (e.g. `"remove,reorder"`).
+
+3. **Cloud Event Synchronization**:
+   - Remote-backed dynamic collections dispatch Cloud Events (`com.applicaster.collection.remove.v1`, `com.applicaster.collection.delete.v1`, etc.) to `postUrl`.
