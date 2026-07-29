@@ -20,6 +20,7 @@
 - **Validation**: Use Zod validators (`validateZappFeed`, `validateActionPayload`) in tests and runtime checks. Schemas enforce correct structure for feeds and actions.
 - **Testing**: All tests are in `src/__test__`. Use `npm run test` to run the suite. Tests validate both builder output and Zod schema compliance.
 - **TypeScript Strictness**: Project uses strict type checking. Always check for possible undefined/null values in feeds and entries.
+- **Documentation Maintenance**: Always keep customer-facing markdown documentation (`Playlists.md`, `Actions.md`, `TopLevelOverview.md`) updated on any feature, API, or Cloud Event changes. NEVER delete functional specifications or Cloud Event definitions when updating docs.
 
 ## Developer Workflows
 - **Build**: `npm run build` (TypeScript compilation)
