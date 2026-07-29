@@ -8,11 +8,11 @@ It provides a local server that simulates real-world radio and podcast workflows
 
 ## 1. Key Capabilities
 
-*   **Role-Driven Rendering (Phase 3 Backend Contract):**
+*   **Role-Driven Rendering:**
     *   Demonstrates backend-driven UI semantics using `role`, `behavior`, and `dynamic_collection_options` extensions.
     *   Feeds use explicit roles (`collection_selector`, `dynamic_collection`) so client renderers adapt visually without relying on hardcoded cell styles or client-side variants.
 *   **System & User Collections:**
-    *   **System Collections:** Read-only protected collections such as **Pokémon GSC** and **Queue** (`/system/collections`). System collections cannot be renamed or deleted.
+    *   **System Collections:** Read-only protected collections (`/system/collections`) such as predefined system playlists. System collections cannot be renamed or deleted.
     *   **User Custom Collections:** Users can create, delete, rename, and manage custom playlists (`/user/collections`).
     *   **Automatic Naming & Non-Recycling Indices:** When creating a playlist without a title, it is automatically named `Playlist #N` (strictly sequential index that is never recycled even after deletions).
 *   **Item Membership & Multi-Select Integration:**
@@ -38,7 +38,7 @@ It provides a local server that simulates real-world radio and podcast workflows
 | `/user/collections/:collectionId/play_next/:itemId` | `GET` | Optional | Returns remaining tracks in collection `:collectionId` starting after `:itemId` for chaining continuous playback. |
 | `/user/collections` | `POST` | Bearer Token Required | Creates a new custom playlist. Body payload: `{ "name": "My Playlist" }`. |
 | `/user/collections/:id` | `DELETE` | Bearer Token Required | Deletes custom collection `:id` (fails with error for system collections or Queue). |
-| `/system/collections` | `GET` | Optional | Returns pre-configured system collections (e.g., Pokémon GSC, Queue). |
+| `/system/collections` | `GET` | Optional | Returns pre-configured system collections. |
 | `/media/collections/radio` | `GET` | Optional | Returns static live radio audio stream feeds. |
 | `/cloud-events` | `POST` | Bearer Token Required | Ingests Applicaster Cloud Events for playlist mutations and playback tracking. |
 
@@ -64,7 +64,7 @@ The service handles standard Applicaster Cloud Events sent to `POST /cloud-event
 
 For full domain definitions, UX specifications, and business guardrails, consult the documentation:
 *   **Playlists & Collections Specification:** [Playlists.md](.agents/Playlists.md)
-*   **Architecture & Phase 3 Backend Contract:** [TopLevelOverview.md](.agents/TopLevelOverview.md)
+*   **Architecture & Backend Specification:** [TopLevelOverview.md](.agents/TopLevelOverview.md)
 *   **Entry Actions & ActionsBuilder:** [Actions.md](.agents/Actions.md)
 *   **Collections DAO Architecture:** [collections-dao-architecture.md](.agents/collections-dao-architecture.md)
 

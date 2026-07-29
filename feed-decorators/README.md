@@ -69,7 +69,7 @@ const entry = new EntryBuilder('collection-123', 'My Playlist')
 ## 3. Documentation References
 
 For full architectural concepts, case studies, and action payload schemas:
-*   **Domain Definitions & Phase 3 Contract:** [docs/TopLevelOverview.md](docs/TopLevelOverview.md)
+*   **Domain Definitions & Architecture Contract:** [docs/TopLevelOverview.md](docs/TopLevelOverview.md)
 *   **Actions & Behavior Schemas:** [docs/Actions.md](docs/Actions.md)
 *   **Storage & Memory Management:** [docs/memory.md](docs/memory.md)
 

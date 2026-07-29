@@ -32,7 +32,7 @@ local_radio/
 
 ## 2. Executive Architectural Highlights
 
-### A. Role & Behavior-Driven UI (Phase 3 Backend Contract)
+### A. Role & Behavior-Driven UI
 UI affordances, cell layouts, and actions are driven entirely by **backend-declared semantics** on feeds rather than hardcoded client variants:
 *   **`role: "collection_selector"`**: Ingested by multi-select UI widgets when selecting playlists for a song (`GET /user/collections?item_id=<id>`).
 *   **`role: "dynamic_collection"`**: Ingested by editable lists and bottom sheets (`GET /user/collections?editable=true`), providing item removal and reordering capabilities via `dynamic_collection_options`.
@@ -56,7 +56,7 @@ For complete technical specifications, UX guidelines, and API references, consul
 | Document | Location | Description |
 | :--- | :--- | :--- |
 | **Playlists & Collections Specification** | [`mock-podcast/.agents/Playlists.md`](./mock-podcast/.agents/Playlists.md) | Complete user-facing capabilities, business rules, Cloud Event schemas, and local Queue lifecycle behaviors. |
-| **Architecture & Phase 3 Contract** | [`mock-podcast/.agents/TopLevelOverview.md`](./mock-podcast/.agents/TopLevelOverview.md) | Architectural specification of role/behavior-driven rendering, dynamic collections, and content filtering. |
+| **Architecture & Render Contract** | [`mock-podcast/.agents/TopLevelOverview.md`](./mock-podcast/.agents/TopLevelOverview.md) | Architectural specification of role/behavior-driven rendering, dynamic collections, and content filtering. |
 | **Feed Decorators Overview** | [`feed-decorators/docs/TopLevelOverview.md`](./feed-decorators/docs/TopLevelOverview.md) | Domain definitions (Role, Action, Behavior, Resolver, Entry, Feed) and screen design case studies. |
 | **Actions DSL Reference** | [`feed-decorators/docs/Actions.md`](./feed-decorators/docs/Actions.md) | Complete schema reference for Zapp actions (`openBottomSheet`, `showTextInput`, `sendCloudEvent`) and behaviors. |
 | **Mock Podcast README** | [`mock-podcast/README.md`](./mock-podcast/README.md) | Server setup, REST endpoints table, and Cloud Events summary. |

@@ -113,7 +113,7 @@ Trade-offs:
 - Centralized and reusable across screens.
 - Depends on platform/plugin support for runtime URL behavior.
 
-### Role/Behavior-Driven Rendering & Dynamic Collections (Phase 3 Backend Contract)
+### Role/Behavior-Driven Rendering & Dynamic Collections
 
 The backend drives UI presentation by declaring semantic **`role`**, **`behavior`**, and **`dynamic_collection_options`** extensions on feeds:
 

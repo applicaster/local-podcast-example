@@ -9,7 +9,7 @@ This document outlines the user-facing capabilities, business rules, Cloud Event
 To understand how playlists and media groups work in our application, we define the following core concepts:
 
 *   **Collection (or Playlist):** A grouped list of audio tracks or media items. Playlists can be system-provided (read-only and protected) or user-created (customizable).
-*   **System Collection:** A predefined collection managed by the system (`isSystem: true`). These collections cannot be deleted or renamed by the user. Examples include **Pokémon GSC** and **Queue**.
+*   **System Collection:** A predefined collection managed by the system (`isSystem: true`). These collections cannot be deleted or renamed by the user.
 *   **Queue:** A special, persistent system collection representing the user's active playback queue. Queue lifecycle and updates are managed locally on the client. The Queue cannot be deleted.
 *   **Live Radio Feed:** A static, read-only collection of live audio stations preloaded by the application (`/media/collections/radio`).
 
@@ -28,7 +28,7 @@ This section defines the business rules, capabilities, and behaviors of the play
     *   The index `N` is sequential (strictly increasing) and calculated by scanning existing custom playlists. Even if older playlists are deleted, their names and indices are not recycled (ensuring strict continuity).
 *   **Deletion Rules & Constraints:**
     *   Users can delete their custom collections.
-    *   **Constraint:** System collections (such as Pokémon GSC) and the Queue cannot be deleted. The option to delete system collections or Queue is blocked.
+    *   **Constraint:** System collections and the Queue cannot be deleted. The option to delete system collections or Queue is blocked.
 *   **Contextual Selection Highlight:**
     *   When viewing lists of collections to add a track, the system dynamically highlights which collections already contain that specific track (selector mode).
 *   **Playlist Actions & Options:**
@@ -223,6 +223,6 @@ On the client side, `@lib/feed-decorators` intercepts the feeds and merges these
 | `/user/collections/:collectionId/play_next/:itemId` | `GET` | Play Next Feed | Returns the next tracks in collection `:collectionId` starting after `:itemId` for playback chaining. |
 | `/user/collections` | `POST` | Create Playlist | Creates a new playlist (optionally accepts custom name). |
 | `/user/collections/:id` | `DELETE` | Delete Playlist | Deletes playlist `:id` (fails for system collections / Queue). |
-| `/system/collections` | `GET` | System Collections | Returns preloaded system collections (e.g., Pokémon GSC, Queue). |
+| `/system/collections` | `GET` | System Collections | Returns preloaded system collections. |
 | `/media/collections/radio` | `GET` | Live Radio Feed | Returns static read-only live audio stations. |
 | `/cloud-events` | `POST` | Event Router | Ingests playback events (`started`, `stopped`) and collection mutations (`add`, `remove`, `toggle`, `delete`, `rename`, `reorder`, `create`, `add.collection`). |
