@@ -15,14 +15,16 @@ import {
 import { Feed, Entry } from '../../types/feed';
 import { CollectionsPersistenceService } from './persistence.service';
 import { CLOUD_EVENT_TYPES } from '../../constants/cloud-event-types.constants';
-import { UI_LABELS } from '../../constants/ui-labels.constants';
 import { EntryBuilder, ActionsBuilder } from '@lib/feed-decorators';
 
 @Injectable()
 export class CollectionsService implements OnModuleInit {
   private static readonly CLOUD_EVENTS_PATH = '/cloud-events';
-  private static readonly QUEUE_NAME = UI_LABELS.COLLECTION.QUEUE_NAME;
+  private static readonly QUEUE_NAME = 'Queue';
   private static readonly QUEUE_ALIAS = 'queue';
+  private static readonly DEFAULT_PLAYLIST_PREFIX = 'Playlist #';
+  private static readonly YOUR_COLLECTIONS_TITLE = 'Your Collections';
+  private static readonly CREATE_COLLECTION_TITLE = 'Create collection';
   private readonly logger = new Logger(CollectionsService.name);
 
   private collections: CollectionEntity[] = [];
@@ -35,7 +37,7 @@ export class CollectionsService implements OnModuleInit {
   async onModuleInit() {
     const queueCollection: CollectionEntity = {
       id: randomUUID(),
-      name: UI_LABELS.COLLECTION.QUEUE_NAME,
+      name: CollectionsService.QUEUE_NAME,
       itemIds: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -60,7 +62,7 @@ export class CollectionsService implements OnModuleInit {
     }
 
     const existingQueue = this.collections.find(
-      (c) => c.isSystem && c.name === UI_LABELS.COLLECTION.QUEUE_NAME,
+      (c) => c.isSystem && c.name === CollectionsService.QUEUE_NAME,
     );
     if (!existingQueue) {
       this.collections.unshift(queueCollection);
@@ -136,7 +138,7 @@ export class CollectionsService implements OnModuleInit {
       return {
         id: randomUUID(),
         type: { value: 'feed' },
-        title: UI_LABELS.FEED_TITLES.YOUR_COLLECTIONS,
+        title: CollectionsService.YOUR_COLLECTIONS_TITLE,
         entry: [],
         extensions: {
           ...(editable
@@ -186,7 +188,7 @@ export class CollectionsService implements OnModuleInit {
     return {
       id: randomUUID(),
       type: { value: 'feed' },
-      title: UI_LABELS.FEED_TITLES.YOUR_COLLECTIONS,
+      title: CollectionsService.YOUR_COLLECTIONS_TITLE,
       entry: entries,
       extensions: {
         ...(editable
@@ -400,7 +402,7 @@ export class CollectionsService implements OnModuleInit {
       id: 'create_collection',
       type: { value: 'action' },
     })
-      .setTitle(UI_LABELS.ENTRY_TITLES.CREATE_COLLECTION)
+      .setTitle(CollectionsService.CREATE_COLLECTION_TITLE)
       .addCoverImageByAlias('create_collection')
       .addExtension('item_count', 0)
       .addExtension('is_system', false);
@@ -617,7 +619,7 @@ export class CollectionsService implements OnModuleInit {
 
   private nextDefaultName(): string {
     const defaultNamePattern = new RegExp(
-      `^${UI_LABELS.COLLECTION.DEFAULT_PLAYLIST_PREFIX}(\\d+)$`,
+      `^${CollectionsService.DEFAULT_PLAYLIST_PREFIX}(\\d+)$`,
     );
     const maxCurrentNumber = this.collections.reduce((acc, item) => {
       const match = item.name.match(defaultNamePattern);
@@ -628,7 +630,7 @@ export class CollectionsService implements OnModuleInit {
       return Math.max(acc, Number(match[1]));
     }, 0);
 
-    return `${UI_LABELS.COLLECTION.DEFAULT_PLAYLIST_PREFIX}${
+    return `${CollectionsService.DEFAULT_PLAYLIST_PREFIX}${
       maxCurrentNumber + 1
     }`;
   }

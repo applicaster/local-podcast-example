@@ -6,11 +6,19 @@ import {
   Entry,
   RadioItem,
 } from '../../types/feed';
-import { UI_LABELS } from '../../constants/ui-labels.constants';
 import { LiveAudioEntryBuilder } from '../../builders/LiveAudioEntryBuilder';
 
 @Injectable()
 export class MediaService {
+  private static readonly LIVE_RADIO_TITLE = 'Live Radio';
+  private static readonly RADIO_STATION_TITLES: Record<string, string> = {
+    jazz: 'Classic Jazz Stream',
+    rock: 'Rock Classics Live',
+    news: '24/7 World News',
+    classical: 'Symphony Hall Classical',
+    pop: 'Top 40 Pop Radio',
+    ambient: 'Deep Focus Ambient',
+  };
   private readonly logger = new Logger(MediaService.name);
   private radioData: RadioItem[] = [];
   private playlistItems: RadioItem[] = [];
@@ -80,7 +88,7 @@ export class MediaService {
    * Convert radio ID to display title
    */
   private getTitleForId(id: string): string {
-    const titleMap = UI_LABELS.RADIO_STATION_TITLES;
+    const titleMap = MediaService.RADIO_STATION_TITLES;
     return titleMap[id] || id.charAt(0).toUpperCase() + id.slice(1);
   }
 
@@ -110,7 +118,7 @@ export class MediaService {
     const feed: Feed = {
       id: this.generateUUID(),
       type: { value: 'feed' },
-      title: UI_LABELS.FEED_TITLES.LIVE_RADIO,
+      title: MediaService.LIVE_RADIO_TITLE,
       entry: entries,
       extensions: {},
     };

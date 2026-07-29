@@ -2,6 +2,9 @@
  * Feed Entry Types - Based on Pipes2 JSON Feed protocol
  */
 
+import { EntryAction, TapActions } from './actions';
+export * from './actions';
+
 export interface ContentItem {
   src: string;
   type: string;
@@ -28,7 +31,10 @@ export interface Entry {
   summary?: string | null;
   content?: ContentItem;
   media_group: MediaGroup[];
-  extensions: Record<string, any>;
+  extensions: Record<string, any> & {
+    entry_action?: EntryAction[];
+    tap_actions?: TapActions;
+  };
   link?: {
     rel: string;
     href: string;

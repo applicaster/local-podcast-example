@@ -117,4 +117,85 @@ describe('ActionsBuilder + Zod validation', () => {
       expect(validateActionPayload(action.type, action.options)).toBe(false);
     }
   });
+
+  it('should build and validate openBottomSheet action', () => {
+    const actions = new ActionsBuilder()
+      .openBottomSheet({
+        modal_presentation: {
+          type: 'bottom_sheet',
+          style_variant: 'modal_bottom_sheet',
+        },
+        header: {
+          title: 'Select Playlist',
+          subtitle: 'Add item to playlist',
+        },
+        content: {
+          title: 'Your Collections',
+          itemsUrl: 'http://localhost:3000/user/collections?item_id=123',
+          items: [],
+        },
+      })
+      .build();
+    const action = actions[0];
+    expect(action).toBeDefined();
+    if (action) {
+      expect(action.type).toBe('openBottomSheet');
+      expect(validateActionPayload(action.type, action.options)).toBe(true);
+    }
+  });
+
+  it('should build and validate showTextInput action', () => {
+    const actions = new ActionsBuilder()
+      .showTextInput({
+        headerTitle: 'Edit Playlist',
+        inputLabel: 'Name',
+        defaultValue: 'My Playlist',
+        buttonLabel: 'Save',
+      })
+      .build();
+    const action = actions[0];
+    expect(action).toBeDefined();
+    if (action) {
+      expect(action.type).toBe('showTextInput');
+      expect(validateActionPayload(action.type, action.options)).toBe(true);
+    }
+  });
+
+  it('should build and validate confirmDialog action', () => {
+    const actions = new ActionsBuilder()
+      .confirmDialog({
+        title: 'Delete',
+        message: 'Are you sure?',
+        okButtonText: 'Yes',
+        cancelButtonText: 'No',
+      })
+      .build();
+    const action = actions[0];
+    expect(action).toBeDefined();
+    if (action) {
+      expect(action.type).toBe('confirmDialog');
+      expect(validateActionPayload(action.type, action.options)).toBe(true);
+    }
+  });
+
+  it('should build and validate refreshComponent action', () => {
+    const actions = new ActionsBuilder().refreshComponent().build();
+    const action = actions[0];
+    expect(action).toBeDefined();
+    if (action) {
+      expect(action.type).toBe('refreshComponent');
+      expect(validateActionPayload(action.type, action.options)).toBe(true);
+    }
+  });
+
+  it('should build and validate addProfile action', () => {
+    const actions = new ActionsBuilder().addProfile().build();
+    const action = actions[0];
+    expect(action).toBeDefined();
+    if (action) {
+      expect(action.type).toBe('addProfile');
+      expect(validateActionPayload(action.type, action.options)).toBe(true);
+    }
+  });
 });
+

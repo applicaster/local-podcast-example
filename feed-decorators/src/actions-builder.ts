@@ -1,3 +1,5 @@
+import { OpenBottomSheetActionOptions } from './zod-definitions';
+
 export type Action = {
   type: string;
   options?: Record<string, any>;
@@ -7,6 +9,18 @@ export class ActionsBuilder {
   protected actions: Action[] = [];
 
   constructor() {}
+
+  /**
+   * Adds an openBottomSheet action to the actions list.
+   * @param opts Options for openBottomSheet (modal_presentation, header, content)
+   */
+  openBottomSheet(opts: OpenBottomSheetActionOptions) {
+    this.actions.push({
+      type: 'openBottomSheet',
+      options: opts,
+    });
+    return this;
+  }
 
   /**
    * Pushes a raw action to the builder.
