@@ -15,7 +15,14 @@ import {
 import { Feed, Entry } from '../../types/feed';
 import { CollectionsPersistenceService } from './persistence.service';
 import { CLOUD_EVENT_TYPES } from '../../constants/cloud-event-types.constants';
-import { EntryBuilder, ActionsBuilder } from '@lib/feed-decorators';
+import {
+  EntryBuilder,
+  ActionsBuilder,
+  buildDynamicCollectionFeed,
+  buildCollectionSelectorFeed,
+} from '@lib/feed-decorators';
+import { SystemCollectionEntryBuilder } from '../../builders/SystemCollectionEntryBuilder';
+import { UserCollectionEntryBuilder } from '../../builders/UserCollectionEntryBuilder';
 
 @Injectable()
 export class CollectionsService implements OnModuleInit {
@@ -159,47 +166,37 @@ export class CollectionsService implements OnModuleInit {
       entries.push(this.createCreateCollectionEntry(cloudEventsUrl));
     }
 
-    return {
+    const baseFeed = {
       id: randomUUID(),
       type: { value: 'feed' },
       title: CollectionsService.YOUR_COLLECTIONS_TITLE,
       entry: entries,
-      extensions: {
-        ...(editable
-          ? {
-              role: 'dynamic_collection',
-              dynamic_collection_options: {
-                postUrl: cloudEventsUrl,
-                operations: 'add,remove,reorder',
-                events: {
-                  add: this.createCreateCollectionActions(
-                    cloudEventsUrl,
-                    itemId,
-                    collectionId,
-                  ).buildActions(),
-                },
-              },
-            }
-          : (itemId || collectionId) && {
-              role: 'collection_selector',
-              behavior: {
-                select_mode: itemId ? 'multi' : 'none',
-                current_selection: selectedCollectionIds,
-              },
-              dynamic_collection_options: {
-                postUrl: cloudEventsUrl,
-                operations: 'add',
-                events: {
-                  add: this.createCreateCollectionActions(
-                    cloudEventsUrl,
-                    itemId,
-                    collectionId,
-                  ).buildActions(),
-                },
-              },
-            }),
-      },
     };
+
+    const addEventActions = this.createCreateCollectionActions(
+      cloudEventsUrl,
+      itemId,
+      collectionId,
+    ).buildActions();
+
+    if (editable) {
+      return buildDynamicCollectionFeed(baseFeed, {
+        postUrl: cloudEventsUrl,
+        operations: 'add,remove,reorder',
+        addActions: addEventActions,
+      }) as CollectionsFeed;
+    }
+
+    if (itemId || collectionId) {
+      return buildCollectionSelectorFeed(baseFeed, {
+        postUrl: cloudEventsUrl,
+        selectMode: itemId ? 'multi' : 'none',
+        currentSelection: selectedCollectionIds,
+        addActions: addEventActions,
+      }) as CollectionsFeed;
+    }
+
+    return baseFeed as CollectionsFeed;
   }
 
   private getPlayNextUrl(
@@ -689,10 +686,21 @@ export class CollectionsService implements OnModuleInit {
       }
     }
 
-    const builder = new EntryBuilder(tapActions, {
+    let builder: EntryBuilder;
+    const baseEntryData = {
       id: collection.id,
       type: { value: itemId ? 'action' : 'collection' },
-    })
+    };
+
+    if (!itemId && !collection.isSystem) {
+      builder = new UserCollectionEntryBuilder(baseEntryData);
+    } else if (!itemId && collection.isSystem) {
+      builder = new SystemCollectionEntryBuilder(baseEntryData);
+    } else {
+      builder = new EntryBuilder(tapActions, baseEntryData);
+    }
+
+    builder
       .setTitle(collection.name)
       .addCoverImageByAlias('collection_list')
       .addExtension('item_count', collection.itemIds.length)
@@ -700,12 +708,9 @@ export class CollectionsService implements OnModuleInit {
 
     // Entry action menu (default mode only).
     if (!itemId && (baseUrl || !collection.isSystem)) {
-      if (baseUrl) {
+      if (baseUrl && builder instanceof SystemCollectionEntryBuilder) {
         // 1. Add all to Queue
-        const addAllActions = new ActionsBuilder().addAllToQueue({
-          url: `${baseUrl}/user/collections/${collection.id}`,
-        });
-        builder.addEntryActionByAlias('add_all_to_queue', addAllActions, true);
+        builder.addAllToQueue(baseUrl, collection.id);
 
         // 2. Play All
         if (collection.itemIds.length > 0) {
@@ -733,94 +738,20 @@ export class CollectionsService implements OnModuleInit {
               };
             }
 
-            const playAllAction = new ActionsBuilder().addAction({
-              type: 'navigateToScreen',
-              options: {
-                typeMapping: firstEntry.type.value,
-                navigationAction: 'push',
-                entry: firstEntry,
-              },
-            });
-            builder.addEntryActionByAlias('play_all', playAllAction, true);
+            builder.playAll(firstEntry);
           }
         }
 
         // 3. Add all to Playlist
         if (isLoggedIn) {
-          const addAllToPlaylistAction = new ActionsBuilder().addAction({
-            type: 'openBottomSheet',
-            options: {
-              modal_presentation: {
-                type: 'bottom_sheet',
-                style_variant: 'modal_bottom_sheet',
-              },
-              header: {
-                title: 'Select Playlist',
-                subtitle: 'Add items to playlist',
-              },
-              content: {
-                title: 'Your Collections',
-                itemsUrl: `${baseUrl}/user/collections?collection_id=${collection.id}`,
-                items: [],
-              },
-            },
-          });
-          builder.addEntryActionByAlias(
-            'add_to_playlist',
-            addAllToPlaylistAction,
-            false,
-          );
+          builder.addAllToPlaylist(baseUrl, collection.id);
         }
       }
 
-      if (!collection.isSystem) {
-        // Edit collection: opens a bottom sheet modal to remove/re-order items.
-        const editActions = new ActionsBuilder().addAction({
-          type: 'openBottomSheet',
-          options: {
-            modal_presentation: {
-              type: 'bottom_sheet',
-              style_variant: 'modal_bottom_sheet',
-            },
-            header: {
-              title: 'Edit Playlist',
-              subtitle: collection.name,
-            },
-            content: {
-              title: collection.name,
-              itemsUrl: `${baseUrl}/user/collections/${collection.id}?editable=true`,
-              items: [],
-            },
-          },
-        });
-        builder.addEntryActionByAlias('edit', editActions, false);
-
-        const editNameActions = new ActionsBuilder().showTextInput({
-          headerTitle: 'Edit Name & Details',
-          inputLabel: 'Name your playlist',
-          defaultValue: collection.name,
-          buttonLabel: 'Update',
-          action: {
-            type: 'sendCloudEvent',
-            options: {
-              url: cloudEventsUrl,
-              type: CLOUD_EVENT_TYPES.COLLECTION_RENAME,
-              subject: 'edit_collection',
-              data: { collectionId: collection.id },
-            },
-          },
-        });
-        builder.addEntryActionByAlias('edit_name', editNameActions, false);
-
-        const deleteActions = new ActionsBuilder()
-          .sendCloudEvent({
-            url: cloudEventsUrl,
-            type: CLOUD_EVENT_TYPES.COLLECTION_DELETE,
-            subject: 'delete_collection',
-            data: { collectionId: collection.id },
-          })
-          .refreshComponent();
-        builder.addEntryActionByAlias('delete_collection', deleteActions, true);
+      if (!collection.isSystem && builder instanceof UserCollectionEntryBuilder) {
+        builder.editCollection(baseUrl, collection.id, collection.name);
+        builder.editName(cloudEventsUrl, collection.id, collection.name);
+        builder.deleteCollection(cloudEventsUrl, collection.id);
       }
     }
 

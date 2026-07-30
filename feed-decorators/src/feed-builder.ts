@@ -112,6 +112,96 @@ export function buildPreferenceFeed(
   } as ZappFeed;
 }
 
+export interface DynamicCollectionFeedOptions {
+  postUrl: string;
+  operations?: string;
+  addActions?: any[];
+  title?: string;
+  entries?: Array<Partial<ZappEntry>>;
+}
+
+/**
+ * Builds a ZappFeed for a dynamic collection role.
+ */
+export function buildDynamicCollectionFeed(
+  feed: Partial<ZappFeed>,
+  opts: DynamicCollectionFeedOptions,
+): ZappFeed {
+  const dynamicCollectionOptions: Record<string, any> = {
+    postUrl: opts.postUrl,
+    operations: opts.operations || 'add,remove,reorder',
+  };
+
+  if (opts.addActions) {
+    dynamicCollectionOptions.events = {
+      add: opts.addActions,
+    };
+  }
+
+  const extensions = {
+    ...(feed.extensions || {}),
+    role: 'dynamic_collection',
+    dynamic_collection_options: dynamicCollectionOptions,
+  };
+
+  return {
+    ...feed,
+    title: opts.title || feed.title,
+    extensions,
+    entry: opts.entries || feed.entry || [],
+  } as ZappFeed;
+}
+
+export interface CollectionSelectorFeedOptions {
+  postUrl?: string;
+  operations?: string;
+  addActions?: any[];
+  selectMode?: 'single' | 'multi' | 'none';
+  currentSelection?: string | string[];
+  title?: string;
+  entries?: Array<Partial<ZappEntry>>;
+}
+
+/**
+ * Builds a ZappFeed for a collection selector role.
+ */
+export function buildCollectionSelectorFeed(
+  feed: Partial<ZappFeed>,
+  opts: CollectionSelectorFeedOptions,
+): ZappFeed {
+  const extensions: Record<string, any> = {
+    ...(feed.extensions || {}),
+    role: 'collection_selector',
+    behavior: {
+      select_mode: opts.selectMode || 'none',
+      current_selection: opts.currentSelection || [],
+    },
+  };
+
+  if (opts.postUrl) {
+    const dynamicCollectionOptions: Record<string, any> = {
+      postUrl: opts.postUrl,
+      operations: opts.operations || 'add',
+    };
+
+    if (opts.addActions) {
+      dynamicCollectionOptions.events = {
+        add: opts.addActions,
+      };
+    }
+
+    extensions.dynamic_collection_options = dynamicCollectionOptions;
+  }
+
+  return {
+    ...feed,
+    title: opts.title || feed.title,
+    extensions,
+    entry: opts.entries || feed.entry || [],
+  } as ZappFeed;
+}
+
+
 // // Sample service using the decorator
 // export function buildValidatedPreferenceFeed(
 //     feed: Partial<ZappFeed>,
