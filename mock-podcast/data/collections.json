@@ -1,13 +1,5 @@
 [
   {
-    "id": "5a53737d-f253-4720-ada6-48b2f3342019",
-    "name": "Queue",
-    "itemIds": [],
-    "createdAt": "2026-07-30T13:14:48.546Z",
-    "updatedAt": "2026-07-30T13:14:48.547Z",
-    "isSystem": true
-  },
-  {
     "id": "system_gsc",
     "name": "Pokémon GSC",
     "itemIds": [
