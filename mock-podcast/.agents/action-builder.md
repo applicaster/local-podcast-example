@@ -106,7 +106,21 @@ const entry = new EntryBuilder<UserCollectionAODItemBuilder>(builder)
   .build(); // Builds final ZappEntry
 ```
 
+```
+
+### 4. Collection Entry Builders
+`SystemCollectionEntryBuilder` and `UserCollectionEntryBuilder` extend `EntryBuilder` to encapsulate collection-level entry actions (`add_all_to_queue`, `play_all`, `add_to_playlist`, `edit`, `edit_name`, `delete_collection`).
+
+```typescript
+export class UserCollectionEntryBuilder extends SystemCollectionEntryBuilder {
+  editCollection(baseUrl: string, collectionId: string, collectionName: string) { ... }
+  editName(cloudEventsUrl: string, collectionId: string, collectionName: string) { ... }
+  deleteCollection(cloudEventsUrl: string, collectionId: string) { ... }
+}
+```
+
 ## Benefits
 - **Type Safety**: IDEs will only suggest actions that are appropriate for the specific entry type.
 - **Encapsulation**: Details like `typeMapping`, cloud event types, and required screen refresh behaviors are encapsulated inside semantic method names.
-- **Maintainability**: If the underlying protocol for adding to a playlist changes, it only needs to be updated in `UserCollectionAODItemBuilder`.
+- **Maintainability**: If the underlying protocol for adding to a playlist changes, it only needs to be updated in the builder class.
+

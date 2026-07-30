@@ -10,7 +10,7 @@ It allows backend services (such as `@lib/mock-podcast`) to construct dynamic, r
 
 *   **`EntryBuilder`**: Fluent chainable API for generating standard Zapp entry objects with title, summary, media group, and extensions.
 *   **`ActionsBuilder`**: Fluent chainable API for generating entry actions (`openBottomSheet`, `showTextInput`, `sendCloudEvent`, `playAll`, `addToPlaylist`) and cell tap actions.
-*   **`buildPreferenceFeed`**: Utility for generating preference editor and collection selector feeds with appropriate `role` and `behavior` tags.
+*   **Feed Construction Helpers**: Utilities (`buildPreferenceFeed`, `buildDynamicCollectionFeed`, `buildCollectionSelectorFeed`) for generating feeds with appropriate `role`, `behavior`, and `dynamic_collection_options` tags.
 *   **Zod Runtime Validation**: Schemas (`validateZappFeed`, `validateActionPayload`) for validating feed and action payloads at runtime.
 
 ---
