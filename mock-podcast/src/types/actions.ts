@@ -168,15 +168,6 @@ export interface RefreshComponentAction {
   options?: RefreshComponentOptions;
 }
 
-export interface AddProfileOptions {
-  profileId?: string;
-}
-
-export interface AddProfileAction {
-  type: 'addProfile';
-  options?: AddProfileOptions;
-}
-
 export type Action =
   | OpenBottomSheetAction
   | SendCloudEventAction
@@ -193,7 +184,6 @@ export type Action =
   | CompleteFTUEAction
   | CompleteHookAction
   | RefreshComponentAction
-  | AddProfileAction
   | {
       type: string;
       options?: Record<string, any>;

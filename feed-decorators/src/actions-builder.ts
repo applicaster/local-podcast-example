@@ -100,18 +100,6 @@ export class ActionsBuilder {
   }
 
   /**
-   * Adds an addProfile action to the actions list.
-   * No options are required for this action.
-   */
-  addProfile() {
-    // fake action, not actually implemented since navigation is performed using type mapping
-    this.actions.push({
-      type: 'addProfile',
-    });
-    return this;
-  }
-
-  /**
    * Adds a confirmDialog action to the actions list.
    * @param opts Options for the confirm dialog (message, title, okButtonText, cancelButtonText)
    */

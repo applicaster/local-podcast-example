@@ -285,16 +285,6 @@ export type RefreshComponentAction = z.infer<
   typeof RefreshComponentActionSchema
 >;
 
-export const AddProfileActionSchema = z.object({
-  type: z.literal('addProfile'),
-  options: z
-    .object({
-      profileId: z.string().optional(),
-    })
-    .optional(),
-});
-export type AddProfileAction = z.infer<typeof AddProfileActionSchema>;
-
 export const ZappActionSchema = z.union([
   OpenBottomSheetActionSchema,
   SendCloudEventActionSchema,
@@ -311,7 +301,6 @@ export const ZappActionSchema = z.union([
   CompleteFTUEActionSchema,
   CompleteHookActionSchema,
   RefreshComponentActionSchema,
-  AddProfileActionSchema,
 ]);
 export type ZappAction = z.infer<typeof ZappActionSchema>;
 

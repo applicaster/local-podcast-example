@@ -18,9 +18,6 @@ const EmptyOptionalSchema = z.object({}).optional();
 const RefreshComponentOptionsSchema = z
   .object({ componentId: z.string().optional() })
   .optional();
-const AddProfileOptionsSchema = z
-  .object({ profileId: z.string().optional() })
-  .optional();
 const CompleteHookOptionsSchema = CompleteHookActionOptionsSchema.optional();
 
 export const actionSchemas: Record<string, z.ZodTypeAny> = {
@@ -41,7 +38,6 @@ export const actionSchemas: Record<string, z.ZodTypeAny> = {
   completeFTUE: EmptyOptionalSchema,
   completeHook: CompleteHookOptionsSchema,
   refreshComponent: RefreshComponentOptionsSchema,
-  addProfile: AddProfileOptionsSchema,
 };
 
 export function validateActionPayload(type: string, payload: any): boolean {

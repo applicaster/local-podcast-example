@@ -187,15 +187,5 @@ describe('ActionsBuilder + Zod validation', () => {
       expect(validateActionPayload(action.type, action.options)).toBe(true);
     }
   });
-
-  it('should build and validate addProfile action', () => {
-    const actions = new ActionsBuilder().addProfile().build();
-    const action = actions[0];
-    expect(action).toBeDefined();
-    if (action) {
-      expect(action.type).toBe('addProfile');
-      expect(validateActionPayload(action.type, action.options)).toBe(true);
-    }
-  });
 });
 
