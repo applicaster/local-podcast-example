@@ -4,6 +4,11 @@
 
 It provides a local server that simulates real-world radio and podcast workflows, including role-driven UI rendering, dynamic collections, multi-playlist selection, and Cloud Event ingestion for playlist management and queue progression.
 
+> [!NOTE]
+> **Quick Start & Authentication:**
+> - **Install & Run:** `npm install` then `npm run start:dev` (runs server locally on `http://localhost:3000`).
+> - **User Collections Authorization:** To retrieve user-owned collections (`GET /user/collections`), requests must include an `Authorization: Bearer <token>` header (any non-empty token value is accepted to simulate a logged-in user session).
+
 ---
 
 ## 1. Key Capabilities
