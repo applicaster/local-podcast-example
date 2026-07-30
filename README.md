@@ -2,12 +2,6 @@
 
 Welcome to the **Applicaster Podcast Playback & Radio System** example project. This repository provides a reference implementation and reusable TypeScript library for building dynamic, role-driven audio applications and playlist management systems in Applicaster/Zapp apps.
 
-> [!NOTE]
-> **Quick Start & Running the Local Podcast Server:**
-> 1. **Install Dependencies:** Run `npm install` inside **both** the `feed-decorators` and `mock-podcast` directories (`cd feed-decorators && npm install` and `cd mock-podcast && npm install`).
-> 2. **Start the Mock Server:** Run `npm run start:dev` inside `mock-podcast` (runs the NestJS server locally on `http://localhost:3000`).
-> 3. **User Collections Authorization:** To retrieve user collections (`GET /user/collections`), requests must include an `Authorization: Bearer <token>` header (any non-empty token string is accepted to simulate an authenticated user session).
-
 ---
 
 ## 1. Project Architecture
@@ -97,3 +91,6 @@ cd mock-podcast
 npm run start:dev
 ```
 The server will listen by default on port `3000`, exposing `/user/collections`, `/system/collections`, `/media/collections/radio`, and `/cloud-events`.
+
+> [!NOTE]
+> **Authentication Requirement:** Requests to `/user/collections` endpoints require an `Authorization: Bearer <token>` header (any non-empty token value is accepted to simulate a logged-in user session).
