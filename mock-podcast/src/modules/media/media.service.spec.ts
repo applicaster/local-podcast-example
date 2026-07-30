@@ -25,24 +25,19 @@ describe('MediaService', () => {
     expect(entries.every((entry) => entry.type.value === 'audio')).toBe(true);
   });
 
-  it('sets dismiss_on_action=true for radio entry actions and includes Playlist, Queue and Open Bottom Sheet actions', () => {
-    const feed = service.getRadioFeed();
+  it('includes Playlist action for authenticated users', () => {
+    const feed = service.getRadioFeed('http://localhost:3000', true);
     const firstAudioEntry = feed.entry.find(
       (entry) => entry.type.value === 'audio',
     );
     const entryActions = firstAudioEntry?.extensions?.entry_action;
 
-    expect(entryActions).toHaveLength(2);
+    expect(entryActions).toHaveLength(1);
 
     const addPlaylistAction = entryActions?.[0];
     expect(addPlaylistAction?.button?.alias).toBe('add_to_playlist');
     expect(addPlaylistAction?.dismiss_on_action).toBe(false);
     expect(addPlaylistAction?.actions?.[0]?.type).toBe('openBottomSheet');
-
-    const addQueueAction = entryActions?.[1];
-    expect(addQueueAction?.button?.alias).toBe('add_to_queue');
-    expect(addQueueAction?.dismiss_on_action).toBe(true);
-    expect(addQueueAction?.actions?.[0]?.type).toBe('addToQueue');
   });
 
   it('returns cached feed instance for repeated default feed calls', () => {
@@ -52,14 +47,13 @@ describe('MediaService', () => {
     expect(second).toBe(first);
   });
 
-  it('excludes add_to_playlist action but retains add_to_queue action when unauthenticated', () => {
+  it('excludes add_to_playlist action when unauthenticated', () => {
     const feed = service.getRadioFeed('http://localhost:3000', false);
     const firstAudioEntry = feed.entry.find(
       (entry) => entry.type.value === 'audio',
     );
     const entryActions = firstAudioEntry?.extensions?.entry_action;
 
-    expect(entryActions).toHaveLength(1);
-    expect(entryActions?.[0]?.button?.alias).toBe('add_to_queue');
+    expect(entryActions).toBeUndefined();
   });
 });

@@ -151,8 +151,6 @@ export class MediaService {
       entry.addToPlaylist();
     }
 
-    entry.addToQueue();
-
     if (radio.homepage) {
       entry.addExtension('homepage', radio.homepage);
     }

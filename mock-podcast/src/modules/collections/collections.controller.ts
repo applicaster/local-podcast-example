@@ -101,7 +101,7 @@ export class CollectionsController {
    * 
    * Retrieves a single collection feed by ID.
    * 
-   * @param id Collection ID or synonym (`queue`).
+   * @param id Collection ID.
    * @param action Optional action filter (e.g. `remove_item`).
    * @param editable Optional flag (`editable=true`) to enable `role: "dynamic_collection"` with `operations: "remove,reorder"`.
    * @returns Standard Zapp DSP Feed for the single collection.

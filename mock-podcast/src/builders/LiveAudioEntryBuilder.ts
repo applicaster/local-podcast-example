@@ -33,15 +33,4 @@ export class LiveAudioEntryBuilder extends EntryBuilder {
     this.addEntryActionByAlias('add_to_playlist', actionBuilder, false);
     return this;
   }
-
-  addToQueue() {
-    const actionBuilder = new ActionsBuilder();
-    actionBuilder.addAction({
-      type: "addToQueue",
-      options: {},
-    });
-
-    this.addEntryActionByAlias('add_to_queue', actionBuilder, true);
-    return this;
-  }
 }

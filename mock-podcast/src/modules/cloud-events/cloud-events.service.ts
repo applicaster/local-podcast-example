@@ -68,23 +68,15 @@ export class CloudEventsService {
 
     if (eventType === CLOUD_EVENT_TYPES.VIDEO_STARTED && data.videoId) {
       this.logger.log(
-        `Handling video started for videoId="${
+        `Received video started event for videoId="${
           data.videoId
         }" from sourceCollectionId="${sourceCollectionId ?? 'N/A'}"`,
       );
-      await this.collectionsService.handleVideoStarted(
-        data.videoId,
-        sourceCollectionId,
-      );
     } else if (eventType === CLOUD_EVENT_TYPES.VIDEO_STOPPED && data.videoId) {
       this.logger.log(
-        `Handling video stopped for videoId="${data.videoId}" with status="${
+        `Received video stopped event for videoId="${data.videoId}" with status="${
           data.status ?? 'UNKNOWN'
         }"`,
-      );
-      await this.collectionsService.handleVideoStopped(
-        data.videoId,
-        data.status,
       );
     } else if (eventType === CLOUD_EVENT_TYPES.COLLECTION_CREATE) {
       this.logger.log('Creating collection via cloud event');

@@ -33,19 +33,4 @@ export class UserCollectionAODItemBuilder extends EntryBuilder {
     this.addEntryActionByAlias('add_to_playlist', actionBuilder, false);
     return this;
   }
-
-  addToQueue(opts?: { itemId?: string; baseUrl?: string }) {
-    const activeBaseUrl = opts?.baseUrl || this.baseUrl;
-    this.actionBuilder.sendCloudEvent({
-      url: `${activeBaseUrl}/cloud-events`,
-      type: 'com.applicaster.collection.add.item.v1',
-      data: {
-        collectionId: 'queue',
-        itemId: opts?.itemId || '@{entry/id}',
-      },
-      inflateData: true,
-    });
-    this.actionBuilder.refreshComponent();
-    return this;
-  }
 }

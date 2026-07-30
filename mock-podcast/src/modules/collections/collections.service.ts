@@ -20,8 +20,6 @@ import { EntryBuilder, ActionsBuilder } from '@lib/feed-decorators';
 @Injectable()
 export class CollectionsService implements OnModuleInit {
   private static readonly CLOUD_EVENTS_PATH = '/cloud-events';
-  private static readonly QUEUE_NAME = 'Queue';
-  private static readonly QUEUE_ALIAS = 'queue';
   private static readonly DEFAULT_PLAYLIST_PREFIX = 'Playlist #';
   private static readonly YOUR_COLLECTIONS_TITLE = 'Your Collections';
   private static readonly CREATE_COLLECTION_TITLE = 'Create collection';
@@ -35,19 +33,8 @@ export class CollectionsService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const queueCollection: CollectionEntity = {
-      id: randomUUID(),
-      name: CollectionsService.QUEUE_NAME,
-      itemIds: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isSystem: true,
-    };
-    const defaultCollections: CollectionEntity[] = [
-      queueCollection
-    ];
     this.collections =
-      await this.persistenceService.loadCollections(defaultCollections);
+      await this.persistenceService.loadCollections([]);
 
     const systemGscId = 'system_gsc';
     let needsSave = false;
@@ -58,14 +45,6 @@ export class CollectionsService implements OnModuleInit {
       (c) => c.id !== 'system_jazz' && c.id !== 'system_funk',
     );
     if (this.collections.length !== originalLength) {
-      needsSave = true;
-    }
-
-    const existingQueue = this.collections.find(
-      (c) => c.isSystem && c.name === CollectionsService.QUEUE_NAME,
-    );
-    if (!existingQueue) {
-      this.collections.unshift(queueCollection);
       needsSave = true;
     }
 
@@ -104,7 +83,7 @@ export class CollectionsService implements OnModuleInit {
   getSystemCollectionsFeed(baseUrl?: string, isLoggedIn = true): CollectionsFeed {
     const cloudEventsUrl = this.cloudEventsUrl(baseUrl);
     const systemCollections = this.collections.filter(
-      (c) => c.isSystem && c.name !== CollectionsService.QUEUE_NAME,
+      (c) => c.isSystem,
     );
     const entries = systemCollections.map((collection) =>
       this.toFeedEntry(
@@ -162,12 +141,7 @@ export class CollectionsService implements OnModuleInit {
 
     const collectionsToRender = (itemId || collectionId)
       ? this.collections.filter(
-          (collection) =>
-            !(
-              collection.isSystem &&
-              collection.name === CollectionsService.QUEUE_NAME
-            ) &&
-            (!collectionId || collection.id !== collectionId),
+          (collection) => !collectionId || collection.id !== collectionId,
         )
       : this.collections;
 
@@ -547,76 +521,6 @@ export class CollectionsService implements OnModuleInit {
     return collection;
   }
 
-  async handleVideoStarted(
-    videoId: string,
-    sourceCollectionId?: string,
-  ): Promise<void> {
-    const queue = this.getQueueCollection();
-    if (!queue) {
-      this.logger.warn(
-        'Queue collection was not found while handling video started event',
-      );
-      return;
-    }
-
-    if (sourceCollectionId) {
-      const sourceCollection =
-        this.findCollectionByIdOrAlias(sourceCollectionId);
-      if (!sourceCollection) {
-        this.logger.warn(
-          `Source collection "${sourceCollectionId}" was not found for video started event`,
-        );
-      } else if (sourceCollection.id !== queue.id) {
-        const sourceItemIndex = sourceCollection.itemIds.indexOf(videoId);
-        if (sourceItemIndex === -1) {
-          this.logger.warn(
-            `Video "${videoId}" was not found in source collection "${sourceCollection.id}"; queue was not updated`,
-          );
-          return;
-        }
-
-        queue.itemIds = sourceCollection.itemIds.slice(sourceItemIndex);
-        queue.updatedAt = new Date().toISOString();
-        await this.persistenceService.saveCollections(this.collections);
-        return;
-      }
-    }
-
-    const currentItemIndex = queue.itemIds.indexOf(videoId);
-    if (currentItemIndex <= 0) {
-      return;
-    }
-
-    queue.itemIds.splice(0, currentItemIndex);
-    queue.updatedAt = new Date().toISOString();
-    await this.persistenceService.saveCollections(this.collections);
-  }
-
-  async handleVideoStopped(videoId: string, status?: string): Promise<void> {
-    if (status !== 'COMPLETED') {
-      return;
-    }
-
-    const queue = this.getQueueCollection();
-    if (!queue) {
-      this.logger.warn(
-        'Queue collection was not found while handling video stopped event',
-      );
-      return;
-    }
-
-    const filteredItemIds = queue.itemIds.filter(
-      (itemId) => itemId !== videoId,
-    );
-    if (filteredItemIds.length === queue.itemIds.length) {
-      return;
-    }
-
-    queue.itemIds = filteredItemIds;
-    queue.updatedAt = new Date().toISOString();
-    await this.persistenceService.saveCollections(this.collections);
-  }
-
   private nextDefaultName(): string {
     const defaultNamePattern = new RegExp(
       `^${CollectionsService.DEFAULT_PLAYLIST_PREFIX}(\\d+)$`,
@@ -633,14 +537,6 @@ export class CollectionsService implements OnModuleInit {
     return `${CollectionsService.DEFAULT_PLAYLIST_PREFIX}${
       maxCurrentNumber + 1
     }`;
-  }
-
-  private getQueueCollection(): CollectionEntity | undefined {
-    return this.collections.find(
-      (collection) =>
-        collection.isSystem &&
-        collection.name === CollectionsService.QUEUE_NAME,
-    );
   }
 
   private decorateEntriesWithPlaybackSource(
@@ -751,17 +647,9 @@ export class CollectionsService implements OnModuleInit {
     return `${baseUrl}${CollectionsService.CLOUD_EVENTS_PATH}`;
   }
 
-  private isQueueAlias(idOrAlias: string): boolean {
-    return idOrAlias.trim().toLowerCase() === CollectionsService.QUEUE_ALIAS;
-  }
-
   private findCollectionByIdOrAlias(
     idOrAlias: string,
   ): CollectionEntity | undefined {
-    if (this.isQueueAlias(idOrAlias)) {
-      return this.getQueueCollection();
-    }
-
     return this.collections.find((collection) => collection.id === idOrAlias);
   }
 
@@ -773,8 +661,6 @@ export class CollectionsService implements OnModuleInit {
     isCollectionMode?: boolean,
     isLoggedIn = true,
   ): CollectionEntry {
-    const isQueue = collection.name === CollectionsService.QUEUE_NAME;
-
     // Build cell tap actions for selector mode (item_id / collection_id).
     const tapActions = new ActionsBuilder();
     if (itemId) {
@@ -813,18 +699,9 @@ export class CollectionsService implements OnModuleInit {
       .addExtension('is_system', collection.isSystem);
 
     // Entry action menu (default mode only).
-    if (!itemId && ((!isQueue && baseUrl) || !collection.isSystem)) {
-      if (!isQueue && baseUrl) {
-        // 1. Add all to Queue
-        const addAllActions = new ActionsBuilder().addAction({
-          type: 'addAllToQueue',
-          options: {
-            url: `${baseUrl}/user/collections/${collection.id}`,
-          },
-        });
-        builder.addEntryActionByAlias('add_all_to_queue', addAllActions, true);
-
-        // 2. Play All
+    if (!itemId && (baseUrl || !collection.isSystem)) {
+      if (baseUrl) {
+        // 1. Play All
         if (collection.itemIds.length > 0) {
           const firstItemId = collection.itemIds[0];
           const firstEntryArray = this.mediaService.getEntriesForIds(

@@ -26,8 +26,8 @@ describe('Controllers Authorization Checks', () => {
   const mockMediaService: any = {
     getRadioFeed: jest.fn((baseUrl, isLoggedIn) => ({
       entry: isLoggedIn
-        ? [{ id: 'radio-1', actions: ['add_to_playlist', 'add_to_queue'] }]
-        : [{ id: 'radio-1', actions: ['add_to_queue'] }],
+        ? [{ id: 'radio-1', actions: ['add_to_playlist'] }]
+        : [{ id: 'radio-1', actions: [] }],
     })),
   };
 

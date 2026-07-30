@@ -5,19 +5,6 @@ export class SystemCollectionEntryBuilder extends EntryBuilder {
     super(new ActionsBuilder(), baseEntry);
   }
 
-  addAllToQueue(baseUrl: string, collectionId: string) {
-    const actionBuilder = new ActionsBuilder();
-    actionBuilder.addAction({
-      type: 'addAllToQueue',
-      options: {
-        url: `${baseUrl}/user/collections/${collectionId}`,
-      },
-    });
-
-    this.addEntryActionByAlias('add_all_to_queue', actionBuilder, true);
-    return this;
-  }
-
   playAll(firstEntry: any) {
     const actionBuilder = new ActionsBuilder();
     actionBuilder.addAction({

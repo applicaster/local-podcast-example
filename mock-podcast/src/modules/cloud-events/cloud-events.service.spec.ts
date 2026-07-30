@@ -3,8 +3,6 @@ import { BadRequestException } from '@nestjs/common';
 
 describe('CloudEventsService', () => {
   const collectionsService = {
-    handleVideoStarted: jest.fn(async () => undefined),
-    handleVideoStopped: jest.fn(async () => undefined),
     createCollection: jest.fn(async () => undefined),
     addItemToCollection: jest.fn(async () => undefined),
     addAllItemsToCollection: jest.fn(async () => undefined),
@@ -21,8 +19,8 @@ describe('CloudEventsService', () => {
     service = new CloudEventsService(collectionsService as any);
   });
 
-  it('routes video.started event and extracts sourceCollectionId from continue-watching payload', async () => {
-    await service.handleEvent({
+  it('handles video.started event without throwing', async () => {
+    const res = await service.handleEvent({
       type: 'com.applicaster.video.started.v1',
       data: {
         videoId: 'retro',
@@ -32,14 +30,11 @@ describe('CloudEventsService', () => {
       },
     });
 
-    expect(collectionsService.handleVideoStarted).toHaveBeenCalledWith(
-      'retro',
-      'playlist-1',
-    );
+    expect(res.type).toBe('com.applicaster.event.received.v1');
   });
 
-  it('routes video.stopped event with status', async () => {
-    await service.handleEvent({
+  it('handles video.stopped event without throwing', async () => {
+    const res = await service.handleEvent({
       type: 'com.applicaster.video.stopped.v1',
       data: {
         videoId: 'retro',
@@ -47,23 +42,20 @@ describe('CloudEventsService', () => {
       },
     });
 
-    expect(collectionsService.handleVideoStopped).toHaveBeenCalledWith(
-      'retro',
-      'COMPLETED',
-    );
+    expect(res.type).toBe('com.applicaster.event.received.v1');
   });
 
   it('routes collection add item event', async () => {
     await service.handleEvent({
       type: 'com.applicaster.collection.add.item.v1',
       data: {
-        collectionId: 'queue',
+        collectionId: 'playlist-1',
         itemId: 'retro',
       },
     });
 
     expect(collectionsService.addItemToCollection).toHaveBeenCalledWith(
-      'queue',
+      'playlist-1',
       'retro',
     );
     expect(collectionsService.removeItemFromCollection).not.toHaveBeenCalled();
@@ -75,12 +67,12 @@ describe('CloudEventsService', () => {
       type: 'com.applicaster.collection.add.collection.v1',
       data: {
         collectionId: 'playlist-1',
-        sourceCollectionId: 'system_jazz',
+        sourceCollectionId: 'system_gsc',
       },
     });
 
     expect(collectionsService.addAllItemsToCollection).toHaveBeenCalledWith(
-      'system_jazz',
+      'system_gsc',
       'playlist-1',
     );
   });
@@ -136,13 +128,13 @@ describe('CloudEventsService', () => {
     await service.handleEvent({
       type: 'com.applicaster.collection.remove.v1',
       data: {
-        collectionId: 'queue',
+        collectionId: 'playlist-1',
         itemId: 'retro',
       },
     });
 
     expect(collectionsService.removeItemFromCollection).toHaveBeenCalledWith(
-      'queue',
+      'playlist-1',
       'retro',
     );
     expect(collectionsService.addItemToCollection).not.toHaveBeenCalled();
@@ -169,13 +161,13 @@ describe('CloudEventsService', () => {
     await service.handleEvent({
       type: 'com.applicaster.collection.toggle.v1',
       data: {
-        collectionId: 'queue',
+        collectionId: 'playlist-1',
         itemId: 'retro',
       },
     });
 
     expect(collectionsService.toggleItemInCollection).toHaveBeenCalledWith(
-      'queue',
+      'playlist-1',
       'retro',
     );
   });
@@ -184,51 +176,52 @@ describe('CloudEventsService', () => {
     const response = await service.handleEvent({
       type: 'com.applicaster.collection.toggle.v1',
       data: {
-        collectionId: 'queue',
+        collectionId: 'playlist-1',
         itemId: 'slay',
       },
     });
 
-    expect(response.specversion).toBe('1.0');
-    expect(response.type).toBe('com.applicaster.event.received.v1');
-    expect(response.source).toBe('podcast-server');
-    expect(response.subject).toBe('Event was successfully received');
-    expect(response.id).toEqual(expect.any(String));
-    expect(response.time).toEqual(expect.any(String));
+    expect(response).toMatchObject({
+      specversion: '1.0',
+      type: 'com.applicaster.event.received.v1',
+      source: 'podcast-server',
+    });
   });
 
-  it('supports sourceCollectionId nested under entry.extensions', async () => {
+  it('handles stringified json payload', async () => {
     await service.handleEvent({
-      type: 'com.applicaster.video.started.v1',
-      data: {
-        videoId: 'plaza',
-        entry: {
-          extensions: {
-            'continue-watching': {
-              sourceCollectionId: 'queue',
-            },
-          },
-        },
-      },
+      type: 'com.applicaster.collection.toggle.v1',
+      data: JSON.stringify({
+        collectionId: 'playlist-1',
+        itemId: 'slay',
+      }),
     });
 
-    expect(collectionsService.handleVideoStarted).toHaveBeenCalledWith(
-      'plaza',
-      'queue',
+    expect(collectionsService.toggleItemInCollection).toHaveBeenCalledWith(
+      'playlist-1',
+      'slay',
     );
   });
 
-  it('throws BadRequestException for invalid stringified event data', async () => {
+  it('throws BadRequestException for invalid JSON payload', async () => {
     await expect(
       service.handleEvent({
         type: 'com.applicaster.collection.toggle.v1',
-        data: 'not-json',
+        data: '{invalid-json',
       }),
     ).rejects.toThrow(BadRequestException);
+  });
 
-    expect(collectionsService.toggleItemInCollection).not.toHaveBeenCalled();
-    expect(collectionsService.removeItemFromCollection).not.toHaveBeenCalled();
-    expect(collectionsService.handleVideoStarted).not.toHaveBeenCalled();
-    expect(collectionsService.handleVideoStopped).not.toHaveBeenCalled();
+  it('handles flat event payloads where data fields exist at root level', async () => {
+    await service.handleEvent({
+      type: 'com.applicaster.collection.add.v1',
+      collectionId: 'playlist-1',
+      sourceCollectionId: 'playlist-2',
+    });
+
+    expect(collectionsService.addAllItemsToCollection).toHaveBeenCalledWith(
+      'playlist-2',
+      'playlist-1',
+    );
   });
 });

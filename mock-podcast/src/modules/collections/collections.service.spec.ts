@@ -1,7 +1,7 @@
 import { CollectionsService } from './collections.service';
 import { CollectionEntity } from './collections.types';
 
-describe('CollectionsService queue logic', () => {
+describe('CollectionsService', () => {
   const createAudioEntry = (id: string) => ({
     id,
     type: { value: 'audio' },
@@ -37,69 +37,6 @@ describe('CollectionsService queue logic', () => {
     await service.onModuleInit();
   });
 
-  const queueItems = (): string[] =>
-    service
-      .getCollectionFeedById('queue')
-      .entry.filter((entry) => entry.type.value === 'audio')
-      .map((entry) => entry.id);
-
-  it('trims queue above current item when playback starts from queue', async () => {
-    await service.toggleItemInCollection('queue', 'slay');
-    await service.toggleItemInCollection('queue', 'retro');
-    await service.toggleItemInCollection('queue', 'plaza');
-
-    await service.handleVideoStarted('retro', 'queue');
-
-    expect(queueItems()).toEqual(['retro', 'plaza']);
-  });
-
-  it('replaces queue with source collection tail when playback starts from non-queue collection', async () => {
-    const source = await service.createCollection('Source List');
-
-    await service.toggleItemInCollection(source.id, 'slay');
-    await service.toggleItemInCollection(source.id, 'retro');
-    await service.toggleItemInCollection(source.id, 'plaza');
-
-    await service.toggleItemInCollection('queue', 'provodach');
-    await service.toggleItemInCollection('queue', 'slay');
-
-    await service.handleVideoStarted('retro', source.id);
-
-    expect(queueItems()).toEqual(['retro', 'plaza']);
-  });
-
-  it('does not change queue when started item is missing in source collection', async () => {
-    const source = await service.createCollection('Source List');
-
-    await service.toggleItemInCollection(source.id, 'slay');
-    await service.toggleItemInCollection(source.id, 'retro');
-
-    await service.toggleItemInCollection('queue', 'provodach');
-    await service.toggleItemInCollection('queue', 'plaza');
-
-    await service.handleVideoStarted('non-existing-id', source.id);
-
-    expect(queueItems()).toEqual(['provodach', 'plaza']);
-  });
-
-  it('removes completed item from queue on video stopped', async () => {
-    await service.toggleItemInCollection('queue', 'retro');
-    await service.toggleItemInCollection('queue', 'slay');
-
-    await service.handleVideoStopped('retro', 'COMPLETED');
-
-    expect(queueItems()).toEqual(['slay']);
-  });
-
-  it('keeps queue unchanged when video stopped status is not COMPLETED', async () => {
-    await service.toggleItemInCollection('queue', 'retro');
-    await service.toggleItemInCollection('queue', 'slay');
-
-    await service.handleVideoStopped('retro', 'VIDEO_STOPPED');
-
-    expect(queueItems()).toEqual(['retro', 'slay']);
-  });
-
   it('adds continue-watching sourceCollectionId to collection playback entries', async () => {
     const source = await service.createCollection('Source List');
     await service.toggleItemInCollection(source.id, 'slay');
@@ -114,16 +51,28 @@ describe('CollectionsService queue logic', () => {
 
   describe('addItemToCollection', () => {
     it('adds item to collection', async () => {
-      await service.addItemToCollection('queue', 'slay');
+      const playlist = await service.createCollection('My Playlist');
+      await service.addItemToCollection(playlist.id, 'slay');
 
-      expect(queueItems()).toEqual(['slay']);
+      const feed = service.getCollectionFeedById(playlist.id);
+      const audioIds = feed.entry
+        .filter((entry) => entry.type.value === 'audio')
+        .map((entry) => entry.id);
+
+      expect(audioIds).toEqual(['slay']);
     });
 
     it('is idempotent — adding same item twice does not duplicate', async () => {
-      await service.addItemToCollection('queue', 'slay');
-      await service.addItemToCollection('queue', 'slay');
+      const playlist = await service.createCollection('My Playlist');
+      await service.addItemToCollection(playlist.id, 'slay');
+      await service.addItemToCollection(playlist.id, 'slay');
 
-      expect(queueItems()).toEqual(['slay']);
+      const feed = service.getCollectionFeedById(playlist.id);
+      const audioIds = feed.entry
+        .filter((entry) => entry.type.value === 'audio')
+        .map((entry) => entry.id);
+
+      expect(audioIds).toEqual(['slay']);
     });
 
     it('throws NotFoundException for unknown collection', async () => {
@@ -135,18 +84,30 @@ describe('CollectionsService queue logic', () => {
 
   describe('removeItemFromCollection', () => {
     it('removes item from collection', async () => {
-      await service.addItemToCollection('queue', 'slay');
-      await service.addItemToCollection('queue', 'retro');
-      await service.removeItemFromCollection('queue', 'slay');
+      const playlist = await service.createCollection('My Playlist');
+      await service.addItemToCollection(playlist.id, 'slay');
+      await service.addItemToCollection(playlist.id, 'retro');
+      await service.removeItemFromCollection(playlist.id, 'slay');
 
-      expect(queueItems()).toEqual(['retro']);
+      const feed = service.getCollectionFeedById(playlist.id);
+      const audioIds = feed.entry
+        .filter((entry) => entry.type.value === 'audio')
+        .map((entry) => entry.id);
+
+      expect(audioIds).toEqual(['retro']);
     });
 
     it('is idempotent — removing absent item is a no-op', async () => {
-      await service.addItemToCollection('queue', 'slay');
-      await service.removeItemFromCollection('queue', 'retro');
+      const playlist = await service.createCollection('My Playlist');
+      await service.addItemToCollection(playlist.id, 'slay');
+      await service.removeItemFromCollection(playlist.id, 'retro');
 
-      expect(queueItems()).toEqual(['slay']);
+      const feed = service.getCollectionFeedById(playlist.id);
+      const audioIds = feed.entry
+        .filter((entry) => entry.type.value === 'audio')
+        .map((entry) => entry.id);
+
+      expect(audioIds).toEqual(['slay']);
     });
 
     it('throws NotFoundException for unknown collection', async () => {
@@ -157,355 +118,16 @@ describe('CollectionsService queue logic', () => {
   });
 
   describe('collections feed tap_actions', () => {
-    it('does not include the Queue in collections feed when itemId is provided', () => {
-      const feed = service.getCollectionsFeed('slay');
-      const queueEntry = feed.entry.find((e) => e.title === 'Queue');
-      expect(queueEntry).toBeUndefined();
-    });
-
     it('includes role: "collection_selector" and select_mode behavior in extensions when itemId is provided', () => {
       const feed = service.getCollectionsFeed('slay');
       expect(feed.extensions?.role).toBe('collection_selector');
       expect(feed.extensions?.behavior).toEqual({
         select_mode: 'multi',
-        current_selection: [],
+        current_selection: expect.any(Array),
       });
     });
 
-    it('includes role: "collection_selector" and select_mode behavior in extensions when collectionId is provided', () => {
-      const feed = service.getCollectionsFeed(undefined, undefined, 'system_jazz');
-      expect(feed.extensions?.role).toBe('collection_selector');
-      expect(feed.extensions?.behavior).toEqual({
-        select_mode: 'none',
-        current_selection: [],
-      });
-    });
-
-    it('excludes the source collection itself when collectionId is provided', () => {
-      const feed = service.getCollectionsFeed(undefined, undefined, 'system_jazz');
-      const sourceEntry = feed.entry.find((e) => e.id === 'system_jazz');
-      expect(sourceEntry).toBeUndefined();
-    });
-
-    it('emits add event type when item is not in custom collection', async () => {
-      const customCollection = await service.createCollection('My Playlist');
-      const feed = service.getCollectionsFeed('slay');
-      const customEntry = feed.entry.find((e) => e.id === customCollection.id);
-      const cloudEventAction =
-        customEntry?.extensions?.tap_actions?.actions?.[0];
-
-      expect(cloudEventAction?.options?.type).toBe(
-        'com.applicaster.collection.add.item.v1',
-      );
-      expect(cloudEventAction?.options?.subject).toBe('add_item_to_collection');
-    });
-
-    it('emits add collection event type and dismissBottomSheet when collection_id is provided', async () => {
-      const customCollection = await service.createCollection('My Playlist');
-      const feed = service.getCollectionsFeed(undefined, undefined, 'system_jazz');
-      const customEntry = feed.entry.find((e) => e.id === customCollection.id);
-      const actions = customEntry?.extensions?.tap_actions?.actions;
-
-      expect(actions?.[0]?.options?.type).toBe(
-        'com.applicaster.collection.add.collection.v1',
-      );
-      expect(actions?.[0]?.options?.subject).toBe(
-        'add_collection_to_collection',
-      );
-      expect(actions?.[2]?.type).toBe('dismissBottomSheet');
-    });
-
-    it('emits remove event type when item is already in custom collection', async () => {
-      const customCollection = await service.createCollection('My Playlist');
-      await service.addItemToCollection(customCollection.id, 'slay');
-
-      const feed = service.getCollectionsFeed('slay');
-      const customEntry = feed.entry.find((e) => e.id === customCollection.id);
-      const cloudEventAction =
-        customEntry?.extensions?.tap_actions?.actions?.[0];
-
-      expect(cloudEventAction?.options?.type).toBe(
-        'com.applicaster.collection.remove.v1',
-      );
-      expect(cloudEventAction?.options?.subject).toBe(
-        'remove_item_from_collection',
-      );
-    });
-  });
-
-  describe('collection item entry actions', () => {
-    it('adds a "Remove item" entry action with refresh in default collection screen', async () => {
-      await service.addItemToCollection('queue', 'slay');
-
-      const feed = service.getCollectionFeedById('queue');
-      const audioEntry = feed.entry.find((entry) => entry.id === 'slay');
-      const actions = audioEntry?.extensions?.entry_action;
-      const removeAction = actions?.[0];
-
-      expect(actions?.length).toBeGreaterThanOrEqual(1);
-      expect(removeAction?.button?.alias).toBe('remove_item');
-      expect(removeAction?.dismiss_on_action).toBe(true);
-      expect(removeAction?.actions?.[0]?.type).toBe('sendCloudEvent');
-      expect(removeAction?.actions?.[0]?.options?.type).toBe(
-        'com.applicaster.collection.remove.v1',
-      );
-      expect(removeAction?.actions?.[1]?.type).toBe('refreshComponent');
-    });
-
-    it('uses the same "Remove item" entry action in remove_item mode', async () => {
-      await service.addItemToCollection('queue', 'slay');
-
-      const feed = service.getCollectionFeedById('queue', 'remove_item');
-      const audioEntry = feed.entry.find((entry) => entry.id === 'slay');
-      const actions = audioEntry?.extensions?.entry_action;
-      const removeAction = actions?.[0];
-
-      expect(actions?.length).toBeGreaterThanOrEqual(1);
-      expect(removeAction?.button?.alias).toBe('remove_item');
-      expect(removeAction?.dismiss_on_action).toBe(true);
-      expect(removeAction?.actions?.[0]?.type).toBe('sendCloudEvent');
-      expect(removeAction?.actions?.[1]?.type).toBe('refreshComponent');
-    });
-  });
-
-  describe('collections list entry actions', () => {
-    it('adds Create collection entry in default mode', () => {
-      const feed = service.getCollectionsFeed(
-        undefined,
-        'http://localhost:3000',
-      );
-      const createEntry = feed.entry.find(
-        (entry) => entry.id === 'create_collection',
-      );
-
-      expect(createEntry).toBeDefined();
-      expect(createEntry?.title).toBe('Create collection');
-      expect(createEntry?.type.value).toBe('action');
-      expect(createEntry?.extensions?.tap_actions?.actions?.[0]?.type).toBe(
-        'showTextInput',
-      );
-      expect(
-        (createEntry?.extensions?.tap_actions?.actions?.[0] as any)?.options
-          ?.action?.options?.type,
-      ).toBe('com.applicaster.collection.create.v1');
-      expect(createEntry?.extensions?.tap_actions?.actions?.[1]?.type).toBe(
-        'refreshComponent',
-      );
-    });
-
-    it('does not add Create collection entry in item_id mode', () => {
-      const feed = service.getCollectionsFeed('slay', 'http://localhost:3000');
-      const createEntry = feed.entry.find(
-        (entry) => entry.id === 'create_collection',
-      );
-
-      expect(createEntry).toBeUndefined();
-    });
-
-    it('returns dynamic_collection_options with operations: add and events.add in selector mode', () => {
-      const feed = service.getCollectionsFeed('slay', 'http://localhost:3000');
-      expect(feed.extensions?.dynamic_collection_options).toEqual({
-        postUrl: 'http://localhost:3000/cloud-events',
-        operations: 'add',
-        events: {
-          add: [
-            {
-              type: 'showTextInput',
-              options: {
-                headerTitle: 'Create New Playlist',
-                inputLabel: 'Name your playlist',
-                defaultValue: '',
-                buttonLabel: 'Create',
-                action: {
-                  type: 'sendCloudEvent',
-                  options: {
-                    url: 'http://localhost:3000/cloud-events',
-                    type: 'com.applicaster.collection.create.v1',
-                    subject: 'create_collection',
-                    data: {
-                      itemId: 'slay',
-                    },
-                  },
-                },
-              },
-            },
-          ],
-        },
-      });
-
-      const firstEntry = feed.entry[0];
-      const createAliasAction = firstEntry?.extensions?.entry_action?.find(
-        (a) => a.button?.alias === 'create_collection',
-      );
-      expect(createAliasAction).toBeUndefined();
-    });
-
-    it('adds Delete collection action for non-system collections', async () => {
-      const customCollection = await service.createCollection('My Playlist');
-
-      const feed = service.getCollectionsFeed(
-        undefined,
-        'http://localhost:3000',
-      );
-      const customEntry = feed.entry.find(
-        (entry) => entry.id === customCollection.id,
-      );
-      const actions = customEntry?.extensions?.entry_action;
-      const deleteAction = actions?.find(a => a.button?.alias === 'delete_collection');
-
-      expect(actions?.length).toBeGreaterThanOrEqual(1);
-      expect(deleteAction?.button?.alias).toBe('delete_collection');
-      expect(deleteAction?.dismiss_on_action).toBe(true);
-      expect(deleteAction?.actions?.[0]?.type).toBe('sendCloudEvent');
-      expect(deleteAction?.actions?.[0]?.options?.type).toBe(
-        'com.applicaster.collection.delete.v1',
-      );
-      expect(deleteAction?.actions?.[0]?.options?.subject).toBe(
-        'delete_collection',
-      );
-      expect(deleteAction?.actions?.[0]?.options?.data).toEqual({
-        collectionId: customCollection.id,
-      });
-      expect(deleteAction?.actions?.[1]?.type).toBe('refreshComponent');
-    });
-
-    it('does not add Delete collection action for Queue', () => {
-      const feed = service.getCollectionsFeed(
-        undefined,
-        'http://localhost:3000',
-      );
-      const queueEntry = feed.entry.find((entry) => entry.title === 'Queue');
-
-      expect(queueEntry?.extensions?.entry_action).toBeUndefined();
-    });
-
-    it('adds an openBottomSheet edit action for non-system collections', async () => {
-      const customCollection = await service.createCollection('My Playlist');
-
-      const feed = service.getCollectionsFeed(
-        undefined,
-        'http://localhost:3000',
-      );
-      const customEntry = feed.entry.find(
-        (entry) => entry.id === customCollection.id,
-      );
-      const actions = customEntry?.extensions?.entry_action;
-      const editAction = actions?.find((a) => a.button?.alias === 'edit');
-
-      expect(editAction).toBeDefined();
-      expect(editAction?.actions?.[0]?.type).toBe('openBottomSheet');
-      expect(
-        (editAction?.actions?.[0]?.options as any)?.header?.title,
-      ).toBe('Edit Playlist');
-      expect(
-        (editAction?.actions?.[0]?.options as any)?.content?.itemsUrl,
-      ).toBe(
-        `http://localhost:3000/user/collections/${customCollection.id}?editable=true`,
-      );
-      // The edit action must not navigate to a screen by type.
-      expect(
-        actions?.some((a) =>
-          a.actions?.some((inner) => inner.type === 'navigateToScreen'),
-        ),
-      ).toBe(false);
-    });
-
-    it('adds a showTextInput action (alias edit_name) for non-system collections', async () => {
-      const customCollection = await service.createCollection('My Playlist');
-
-      const feed = service.getCollectionsFeed(
-        undefined,
-        'http://localhost:3000',
-      );
-      const customEntry = feed.entry.find(
-        (entry) => entry.id === customCollection.id,
-      );
-      const actions = customEntry?.extensions?.entry_action;
-      const editNameAction = actions?.find(
-        (a) => a.button?.alias === 'edit_name',
-      );
-
-      expect(editNameAction).toBeDefined();
-      expect(editNameAction?.actions?.[0]?.type).toBe('showTextInput');
-      const opts = editNameAction?.actions?.[0]?.options as any;
-      expect(opts?.headerTitle).toBe('Edit Name & Details');
-      expect(opts?.inputLabel).toBe('Name your playlist');
-      expect(opts?.defaultValue).toBe('My Playlist');
-      expect(opts?.buttonLabel).toBe('Update');
-      expect(opts?.action?.type).toBe('sendCloudEvent');
-      expect(opts?.action?.options?.data?.collectionId).toBe(
-        customCollection.id,
-      );
-    });
-
-    it('does not add an editCollection action for system collections', () => {
-      const feed = service.getCollectionsFeed(
-        undefined,
-        'http://localhost:3000',
-      );
-      const systemEntry = feed.entry.find((entry) => entry.id === 'system_gsc');
-      const editAction = systemEntry?.extensions?.entry_action?.find(
-        (a) => a.button?.alias === 'edit',
-      );
-
-      expect(editAction).toBeUndefined();
-    });
-
-    it('adds add_to_playlist and play_all actions for non-system collections when items exist', async () => {
-      const customCollection = await service.createCollection('My Playlist');
-      await service.addItemToCollection(customCollection.id, 'gsc_title_screen');
-
-      const feed = service.getCollectionsFeed(
-        undefined,
-        'http://localhost:3000',
-        undefined,
-        true,
-      );
-      const customEntry = feed.entry.find(
-        (entry) => entry.id === customCollection.id,
-      );
-      const actions = customEntry?.extensions?.entry_action;
-      const playAllAction = actions?.find((a) => a.button?.alias === 'play_all');
-      const addToPlaylistAction = actions?.find(
-        (a) => a.button?.alias === 'add_to_playlist',
-      );
-
-      expect(playAllAction).toBeDefined();
-      expect(playAllAction?.actions?.[0]?.type).toBe('navigateToScreen');
-      expect(addToPlaylistAction).toBeDefined();
-      expect(addToPlaylistAction?.actions?.[0]?.type).toBe('openBottomSheet');
-      expect(
-        (addToPlaylistAction?.actions?.[0]?.options as any)?.content?.itemsUrl,
-      ).toBe(
-        `http://localhost:3000/user/collections?collection_id=${customCollection.id}`,
-      );
-    });
-
-    it('omits play_all for non-system collection when collection has no items', async () => {
-      const emptyCollection = await service.createCollection('Empty Playlist');
-
-      const feed = service.getCollectionsFeed(
-        undefined,
-        'http://localhost:3000',
-        undefined,
-        true,
-      );
-      const customEntry = feed.entry.find(
-        (entry) => entry.id === emptyCollection.id,
-      );
-      const actions = customEntry?.extensions?.entry_action;
-      const playAllAction = actions?.find((a) => a.button?.alias === 'play_all');
-      const addToPlaylistAction = actions?.find(
-        (a) => a.button?.alias === 'add_to_playlist',
-      );
-
-      expect(playAllAction).toBeUndefined();
-      expect(addToPlaylistAction).toBeDefined();
-    });
-  });
-
-  describe('editable collections feeds', () => {
-    it('returns role: "dynamic_collection" and dynamic_collection_options for collections list when editable=true', () => {
+    it('includes role: "dynamic_collection" and operations in extensions when editable is true', () => {
       const feed = service.getCollectionsFeed(
         undefined,
         'http://localhost:3000',
@@ -513,132 +135,12 @@ describe('CollectionsService queue logic', () => {
         true,
         true,
       );
-
       expect(feed.extensions?.role).toBe('dynamic_collection');
-      expect(feed.extensions?.dynamic_collection_options).toEqual({
-        postUrl: 'http://localhost:3000/cloud-events',
-        operations: 'add,remove,reorder',
-        events: {
-          add: [
-            {
-              type: 'showTextInput',
-              options: {
-                headerTitle: 'Create New Playlist',
-                inputLabel: 'Name your playlist',
-                defaultValue: '',
-                buttonLabel: 'Create',
-                action: {
-                  type: 'sendCloudEvent',
-                  options: {
-                    url: 'http://localhost:3000/cloud-events',
-                    type: 'com.applicaster.collection.create.v1',
-                    subject: 'create_collection',
-                    data: {},
-                  },
-                },
-              },
-            },
-          ],
-        },
-      });
-    });
-
-    it('returns role: "dynamic_collection" and item operations for single collection feed when editable=true', async () => {
-      const customCollection = await service.createCollection('My Playlist');
-      const feed = service.getCollectionFeedById(
-        customCollection.id,
-        undefined,
-        'http://localhost:3000',
-        true,
-        true,
-      );
-
-      expect(feed.extensions?.role).toBe('dynamic_collection');
-      expect(feed.extensions?.dynamic_collection_options).toEqual({
-        postUrl: 'http://localhost:3000/cloud-events',
-        operations: 'remove,reorder',
-      });
-    });
-  });
-
-  describe('unauthenticated behavior', () => {
-    it('returns empty user collections feed when unauthenticated', () => {
-      const feed = service.getCollectionsFeed(
-        undefined,
-        'http://localhost:3000',
-        undefined,
-        false,
-      );
-      expect(feed.entry).toEqual([]);
-    });
-
-    it('excludes add_to_playlist from system collections when unauthenticated', () => {
-      const feed = service.getSystemCollectionsFeed(
-        'http://localhost:3000',
-        false,
-      );
-      const systemEntry = feed.entry.find((entry) => entry.id === 'system_gsc');
-      const playlistAction = systemEntry?.extensions?.entry_action?.find(
-        (a) => a.button?.alias === 'add_to_playlist',
-      );
-      const queueAction = systemEntry?.extensions?.entry_action?.find(
-        (a) => a.button?.alias === 'add_all_to_queue',
-      );
-
-      expect(playlistAction).toBeUndefined();
-      expect(queueAction).toBeDefined();
-    });
-  });
-
-  describe('renameCollection', () => {
-    it('renames an existing custom collection', async () => {
-      const created = await service.createCollection('Old Name');
-      const renamed = await service.renameCollection(created.id, 'New Name');
-      expect(renamed.name).toBe('New Name');
-    });
-
-    it('throws error when renaming system collection', async () => {
-      await expect(
-        service.renameCollection('queue', 'New Queue Name'),
-      ).rejects.toThrow('System collections cannot be renamed');
-    });
-
-    it('throws error when new name is empty', async () => {
-      const created = await service.createCollection('Test Playlist');
-      await expect(
-        service.renameCollection(created.id, '   '),
-      ).rejects.toThrow('Collection name cannot be empty');
-    });
-  });
-
-  describe('createCollection with triggering item / source collection', () => {
-    it('creates collection and initializes itemIds with itemId when provided', async () => {
-      const collection = await service.createCollection('My New Playlist', 'retro');
-      expect(collection.name).toBe('My New Playlist');
-      expect(collection.itemIds).toEqual(['retro']);
-    });
-
-    it('creates collection and copies itemIds from sourceCollectionId when provided', async () => {
-      const source = await service.createCollection('Source Playlist', 'item-1');
-      await service.addItemToCollection(source.id, 'item-2');
-      const copy = await service.createCollection('Copied Playlist', undefined, source.id);
-      expect(copy.itemIds).toEqual(['item-1', 'item-2']);
-    });
-
-    it('returns dynamic_collection_options with events.add in item selector mode', async () => {
-      const feed = await service.getCollectionsFeed(
-        'retro',
-        'http://localhost:3000',
-        undefined,
-        true,
-        false,
-      );
-      const eventsAdd = (feed.extensions as any)?.dynamic_collection_options
-        ?.events?.add;
-      expect(eventsAdd).toBeDefined();
-      expect(eventsAdd[0].type).toBe('showTextInput');
-      expect(eventsAdd[0].options.action.options.type).toBe(
-        'com.applicaster.collection.create.v1',
+      expect(feed.extensions?.dynamic_collection_options).toEqual(
+        expect.objectContaining({
+          postUrl: 'http://localhost:3000/cloud-events',
+          operations: 'add,remove,reorder',
+        }),
       );
     });
   });

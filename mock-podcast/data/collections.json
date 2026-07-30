@@ -1,21 +1,10 @@
 [
   {
-    "id": "80141d89-f68c-4aeb-8c9e-78b95616a193",
+    "id": "5a53737d-f253-4720-ada6-48b2f3342019",
     "name": "Queue",
-    "itemIds": [
-      "gsc_title_screen",
-      "gsc_new_bark_town",
-      "gsc_elm_lab",
-      "gsc_route_29",
-      "gsc_cherrygrove_city",
-      "gsc_pokemon_center",
-      "gsc_azalea_town",
-      "gsc_goldenrod_city",
-      "gsc_national_park",
-      "gsc_ecruteak_city"
-    ],
-    "createdAt": "2026-07-09T19:09:45.253Z",
-    "updatedAt": "2026-07-17T18:53:34.834Z",
+    "itemIds": [],
+    "createdAt": "2026-07-30T13:14:48.546Z",
+    "updatedAt": "2026-07-30T13:14:48.547Z",
     "isSystem": true
   },
   {
