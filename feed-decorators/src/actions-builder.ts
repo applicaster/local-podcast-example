@@ -100,6 +100,26 @@ export class ActionsBuilder {
   }
 
   /**
+   * Adds an addToQueue action to the actions list.
+   */
+  addToQueue() {
+    this.actions.push({ type: 'addToQueue', options: {} });
+    return this;
+  }
+
+  /**
+   * Adds an addAllToQueue action to the actions list.
+   * @param opts Options containing the collection URL
+   */
+  addAllToQueue(opts: { url: string }) {
+    this.actions.push({
+      type: 'addAllToQueue',
+      options: opts,
+    });
+    return this;
+  }
+
+  /**
    * Adds a confirmDialog action to the actions list.
    * @param opts Options for the confirm dialog (message, title, okButtonText, cancelButtonText)
    */

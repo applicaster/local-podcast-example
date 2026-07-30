@@ -281,9 +281,19 @@ export const RefreshComponentActionSchema = z.object({
     })
     .optional(),
 });
-export type RefreshComponentAction = z.infer<
-  typeof RefreshComponentActionSchema
->;
+export const AddToQueueActionSchema = z.object({
+  type: z.literal('addToQueue'),
+  options: z.object({}).optional(),
+});
+export type AddToQueueAction = z.infer<typeof AddToQueueActionSchema>;
+
+export const AddAllToQueueActionSchema = z.object({
+  type: z.literal('addAllToQueue'),
+  options: z.object({
+    url: z.string().min(1),
+  }),
+});
+export type AddAllToQueueAction = z.infer<typeof AddAllToQueueActionSchema>;
 
 export const ZappActionSchema = z.union([
   OpenBottomSheetActionSchema,
@@ -301,6 +311,8 @@ export const ZappActionSchema = z.union([
   CompleteFTUEActionSchema,
   CompleteHookActionSchema,
   RefreshComponentActionSchema,
+  AddToQueueActionSchema,
+  AddAllToQueueActionSchema,
 ]);
 export type ZappAction = z.infer<typeof ZappActionSchema>;
 

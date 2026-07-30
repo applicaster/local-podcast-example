@@ -18,7 +18,9 @@ const EmptyOptionalSchema = z.object({}).optional();
 const RefreshComponentOptionsSchema = z
   .object({ componentId: z.string().optional() })
   .optional();
-const CompleteHookOptionsSchema = CompleteHookActionOptionsSchema.optional();
+const AddAllToQueueOptionsSchema = z.object({
+  url: z.string().min(1),
+});
 
 export const actionSchemas: Record<string, z.ZodTypeAny> = {
   openBottomSheet: OpenBottomSheetActionOptionsSchema,
@@ -36,8 +38,10 @@ export const actionSchemas: Record<string, z.ZodTypeAny> = {
   navigateToScreen: NavigateToScreenActionOptionsSchema,
   setUILanguage: SetUILanguageActionOptionsSchema,
   completeFTUE: EmptyOptionalSchema,
-  completeHook: CompleteHookOptionsSchema,
+  completeHook: CompleteHookActionOptionsSchema.optional(),
   refreshComponent: RefreshComponentOptionsSchema,
+  addToQueue: EmptyOptionalSchema,
+  addAllToQueue: AddAllToQueueOptionsSchema,
 };
 
 export function validateActionPayload(type: string, payload: any): boolean {

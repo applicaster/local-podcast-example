@@ -168,6 +168,20 @@ export interface RefreshComponentAction {
   options?: RefreshComponentOptions;
 }
 
+export interface AddToQueueAction {
+  type: 'addToQueue';
+  options?: Record<string, never>;
+}
+
+export interface AddAllToQueueOptions {
+  url: string;
+}
+
+export interface AddAllToQueueAction {
+  type: 'addAllToQueue';
+  options: AddAllToQueueOptions;
+}
+
 export type Action =
   | OpenBottomSheetAction
   | SendCloudEventAction
@@ -184,6 +198,8 @@ export type Action =
   | CompleteFTUEAction
   | CompleteHookAction
   | RefreshComponentAction
+  | AddToQueueAction
+  | AddAllToQueueAction
   | {
       type: string;
       options?: Record<string, any>;

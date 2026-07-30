@@ -701,7 +701,13 @@ export class CollectionsService implements OnModuleInit {
     // Entry action menu (default mode only).
     if (!itemId && (baseUrl || !collection.isSystem)) {
       if (baseUrl) {
-        // 1. Play All
+        // 1. Add all to Queue
+        const addAllActions = new ActionsBuilder().addAllToQueue({
+          url: `${baseUrl}/user/collections/${collection.id}`,
+        });
+        builder.addEntryActionByAlias('add_all_to_queue', addAllActions, true);
+
+        // 2. Play All
         if (collection.itemIds.length > 0) {
           const firstItemId = collection.itemIds[0];
           const firstEntryArray = this.mediaService.getEntriesForIds(
