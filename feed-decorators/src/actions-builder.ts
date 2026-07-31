@@ -1,4 +1,7 @@
-import { OpenBottomSheetActionOptions } from './zod-definitions';
+import {
+  OpenBottomSheetActionOptions,
+  ShowToastActionOptions,
+} from './zod-definitions';
 
 export type Action = {
   type: string;
@@ -120,6 +123,22 @@ export class ActionsBuilder {
   }
 
   /**
+   * Adds a showToast action to the actions list.
+   * @param message The message to display in the toast notification
+   * @param options Optional configuration for id, extraMessage, timeout (in ms), and custom style (colors, font, etc.)
+   */
+  showToast(
+    message: string,
+    options?: Omit<ShowToastActionOptions, 'message'>,
+  ) {
+    this.actions.push({
+      type: 'showToast',
+      options: { message, ...options },
+    });
+    return this;
+  }
+
+  /**
    * Adds a confirmDialog action to the actions list.
    * @param opts Options for the confirm dialog (message, title, okButtonText, cancelButtonText)
    */
@@ -143,14 +162,14 @@ export class ActionsBuilder {
 
   /**
    * Adds a showTextInput action to the actions list.
-   * @param opts Options for showTextInput (headerTitle, inputLabel, defaultValue, buttonLabel, action)
+   * @param opts Options for showTextInput (headerTitle, inputLabel, defaultValue, buttonLabel, actions)
    */
   showTextInput(opts: {
     headerTitle?: string;
     inputLabel?: string;
     defaultValue?: string;
     buttonLabel?: string;
-    action?: Action;
+    actions: Action[];
   }) {
     this.actions.push({
       type: 'showTextInput',

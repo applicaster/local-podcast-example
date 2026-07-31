@@ -48,7 +48,7 @@ export interface ShowTextInputOptions {
   inputLabel?: string;
   defaultValue?: string;
   buttonLabel?: string;
-  action?: Action;
+  actions: Action[];
 }
 
 export interface ShowTextInputAction {

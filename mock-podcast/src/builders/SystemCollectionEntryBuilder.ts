@@ -7,9 +7,11 @@ export class SystemCollectionEntryBuilder extends EntryBuilder {
 
   addAllToQueue(baseUrl: string, collectionId: string) {
     const actionBuilder = new ActionsBuilder();
-    actionBuilder.addAllToQueue({
-      url: `${baseUrl}/user/collections/${collectionId}`,
-    });
+    actionBuilder
+      .addAllToQueue({
+        url: `${baseUrl}/user/collections/${collectionId}`,
+      })
+      .showToast('Added to queue');
 
     this.addEntryActionByAlias('add_all_to_queue', actionBuilder, true);
     return this;

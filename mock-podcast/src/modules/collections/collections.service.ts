@@ -350,24 +350,34 @@ export class CollectionsService implements OnModuleInit {
       inputLabel: 'Name your playlist',
       defaultValue: '',
       buttonLabel: 'Create',
-      action: {
-        type: 'sendCloudEvent',
-        options: {
-          url: cloudEventsUrl,
-          type: CLOUD_EVENT_TYPES.COLLECTION_CREATE,
-          subject: 'create_collection',
-          data: {
-            ...(itemId && { itemId }),
-            ...(sourceCollectionId && { sourceCollectionId }),
+      actions: [
+        {
+          type: 'sendCloudEvent',
+          options: {
+            url: cloudEventsUrl,
+            type: CLOUD_EVENT_TYPES.COLLECTION_CREATE,
+            subject: 'create_collection',
+            data: {
+              ...(itemId && { itemId }),
+              ...(sourceCollectionId && { sourceCollectionId }),
+            },
           },
         },
-      },
+        {
+          type: 'showToast',
+          options: {
+            message: 'Playlist created.',
+          },
+        },
+        {
+          type: 'refreshComponent',
+        },
+      ],
     });
   }
 
   private createCreateCollectionEntry(cloudEventsUrl: string): CollectionEntry {
-    const tapActions = this.createCreateCollectionActions(cloudEventsUrl)
-      .refreshComponent();
+    const tapActions = this.createCreateCollectionActions(cloudEventsUrl);
 
     const entry = new EntryBuilder(tapActions, {
       id: 'create_collection',

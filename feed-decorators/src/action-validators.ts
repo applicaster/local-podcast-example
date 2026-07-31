@@ -12,6 +12,7 @@ import {
   NavigateToScreenActionOptionsSchema,
   SetUILanguageActionOptionsSchema,
   CompleteHookActionOptionsSchema,
+  ShowToastActionOptionsSchema,
 } from './zod-definitions';
 
 const EmptyOptionalSchema = z.object({}).optional();
@@ -42,6 +43,7 @@ export const actionSchemas: Record<string, z.ZodTypeAny> = {
   refreshComponent: RefreshComponentOptionsSchema,
   addToQueue: EmptyOptionalSchema,
   addAllToQueue: AddAllToQueueOptionsSchema,
+  showToast: ShowToastActionOptionsSchema,
 };
 
 export function validateActionPayload(type: string, payload: any): boolean {

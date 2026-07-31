@@ -151,6 +151,14 @@ describe('ActionsBuilder + Zod validation', () => {
         inputLabel: 'Name',
         defaultValue: 'My Playlist',
         buttonLabel: 'Save',
+        actions: [
+          {
+            type: 'sendCloudEvent',
+            options: {
+              url: 'https://example.com/events',
+            },
+          },
+        ],
       })
       .build();
     const action = actions[0];

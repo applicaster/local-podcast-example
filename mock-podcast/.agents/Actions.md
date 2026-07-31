@@ -381,17 +381,28 @@ Triggers a text input bottom sheet/dialog to create or edit text (e.g. playlist 
     "inputLabel": "Name your playlist",
     "defaultValue": "Summer Hits",
     "buttonLabel": "Update",
-    "action": {
-      "type": "sendCloudEvent",
-      "options": {
-        "url": "https://server.com/cloud-events",
-        "type": "com.applicaster.collection.create.v1",
-        "subject": "edit_collection",
-        "data": {
-          "collectionId": "playlist-123"
+    "actions": [
+      {
+        "type": "sendCloudEvent",
+        "options": {
+          "url": "https://server.com/cloud-events",
+          "type": "com.applicaster.collection.create.v1",
+          "subject": "edit_collection",
+          "data": {
+            "collectionId": "playlist-123"
+          }
         }
+      },
+      {
+        "type": "showToast",
+        "options": {
+          "message": "Playlist renamed."
+        }
+      },
+      {
+        "type": "refreshComponent"
       }
-    }
+    ]
   }
 }
 ```
@@ -579,13 +590,16 @@ Passing `selector` to generated behavior is not currently supported.
 Used for feeds where the user selects items or collections (e.g., choice lists or playlist selection). Works with a `behavior` block defining `select_mode` (`single` | `multi`) and `current_selection`.
 
 ```json
-"extensions": {
-  "role": "collection_selector",
-  "behavior": {
-    "select_mode": "multi",
-    "current_selection": ["playlist-1"]
-  }
+{
+    "extensions": {
+      "role": "collection_selector",
+      "behavior": {
+        "select_mode": "multi",
+        "current_selection": ["playlist-1"]
+      }
+    }
 }
+
 ```
 
 ### dynamic_collection
@@ -613,53 +627,63 @@ When you declare `"operations": "remove,reorder"` in `dynamic_collection_options
 
 ##### Item-Scoped Entry Actions Schema (`extensions.entry_action` on each entry):
 ```json
-"entry": [
-  {
-    "id": "song-123",
-    "title": "Retro",
-    "extensions": {
-      "entry_action": [
-        {
-          "button": { "alias": "remove_item" },
-          "dismiss_on_action": true,
-          "actions": [
-            {
-              "type": "sendCloudEvent",
-              "options": {
-                "url": "https://server.com/cloud-events",
-                "type": "com.applicaster.collection.remove.v1",
-                "subject": "remove_item_from_collection",
-                "data": {
-                  "collectionId": "my-playlist-id",
-                  "itemId": "song-123"
-                }
-              }
+{
+  "entry": [
+    {
+      "id": "song-123",
+      "title": "Retro",
+      "extensions": {
+        "entry_action": [
+          {
+            "button": {
+              "alias": "remove_item"
             },
-            { "type": "refreshComponent" }
-          ]
-        },
-        {
-          "button": { "alias": "reorder_item" },
-          "dismiss_on_action": false,
-          "actions": [
-            {
-              "type": "sendCloudEvent",
-              "options": {
-                "url": "https://server.com/cloud-events",
-                "type": "com.applicaster.collection.reorder.v1",
-                "subject": "reorder_item_in_collection",
-                "data": {
-                  "collectionId": "my-playlist-id"
+            "dismiss_on_action": true,
+            "actions": [
+              {
+                "type": "sendCloudEvent",
+                "options": {
+                  "url": "https://server.com/cloud-events",
+                  "type": "com.applicaster.collection.remove.v1",
+                  "subject": "remove_item_from_collection",
+                  "data": {
+                    "collectionId": "my-playlist-id",
+                    "itemId": "song-123"
+                  }
                 }
+              },
+              {
+                "type": "refreshComponent"
               }
+            ]
+          },
+          {
+            "button": {
+              "alias": "reorder_item"
             },
-            { "type": "refreshComponent" }
-          ]
-        }
-      ]
+            "dismiss_on_action": false,
+            "actions": [
+              {
+                "type": "sendCloudEvent",
+                "options": {
+                  "url": "https://server.com/cloud-events",
+                  "type": "com.applicaster.collection.reorder.v1",
+                  "subject": "reorder_item_in_collection",
+                  "data": {
+                    "collectionId": "my-playlist-id"
+                  }
+                }
+              },
+              {
+                "type": "refreshComponent"
+              }
+            ]
+          }
+        ]
+      }
     }
-  }
-]
+  ]
+}
 ```
 
 #### 4. Cloud Event Routing Table (Dispatched by Client)
@@ -787,32 +811,45 @@ Used for single playlist track lists (`GET /user/collections/:id?editable=true`)
 ##### Example B: Editable Playlists List with Inline Creation (`add,remove,reorder`)
 Used for playlist management screens (`GET /user/collections?editable=true`), allowing deletion, reordering, and inline playlist creation via a text input modal:
 ```json
-"extensions": {
-  "role": "dynamic_collection",
-  "dynamic_collection_options": {
-    "postUrl": "https://server.com/cloud-events",
-    "operations": "add,remove,reorder",
-    "events": {
-      "add": [
-        {
-          "type": "showTextInput",
-          "options": {
-            "headerTitle": "Create New Playlist",
-            "inputLabel": "Playlist Name",
-            "defaultValue": "",
-            "buttonLabel": "Create",
-            "action": {
-              "type": "sendCloudEvent",
-              "options": {
-                "url": "https://server.com/cloud-events",
-                "type": "com.applicaster.collection.create.v1",
-                "subject": "create_collection",
-                "data": {}
-              }
+{
+  "extensions": {
+    "role": "dynamic_collection",
+    "dynamic_collection_options": {
+      "postUrl": "https://server.com/cloud-events",
+      "operations": "add,remove,reorder",
+      "events": {
+        "add": [
+          {
+            "type": "showTextInput",
+            "options": {
+              "headerTitle": "Create New Playlist",
+              "inputLabel": "Playlist Name",
+              "defaultValue": "",
+              "buttonLabel": "Create",
+              "actions": [
+                {
+                  "type": "sendCloudEvent",
+                  "options": {
+                    "url": "https://server.com/cloud-events",
+                    "type": "com.applicaster.collection.create.v1",
+                    "subject": "create_collection",
+                    "data": {}
+                  }
+                },
+                {
+                  "type": "showToast",
+                  "options": {
+                    "message": "Playlist created."
+                  }
+                },
+                {
+                  "type": "refreshComponent"
+                }
+              ]
             }
           }
-        }
-      ]
+        ]
+      }
     }
   }
 }
@@ -821,38 +858,53 @@ Used for playlist management screens (`GET /user/collections?editable=true`), al
 ##### Example C: Selector Mode with "+ Create Playlist" (`collection_selector` + `dynamic_collection_options`)
 `dynamic_collection_options` can be combined with `role: "collection_selector"` so users can create a new playlist directly inside a track's "Add to Playlist" selector modal (`GET /user/collections?item_id=<id>`):
 ```json
-"extensions": {
-  "role": "collection_selector",
-  "behavior": {
-    "select_mode": "multi",
-    "current_selection": ["playlist-1"]
-  },
-  "dynamic_collection_options": {
-    "postUrl": "https://server.com/cloud-events",
-    "operations": "add",
-    "events": {
-      "add": [
-        {
-          "type": "showTextInput",
-          "options": {
-            "headerTitle": "Create New Playlist",
-            "inputLabel": "Playlist Name",
-            "defaultValue": "",
-            "buttonLabel": "Create",
-            "action": {
-              "type": "sendCloudEvent",
-              "options": {
-                "url": "https://server.com/cloud-events",
-                "type": "com.applicaster.collection.create.v1",
-                "subject": "create_collection",
-                "data": {
-                  "itemId": "song-123"
+{
+  "extensions": {
+    "role": "collection_selector",
+    "behavior": {
+      "select_mode": "multi",
+      "current_selection": [
+        "playlist-1"
+      ]
+    },
+    "dynamic_collection_options": {
+      "postUrl": "https://server.com/cloud-events",
+      "operations": "add",
+      "events": {
+        "add": [
+          {
+            "type": "showTextInput",
+            "options": {
+              "headerTitle": "Create New Playlist",
+              "inputLabel": "Playlist Name",
+              "defaultValue": "",
+              "buttonLabel": "Create",
+              "actions": [
+                {
+                  "type": "sendCloudEvent",
+                  "options": {
+                    "url": "https://server.com/cloud-events",
+                    "type": "com.applicaster.collection.create.v1",
+                    "subject": "create_collection",
+                    "data": {
+                      "itemId": "song-123"
+                    }
+                  }
+                },
+                {
+                  "type": "showToast",
+                  "options": {
+                    "message": "Playlist created."
+                  }
+                },
+                {
+                  "type": "refreshComponent"
                 }
-              }
+              ]
             }
           }
-        }
-      ]
+        ]
+      }
     }
   }
 }

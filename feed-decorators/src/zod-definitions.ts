@@ -80,12 +80,12 @@ export const ShowTextInputActionOptionsSchema = z.object({
   inputLabel: z.string().optional(),
   defaultValue: z.string().optional(),
   buttonLabel: z.string().optional(),
-  action: z
-    .object({
+  actions: z.array(
+    z.object({
       type: z.string(),
       options: z.record(z.string(), z.any()).optional(),
-    })
-    .optional(),
+    }),
+  ),
 });
 export type ShowTextInputActionOptions = z.infer<
   typeof ShowTextInputActionOptionsSchema
@@ -295,6 +295,33 @@ export const AddAllToQueueActionSchema = z.object({
 });
 export type AddAllToQueueAction = z.infer<typeof AddAllToQueueActionSchema>;
 
+export const ShowToastStyleSchema = z.object({
+  backgroundColor: z.string().optional(),
+  color: z.string().optional(),
+  fontFamily: z.string().optional(),
+  fontSize: z.number().optional(),
+  lineHeight: z.number().optional(),
+  letterSpacing: z.number().optional(),
+});
+export type ShowToastStyle = z.infer<typeof ShowToastStyleSchema>;
+
+export const ShowToastActionOptionsSchema = z.object({
+  message: z.string().min(1),
+  id: z.string().optional(),
+  extraMessage: z.string().optional(),
+  style: ShowToastStyleSchema.optional(),
+  timeout: z.number().optional(),
+});
+export type ShowToastActionOptions = z.infer<
+  typeof ShowToastActionOptionsSchema
+>;
+
+export const ShowToastActionSchema = z.object({
+  type: z.literal('showToast'),
+  options: ShowToastActionOptionsSchema,
+});
+export type ShowToastAction = z.infer<typeof ShowToastActionSchema>;
+
 export const ZappActionSchema = z.union([
   OpenBottomSheetActionSchema,
   SendCloudEventActionSchema,
@@ -313,6 +340,7 @@ export const ZappActionSchema = z.union([
   RefreshComponentActionSchema,
   AddToQueueActionSchema,
   AddAllToQueueActionSchema,
+  ShowToastActionSchema,
 ]);
 export type ZappAction = z.infer<typeof ZappActionSchema>;
 

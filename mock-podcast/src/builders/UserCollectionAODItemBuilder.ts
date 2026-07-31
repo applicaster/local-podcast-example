@@ -36,7 +36,7 @@ export class UserCollectionAODItemBuilder extends EntryBuilder {
 
   addToQueue() {
     const actionBuilder = new ActionsBuilder();
-    actionBuilder.addToQueue();
+    actionBuilder.addToQueue().showToast('Added to queue');
     this.addEntryActionByAlias('add_to_queue', actionBuilder, true);
     return this;
   }

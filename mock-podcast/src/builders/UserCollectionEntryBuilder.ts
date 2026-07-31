@@ -48,15 +48,26 @@ export class UserCollectionEntryBuilder extends SystemCollectionEntryBuilder {
       inputLabel: 'Name your playlist',
       defaultValue: collectionName,
       buttonLabel: 'Update',
-      action: {
-        type: 'sendCloudEvent',
-        options: {
-          url: cloudEventsUrl,
-          type: CLOUD_EVENT_TYPES.COLLECTION_RENAME,
-          subject: 'edit_collection',
-          data: { collectionId },
+      actions: [
+        {
+          type: 'sendCloudEvent',
+          options: {
+            url: cloudEventsUrl,
+            type: CLOUD_EVENT_TYPES.COLLECTION_RENAME,
+            subject: 'edit_collection',
+            data: { collectionId },
+          },
         },
-      },
+        {
+          type: 'showToast',
+          options: {
+            message: 'Playlist renamed.',
+          },
+        },
+        {
+          type: 'refreshComponent',
+        },
+      ],
     });
 
     this.addEntryActionByAlias('edit_name', actionBuilder, false);
