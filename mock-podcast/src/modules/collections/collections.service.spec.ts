@@ -143,5 +143,52 @@ describe('CollectionsService', () => {
         }),
       );
     });
+
+    it('puts confirmDialog before delete_collection on user playlists', async () => {
+      const playlist = await service.createCollection('Morning Mix');
+      const feed = service.getCollectionsFeed(
+        undefined,
+        'http://localhost:3000',
+      );
+      const entry = feed.entry.find((item) => item.id === playlist.id);
+      const deleteAction = entry?.extensions?.entry_action?.find(
+        (action: { button?: { alias?: string } }) =>
+          action.button?.alias === 'delete_collection',
+      );
+
+      expect(deleteAction?.dismiss_on_action).toBe(false);
+      expect(
+        deleteAction?.actions?.map((action: { type: string }) => action.type),
+      ).toEqual([
+        'confirmDialog',
+        'dismissBottomSheet',
+        'sendCloudEvent',
+        'refreshComponent',
+      ]);
+      expect(deleteAction?.actions?.[0]?.options?.message).toContain(
+        'Morning Mix',
+      );
+    });
+
+    it('does not add delete_collection on system collections', () => {
+      const feed = service.getCollectionsFeed(
+        undefined,
+        'http://localhost:3000',
+      );
+      const systemEntries = feed.entry.filter(
+        (item) => item.extensions?.is_system === true,
+      );
+
+      expect(systemEntries.length).toBeGreaterThan(0);
+
+      for (const entry of systemEntries) {
+        const deleteAction = entry.extensions?.entry_action?.find(
+          (action: { button?: { alias?: string } }) =>
+            action.button?.alias === 'delete_collection',
+        );
+
+        expect(deleteAction).toBeUndefined();
+      }
+    });
   });
 });
