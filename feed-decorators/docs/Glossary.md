@@ -58,3 +58,17 @@ The active audio playback queue, managed **completely client-side** in local app
 
 ### 11. Selector Mode
 An interactive sheet or screen state triggered by `role: "collection_selector"`, where row entries display selection widgets (checkboxes/switches) automatically bound to `behavior.current_selection`.
+
+---
+
+## Continuous Playback & Queue Progression
+
+### 12. Up Next Feed (`upNextFeed` / `up_next_feed`)
+An entry-level extension (`entry.extensions.upNextFeed`) containing a Pipes feed URL string or DataSource configuration object. Placed on playlist entries (or the terminal item) of a collection or feed. Decorating all playlist entries ensures that whichever item becomes the tail of the active queue—even after dynamic reordering or deletions—will trigger recommendations. When the client playback queue begins playing the last element in the active queue, the queue manager resolves this feed and appends the returned recommendation entries to the tail of the queue.
+
+### 13. Play Next Feed URL (`play_next_feed_url`)
+An entry-level extension (`entry.extensions.play_next_feed_url`) providing a direct feed URL to the immediate subsequent track in a sequential playlist or album.
+
+### 14. Continuous Queue Chaining
+The architectural pattern wherein audio playback automatically chains into algorithmic or curated recommendation feeds as the listener reaches the end of their chosen collection or playlist, preventing abrupt audio cessation.
+

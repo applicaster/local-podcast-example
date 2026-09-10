@@ -86,3 +86,27 @@ describe('buildCollectionSelectorFeed', () => {
   });
 });
 
+describe('EntryBuilder upNextFeed', () => {
+  it('should set upNextFeed extension with string URL', () => {
+    const entry = new EntryBuilder(new ActionsBuilder(), { id: 'track-1' })
+      .setUpNextFeed('https://example.com/pipes/up-next')
+      .build();
+
+    expect(entry.extensions?.upNextFeed).toBe(
+      'https://example.com/pipes/up-next',
+    );
+  });
+
+  it('should set upNextFeed extension with object data source', () => {
+    const dataSource = {
+      source: 'https://example.com/pipes/up-next',
+      mapping: 'custom_mapper',
+    };
+    const entry = new EntryBuilder(new ActionsBuilder(), { id: 'track-2' })
+      .setUpNextFeed(dataSource)
+      .build();
+
+    expect(entry.extensions?.upNextFeed).toEqual(dataSource);
+  });
+});
+

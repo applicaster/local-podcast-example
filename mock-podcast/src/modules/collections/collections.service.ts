@@ -238,12 +238,11 @@ export class CollectionsService implements OnModuleInit {
         itemId,
         baseUrl,
       );
-      if (playNextUrl) {
-        entries[0].extensions = {
-          ...entries[0].extensions,
-          play_next_feed_url: playNextUrl,
-        };
-      }
+      entries[0].extensions = {
+        ...entries[0].extensions,
+        upNextFeed: `${baseUrl}/media/up-next`,
+        ...(playNextUrl ? { play_next_feed_url: playNextUrl } : {}),
+      };
     }
 
     return {
@@ -302,6 +301,15 @@ export class CollectionsService implements OnModuleInit {
 
     const entries = this.mediaService.getEntriesForIds(collection.itemIds, isLoggedIn);
     this.decorateEntriesWithPlaybackSource(entries, collection.id);
+
+    if (baseUrl) {
+      entries.forEach((entry) => {
+        entry.extensions = {
+          ...(entry.extensions ?? {}),
+          upNextFeed: `${baseUrl}/media/up-next`,
+        };
+      });
+    }
 
     const isEditMode = editable || action === 'remove_item';
 
@@ -741,12 +749,11 @@ export class CollectionsService implements OnModuleInit {
               firstItemId,
               baseUrl,
             );
-            if (playNextUrl) {
-              firstEntry.extensions = {
-                ...firstEntry.extensions,
-                play_next_feed_url: playNextUrl,
-              };
-            }
+            firstEntry.extensions = {
+              ...firstEntry.extensions,
+              upNextFeed: `${baseUrl}/media/up-next`,
+              ...(playNextUrl ? { play_next_feed_url: playNextUrl } : {}),
+            };
 
             builder.playAll(firstEntry);
           }

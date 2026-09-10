@@ -23,6 +23,10 @@ It provides a local server that simulates real-world radio and podcast workflows
     *   To support item-scoped operations, every entry in an editable feed includes corresponding item-scoped actions in `extensions.entry_action`: `alias: "remove_item"` (dispatches `com.applicaster.collection.remove.v1` / `delete.v1`) and `alias: "reorder_item"` (dispatches `com.applicaster.collection.reorder.v1`).
 *   **Cloud Events Router (`POST /cloud-events`):**
     *   Ingests standardized Applicaster Cloud Events for track additions, deletions, creations, reorders, renames, and playback status updates.
+*   **Continuous Playback Chaining & Up-Next Recommendations (`GET /media/up-next`):**
+    *   Decorates playlist entries in collection feeds (`/user/collections/:id`), play-next feeds, and embedded Play All entries with `extensions.upNextFeed = "http://<host>:<port>/media/up-next"` to ensure queue chaining functions reliably even if tracks are dynamically reordered by the listener.
+    *   Exposes `GET /media/up-next`, returning 5 recommended audio tracks formatted as a Zapp DSP feed.
+    *   Allows the client queue (`queue-action` plugin) to seamlessly resolve and append recommendations upon reaching the last element in the queue.
 *   **Completely Local Queue Architecture (No Server Implementation Required):**
     > [!IMPORTANT]
     > **Queue is Local to Client App:** In production Zapp applications, the playback Queue is **completely local** and managed entirely in client memory/storage by the app renderer. **There does not need to be any server-side implementation for the Queue.** While this mock server includes a `/system/collections` Queue and logs playback events (`started` / `stopped`) for testing purposes, production backends do not need to build, store, or manage the Queue.

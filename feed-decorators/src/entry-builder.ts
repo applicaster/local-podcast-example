@@ -88,6 +88,19 @@ export class EntryBuilder<
   }
 
   /**
+   * Sets the `upNextFeed` entry extension (`entry.extensions.upNextFeed`) on this entry.
+   *
+   * Used by the client queue manager to resolve and append continuous playback recommendations
+   * when playback reaches the end of the queue. Decorating all items in a playlist ensures queue
+   * chaining remains resilient even if the user dynamically reorders tracks or deletes the tail item.
+   *
+   * @param feed - Up next feed URL string or Pipes DataSource configuration object.
+   */
+  setUpNextFeed(feed: string | Record<string, any>): this {
+    return this.addExtension('upNextFeed', feed);
+  }
+
+  /**
    * Add actions using the specific action builder
    */
   addActions(): TActionBuilder {
