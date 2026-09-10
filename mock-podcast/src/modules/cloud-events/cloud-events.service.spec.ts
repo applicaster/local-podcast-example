@@ -1,5 +1,6 @@
 import { CloudEventsService } from './cloud-events.service';
 import { BadRequestException } from '@nestjs/common';
+import { CLOUD_EVENT_TYPES } from '../../constants/cloud-event-types.constants';
 
 describe('CloudEventsService', () => {
   const collectionsService = {
@@ -16,7 +17,12 @@ describe('CloudEventsService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new CloudEventsService(collectionsService as any);
+    service = new CloudEventsService(
+      collectionsService as any,
+      {
+        handlePinEvent: jest.fn(),
+      } as any,
+    );
   });
 
   it('handles video.started event without throwing', async () => {
@@ -223,5 +229,48 @@ describe('CloudEventsService', () => {
       'playlist-2',
       'playlist-1',
     );
+  });
+});
+
+describe('CloudEventsService PIN routing', () => {
+  const collectionsService = {} as any;
+  const pinService = {
+    handlePinEvent: jest.fn(async () => ({
+      specversion: '1.0',
+      type: CLOUD_EVENT_TYPES.EVENT_RECEIVED,
+      source: 'podcast-server',
+      subject: 'Valid Pin Code',
+      id: '1234',
+      time: '2026-09-09T00:00:00.000Z',
+    })),
+  };
+
+  let service: CloudEventsService;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    service = new CloudEventsService(collectionsService, pinService as any);
+  });
+
+  it('routes a PIN event to PinService with the payload', async () => {
+    const ack = await service.handleEvent({
+      type: CLOUD_EVENT_TYPES.PIN_CODE,
+      data: { profile: 12345, pin_code: '1234' },
+    });
+
+    expect(pinService.handlePinEvent).toHaveBeenCalledWith(
+      CLOUD_EVENT_TYPES.PIN_CODE,
+      { profile: 12345, pin_code: '1234' },
+    );
+    expect(ack.subject).toBe('Valid Pin Code');
+  });
+
+  it('leaves non-PIN events untouched', async () => {
+    await service.handleEvent({
+      type: CLOUD_EVENT_TYPES.VIDEO_STARTED,
+      data: { videoId: 'v1' },
+    });
+
+    expect(pinService.handlePinEvent).not.toHaveBeenCalled();
   });
 });

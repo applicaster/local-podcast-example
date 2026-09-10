@@ -10,4 +10,9 @@ export const CLOUD_EVENT_TYPES = {
   COLLECTION_DELETE: 'com.applicaster.collection.delete.v1',
   COLLECTION_RENAME: 'com.applicaster.collection.rename.v1',
   EVENT_RECEIVED: 'com.applicaster.event.received.v1',
+  PIN_CODE: 'com.applicaster.pin.v1',
+  PIN_CODE_SET: 'com.applicaster.pin.set.v1',
+  PIN_CODE_CHANGE: 'com.applicaster.pin.change.v1',
+  PIN_CODE_RESET: 'com.applicaster.pin.reset.v1',
+  PIN_CODE_RECOVERY_REQUESTED: 'com.applicaster.pin.recovery.requested.v1',
 } as const;
