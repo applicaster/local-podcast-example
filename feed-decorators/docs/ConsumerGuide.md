@@ -48,15 +48,46 @@ When a user opens an editable playlist or queue screen:
   - On `com.applicaster.video.stopped.v1` (`status: "COMPLETED"`): Automatically removes completed track from local queue.
 - **No Backend Requirement:** Production backends are not required to persist or manage the queue.
 
+### Pattern D: Continuous Playback Chaining (`upNextFeed`)
+To avoid abrupt playback stoppage when an album or playlist finishes:
+- **Backend Feed Decoration:** The backend decorates the **terminal entry** of a collection or feed with `extensions.upNextFeed` (or snake_case `up_next_feed`):
+  ```json
+  {
+    "id": "track_last",
+    "title": "Final Track",
+    "extensions": {
+      "upNextFeed": "https://api.example.com/media/up-next"
+    }
+  }
+  ```
+- **Object-Driven DataSource:** `upNextFeed` can also be a Pipes DataSource object supporting custom mapping, headers, query parameters, or POST body:
+  ```json
+  {
+    "extensions": {
+      "upNextFeed": {
+        "source": "https://api.example.com/recommendations",
+        "mapping": "custom_pipes_mapping",
+        "headers": { "Authorization": "Bearer <token>" }
+      }
+    }
+  }
+  ```
+- **Client Queue Integration (`queue-action`):**
+  1. The client QueueManager monitors playback events.
+  2. When the user starts playing the last entry in the active queue, the manager detects `isLastElement(entry)` and extracts `extensions.upNextFeed`.
+  3. The manager resolves the Pipes feed via its pluggable `FeedResolver` and appends the returned recommendation tracks into the active queue (`addAllToQueue`).
+  4. Deduplication ensures each slot only triggers resolution once.
+
 ---
 
 ## 3. Quick Reference for Developers
 
-| Feature / UI Mode | Feed Extension | Required Entry Actions | Client Behavior |
+| Feature / UI Mode | Feed / Entry Extension | Required Entry Actions | Client Behavior |
 | :--- | :--- | :--- | :--- |
 | **Playlist Selection Sheet** | `"role": "collection_selector"` | `add_to_playlist`, `remove_from_playlist` | Renders multi-select checkboxes based on `behavior.current_selection`. |
 | **Editable Track List** | `"role": "dynamic_collection"` (`operations: "remove,reorder"`) | `alias: "remove_item"`, `alias: "reorder_item"` | Injects swipe-to-delete & drag handles. Executes entry actions on user interaction. |
 | **Editable Playlists Screen** | `"role": "dynamic_collection"` (`operations: "add,remove,reorder"`) | `alias: "remove_item"`, `events.add` | Renders "+ Create Playlist" button in header & trash icons on playlist rows. |
+| **Continuous Playback** | `entry.extensions.upNextFeed` | N/A (automatic queue progression) | Resolves Pipes feed and appends recommendation tracks to active queue upon starting final item. |
 
 ---
 

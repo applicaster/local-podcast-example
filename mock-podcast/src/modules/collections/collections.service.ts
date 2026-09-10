@@ -238,17 +238,11 @@ export class CollectionsService implements OnModuleInit {
         itemId,
         baseUrl,
       );
-      if (playNextUrl) {
-        entries[0].extensions = {
-          ...entries[0].extensions,
-          play_next_feed_url: playNextUrl,
-        };
-      } else {
-        entries[0].extensions = {
-          ...entries[0].extensions,
-          upNextFeed: `${baseUrl}/media/up-next`,
-        };
-      }
+      entries[0].extensions = {
+        ...entries[0].extensions,
+        upNextFeed: `${baseUrl}/media/up-next`,
+        ...(playNextUrl ? { play_next_feed_url: playNextUrl } : {}),
+      };
     }
 
     return {
@@ -308,12 +302,13 @@ export class CollectionsService implements OnModuleInit {
     const entries = this.mediaService.getEntriesForIds(collection.itemIds, isLoggedIn);
     this.decorateEntriesWithPlaybackSource(entries, collection.id);
 
-    if (entries.length > 0 && baseUrl) {
-      const lastEntry = entries[entries.length - 1];
-      lastEntry.extensions = {
-        ...(lastEntry.extensions ?? {}),
-        upNextFeed: `${baseUrl}/media/up-next`,
-      };
+    if (baseUrl) {
+      entries.forEach((entry) => {
+        entry.extensions = {
+          ...(entry.extensions ?? {}),
+          upNextFeed: `${baseUrl}/media/up-next`,
+        };
+      });
     }
 
     const isEditMode = editable || action === 'remove_item';
@@ -754,17 +749,11 @@ export class CollectionsService implements OnModuleInit {
               firstItemId,
               baseUrl,
             );
-            if (playNextUrl) {
-              firstEntry.extensions = {
-                ...firstEntry.extensions,
-                play_next_feed_url: playNextUrl,
-              };
-            } else {
-              firstEntry.extensions = {
-                ...firstEntry.extensions,
-                upNextFeed: `${baseUrl}/media/up-next`,
-              };
-            }
+            firstEntry.extensions = {
+              ...firstEntry.extensions,
+              upNextFeed: `${baseUrl}/media/up-next`,
+              ...(playNextUrl ? { play_next_feed_url: playNextUrl } : {}),
+            };
 
             builder.playAll(firstEntry);
           }

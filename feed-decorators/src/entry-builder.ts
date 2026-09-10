@@ -88,7 +88,10 @@ export class EntryBuilder<
   }
 
   /**
-   * Set upNextFeed pipes feed for automatic chaining upon starting the last item in queue
+   * Sets the `upNextFeed` entry extension (URL string or DataSource object)
+   * used to resolve and append continuous recommendations when the playback queue reaches this item.
+   *
+   * @param feed - Feed URL string or DataSource configuration object for the Pipes feed.
    */
   setUpNextFeed(feed: string | Record<string, any>): this {
     return this.addExtension('upNextFeed', feed);

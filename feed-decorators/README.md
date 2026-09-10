@@ -61,7 +61,21 @@ const entry = new EntryBuilder('collection-123', 'My Playlist')
     },
   })
   .setActions(actions)
+  .setUpNextFeed('https://api.example.com/media/up-next') // Auto-chaining recommendation feed
   .build();
+```
+
+### Chaining with `setUpNextFeed`
+```typescript
+// Attach an upNextFeed URL or DataSource object to the terminal item of a playlist
+entryBuilder.setUpNextFeed('https://api.example.com/media/up-next');
+
+// Or with full Pipes DataSource configuration
+entryBuilder.setUpNextFeed({
+  source: 'https://api.example.com/recommendations',
+  mapping: 'custom_mapping',
+  headers: { Authorization: 'Bearer <token>' },
+});
 ```
 
 ---
