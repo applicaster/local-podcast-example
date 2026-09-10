@@ -255,8 +255,8 @@ When `has_pin` is `true`, insert this action **in front of** the entry's existin
 }
 ```
 
-Leave the existing actions untouched behind it. When `has_pin` is `false`, add
-nothing.
+Leave the existing actions in place behind it — Addition 4 is the only change
+to any of them. When `has_pin` is `false`, add nothing here.
 
 **Why the feed and not the app:** the action chain stops when `pinCode` resolves
 `Cancel`, so the session is never written on a cancelled entry. The server is

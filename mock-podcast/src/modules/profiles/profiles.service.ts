@@ -26,14 +26,16 @@ export const DEFAULT_PROFILES_FEED_URL =
  *
  * It is proxied rather than reproduced. A profile renamed through their form
  * is renamed in their backend, and a fixture would keep showing the old name;
- * proxying keeps the two feeds telling the same story. Their avatars, denied
- * actions and session actions are theirs and travel untouched.
+ * proxying keeps the two feeds telling the same story. Their avatars and
+ * denied actions are theirs and travel untouched.
  *
- * Three things are rewritten, and only these:
+ * Four things are rewritten, and only these:
  *
  * - `has_pin`, answered from this mock's PIN store rather than from upstream,
  *   which knows nothing about it;
  * - `tap_actions`, gated behind that profile's own PIN when it has one;
+ * - the entry's own `sessionStorageSet` inside those actions, which gains the
+ *   profile's name and avatar — every other action in the chain is left alone;
  * - `type.value`, `profile` to `action` — see below.
  *
  * When the upstream cannot be reached the fixture stands in, so the stand
