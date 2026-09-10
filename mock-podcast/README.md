@@ -24,7 +24,7 @@ It provides a local server that simulates real-world radio and podcast workflows
 *   **Cloud Events Router (`POST /cloud-events`):**
     *   Ingests standardized Applicaster Cloud Events for track additions, deletions, creations, reorders, renames, and playback status updates.
 *   **Continuous Playback Chaining & Up-Next Recommendations (`GET /media/up-next`):**
-    *   Decorates the terminal entry of collection feeds (`/user/collections/:id`) and end-of-collection play-next feeds with `extensions.upNextFeed = "http://<host>:<port>/media/up-next"`.
+    *   Decorates playlist entries in collection feeds (`/user/collections/:id`), play-next feeds, and embedded Play All entries with `extensions.upNextFeed = "http://<host>:<port>/media/up-next"` to ensure queue chaining functions reliably even if tracks are dynamically reordered by the listener.
     *   Exposes `GET /media/up-next`, returning 5 recommended audio tracks formatted as a Zapp DSP feed.
     *   Allows the client queue (`queue-action` plugin) to seamlessly resolve and append recommendations upon reaching the last element in the queue.
 *   **Completely Local Queue Architecture (No Server Implementation Required):**

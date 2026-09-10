@@ -50,7 +50,7 @@ When a user opens an editable playlist or queue screen:
 
 ### Pattern D: Continuous Playback Chaining (`upNextFeed`)
 To avoid abrupt playback stoppage when an album or playlist finishes:
-- **Backend Feed Decoration:** The backend decorates the **terminal entry** of a collection or feed with `extensions.upNextFeed` (or snake_case `up_next_feed`):
+- **Backend Feed Decoration:** The backend decorates playlist items (or the terminal entry) with `extensions.upNextFeed` (or snake_case `up_next_feed`). While decorating only the terminal entry is supported, decorating all items in a playlist ensures that queue chaining remains resilient even if the user dynamically reorders tracks or deletes items from the queue:
   ```json
   {
     "id": "track_last",

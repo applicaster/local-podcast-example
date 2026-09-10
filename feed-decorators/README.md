@@ -67,7 +67,7 @@ const entry = new EntryBuilder('collection-123', 'My Playlist')
 
 ### Chaining with `setUpNextFeed`
 ```typescript
-// Attach an upNextFeed URL or DataSource object to the terminal item of a playlist
+// Attach an upNextFeed URL or DataSource object to playlist items (or the terminal item)
 entryBuilder.setUpNextFeed('https://api.example.com/media/up-next');
 
 // Or with full Pipes DataSource configuration
