@@ -768,7 +768,7 @@ export class CollectionsService implements OnModuleInit {
       if (!collection.isSystem && builder instanceof UserCollectionEntryBuilder) {
         builder.editCollection(baseUrl, collection.id, collection.name);
         builder.editName(cloudEventsUrl, collection.id, collection.name);
-        builder.deleteCollection(cloudEventsUrl, collection.id);
+        builder.deleteCollection(cloudEventsUrl, collection.id, collection.name);
       }
     }
 

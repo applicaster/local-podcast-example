@@ -411,17 +411,21 @@ Triggers a text input bottom sheet/dialog to create or edit text (e.g. playlist 
 
 Shows a confirmation dialog with provided message and title. If the user confirms, next action in the array will be executed. If the user cancels, execution chain will be cancelled without generating error.
 
+Used before destructive playlist removal (`alias: "delete_collection"`). Keep `dismiss_on_action: false` so the actions sheet stays open behind the dialog. Cancel leaves the sheet; Confirm continues to `dismissBottomSheet` and `sendCloudEvent`.
+
 ```
 {
   "type": "confirmDialog",
   "options": {
-    "message": "Region will be changed to UK. Are you sure you want to continue?",
-    "title": "Region change",
-    "okButtonText": "Yes",
-    "cancelButtonText": "No"
+    "title": "Delete Playlist?",
+    "message": "Are you sure you want to delete Morning Mix? This action can't be undone.",
+    "okButtonText": "Delete",
+    "cancelButtonText": "Cancel"
   }
 }
 ```
+
+The Playlist Experience plugin overwrites these strings from Studio localizations (`playlist_experience_delete_confirm_*`).
 
 ## First time user experience plugin actions
 
