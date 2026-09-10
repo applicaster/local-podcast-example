@@ -243,6 +243,11 @@ export class CollectionsService implements OnModuleInit {
           ...entries[0].extensions,
           play_next_feed_url: playNextUrl,
         };
+      } else {
+        entries[0].extensions = {
+          ...entries[0].extensions,
+          upNextFeed: `${baseUrl}/media/up-next`,
+        };
       }
     }
 
@@ -302,6 +307,14 @@ export class CollectionsService implements OnModuleInit {
 
     const entries = this.mediaService.getEntriesForIds(collection.itemIds, isLoggedIn);
     this.decorateEntriesWithPlaybackSource(entries, collection.id);
+
+    if (entries.length > 0 && baseUrl) {
+      const lastEntry = entries[entries.length - 1];
+      lastEntry.extensions = {
+        ...(lastEntry.extensions ?? {}),
+        upNextFeed: `${baseUrl}/media/up-next`,
+      };
+    }
 
     const isEditMode = editable || action === 'remove_item';
 
@@ -745,6 +758,11 @@ export class CollectionsService implements OnModuleInit {
               firstEntry.extensions = {
                 ...firstEntry.extensions,
                 play_next_feed_url: playNextUrl,
+              };
+            } else {
+              firstEntry.extensions = {
+                ...firstEntry.extensions,
+                upNextFeed: `${baseUrl}/media/up-next`,
               };
             }
 
