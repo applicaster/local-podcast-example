@@ -88,6 +88,13 @@ export class EntryBuilder<
   }
 
   /**
+   * Set upNextFeed pipes feed for automatic chaining upon starting the last item in queue
+   */
+  setUpNextFeed(feed: string | Record<string, any>): this {
+    return this.addExtension('upNextFeed', feed);
+  }
+
+  /**
    * Add actions using the specific action builder
    */
   addActions(): TActionBuilder {
