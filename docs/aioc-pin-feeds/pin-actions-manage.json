@@ -1,0 +1,55 @@
+{
+    "id": "pin-manage-actions-feed",
+    "title": "Manage PIN",
+    "type": {
+        "value": "pin-actions-feed"
+    },
+    "entry": [
+        {
+            "id": "reset-pin",
+            "title": "Reset PIN",
+            "type": {
+                "value": "action"
+            },
+            "extensions": {
+                "tap_actions": {
+                    "actions": [
+                        {
+                            "type": "pinCode",
+                            "options": {
+                                "typeMapping": "parent-lock",
+                                "flow": "verify-pin",
+                                "cloudEventPayload": {
+                                    "profile": "a3JVE000005wcej2AA",
+                                    "purpose": "manage"
+                                }
+                            }
+                        },
+                        {
+                            "type": "sendCloudEvent",
+                            "options": {
+                                "url": "https://zapp-ran-demo.web.app/cloud-events",
+                                "type": "com.applicaster.pin.reset.v1",
+                                "subject": "profile_reset",
+                                "data": {
+                                    "profile": "a3JVE000007CgIn2AK"
+                                }
+                            }
+                        },
+                        {
+                            "type": "showToast",
+                            "options": {
+                                "message": "An email to set a new PIN was sent to the account.",
+                                "id": "pin_reset_email_sent",
+                                "timeout": 3000
+                            }
+                        },
+                        {
+                            "type": "refreshComponent"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

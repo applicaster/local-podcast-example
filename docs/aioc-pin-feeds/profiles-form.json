@@ -1,0 +1,124 @@
+{
+    "properties": [
+        {
+            "id": "profileImage",
+            "type": "singleSelect",
+            "preset": "FormAvatarPicker",
+            "options": {
+                "title": "Choose Avatar",
+                "itemsFeedURL": "https://api-qa.aio.focusonthefamily.com/CMS/avatars"
+            }
+        },
+        {
+            "id": "displayName",
+            "type": "textInput",
+            "preset": "FormTextInput",
+            "options": {
+                "title": "Display Name",
+                "required": false,
+                "minLength": 2,
+                "maxLength": 25
+            }
+        },
+        {
+            "id": "buttonResetPin",
+            "preset": "FormButtonSave",
+            "type": "button",
+            "options": {
+                "title": "Reset PIN",
+                "extensions": {
+                    "tap_actions": {
+                        "actions": [
+                            {
+                                "type": "pinCode",
+                                "options": {
+                                    "typeMapping": "parent-lock",
+                                    "flow": "verify-pin",
+                                    "cloudEventPayload": {
+                                        "profile": "a3JVE000005wcej2AA",
+                                        "purpose": "manage"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "sendCloudEvent",
+                                "options": {
+                                    "url": "https://zapp-ran-demo.web.app/cloud-events",
+                                    "type": "com.applicaster.pin.reset.v1",
+                                    "subject": "profile_reset",
+                                    "data": {
+                                        "profile": "a3JVE000007CgIn2AK"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "showToast",
+                                "options": {
+                                    "message": "An email to set a new PIN was sent to the account.",
+                                    "id": "pin_reset_email_sent",
+                                    "timeout": 3000
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "id": "buttonSave",
+            "type": "button",
+            "preset": "FormButtonSave",
+            "options": {
+                "title": "Save",
+                "extensions": {
+                    "tap_actions": {
+                        "actions": [
+                            {
+                                "type": "validateForm"
+                            },
+                            {
+                                "type": "postForm",
+                                "options": {
+                                    "data": {
+                                        "form_data": "@{screen/}"
+                                    },
+                                    "inflateData": true,
+                                    "subject": "profile_update",
+                                    "type": "com.applicaster.post.data.v1",
+                                    "url": "https://api-qa.aio.focusonthefamily.com/CMS/events"
+                                }
+                            },
+                            {
+                                "type": "navigateToScreen",
+                                "options": {
+                                    "typeMapping": "home-screen"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "id": "buttonCancel",
+            "type": "button",
+            "preset": "FormButtonCancel",
+            "options": {
+                "title": "Cancel",
+                "extensions": {
+                    "tap_actions": {
+                        "actions": [
+                            {
+                                "type": "goBack",
+                                "options": {
+                                    "fallbackToHome": true,
+                                    "backToTop": false
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+}

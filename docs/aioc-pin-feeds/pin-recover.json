@@ -1,0 +1,33 @@
+{
+    "id": "recover-pin-code-feed",
+    "title": "Recover Pin Code",
+    "type": {
+        "value": "recover-pin-code-feed"
+    },
+    "entry": [
+        {
+            "id": "recover-pin-code",
+            "title": "Recover Pin Code",
+            "type": {
+                "value": "action"
+            },
+            "extensions": {
+                "tap_actions": {
+                    "actions": [
+                        {
+                            "type": "sendCloudEvent",
+                            "options": {
+                                "url": "https://zapp-ran-demo.web.app/cloud-events",
+                                "type": "com.applicaster.pin.recovery.requested.v1",
+                                "subject": "recover_pin_code",
+                                "data": {
+                                    "profile": ""
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

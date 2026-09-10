@@ -1,0 +1,163 @@
+{
+    "id": "pin-actions-feed",
+    "title": "PIN Actions",
+    "type": {
+        "value": "pin-actions-feed"
+    },
+    "entry": [
+        {
+            "id": "change-pin",
+            "title": "Change PIN",
+            "type": {
+                "value": "action"
+            },
+            "extensions": {
+                "tap_actions": {
+                    "actions": [
+                        {
+                            "type": "pinCode",
+                            "options": {
+                                "typeMapping": "parent-lock",
+                                "flow": "change-pin",
+                                "cloudEventPayload": {
+                                    "profile": "a3JVE000007CgIn2AK"
+                                }
+                            }
+                        },
+                        {
+                            "type": "refreshComponent"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": "disable-pin",
+            "title": "Disable PIN",
+            "type": {
+                "value": "action"
+            },
+            "extensions": {
+                "tap_actions": {
+                    "actions": [
+                        {
+                            "type": "confirmDialog",
+                            "options": {
+                                "message": "Content will no longer be protected. You will need the current PIN to continue.",
+                                "title": "Disable PIN?",
+                                "okButtonText": "Disable",
+                                "cancelButtonText": "Cancel"
+                            }
+                        },
+                        {
+                            "type": "pinCode",
+                            "options": {
+                                "typeMapping": "parent-lock",
+                                "flow": "verify-pin",
+                                "cloudEventPayload": {
+                                    "profile": "a3JVE000007CgIn2AK"
+                                }
+                            }
+                        },
+                        {
+                            "type": "sendCloudEvent",
+                            "options": {
+                                "url": "https://zapp-ran-demo.web.app/cloud-events",
+                                "type": "com.applicaster.pin.change.v1",
+                                "subject": "disable_pin",
+                                "data": {
+                                    "step": "disable",
+                                    "profile": "a3JVE000007CgIn2AK"
+                                }
+                            }
+                        },
+                        {
+                            "type": "refreshComponent"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": "reset-pin",
+            "title": "Reset PIN",
+            "type": {
+                "value": "action"
+            },
+            "extensions": {
+                "tap_actions": {
+                    "actions": [
+                        {
+                            "type": "pinCode",
+                            "options": {
+                                "typeMapping": "parent-lock",
+                                "flow": "verify-pin",
+                                "cloudEventPayload": {
+                                    "profile": "a3JVE000005wcej2AA",
+                                    "purpose": "manage"
+                                }
+                            }
+                        },
+                        {
+                            "type": "sendCloudEvent",
+                            "options": {
+                                "url": "https://zapp-ran-demo.web.app/cloud-events",
+                                "type": "com.applicaster.pin.reset.v1",
+                                "subject": "profile_reset",
+                                "data": {
+                                    "profile": "a3JVE000007CgIn2AK"
+                                }
+                            }
+                        },
+                        {
+                            "type": "showToast",
+                            "options": {
+                                "message": "An email to set a new PIN was sent to the account.",
+                                "id": "pin_reset_email_sent",
+                                "timeout": 3000
+                            }
+                        },
+                        {
+                            "type": "refreshComponent"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": "forgot-pin",
+            "title": "Forgot PIN",
+            "type": {
+                "value": "action"
+            },
+            "extensions": {
+                "tap_actions": {
+                    "actions": [
+                        {
+                            "type": "sendCloudEvent",
+                            "options": {
+                                "url": "https://zapp-ran-demo.web.app/cloud-events",
+                                "type": "com.applicaster.pin.recovery.requested.v1",
+                                "subject": "recover_pin_code",
+                                "data": {
+                                    "profile": "a3JVE000007CgIn2AK"
+                                }
+                            }
+                        },
+                        {
+                            "type": "showToast",
+                            "options": {
+                                "message": "An email to set a new PIN was sent to the account.",
+                                "id": "pin_reset_email_sent",
+                                "timeout": 3000
+                            }
+                        },
+                        {
+                            "type": "refreshComponent"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
