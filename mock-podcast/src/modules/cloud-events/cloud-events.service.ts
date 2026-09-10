@@ -2,6 +2,8 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { CollectionsService } from '../collections/collections.service';
 import { CLOUD_EVENT_TYPES } from '../../constants/cloud-event-types.constants';
+import { PinService, PIN_EVENT_TYPES } from '../pin/pin.service';
+import { PinEventData } from '../pin/pin.types';
 
 type CloudEventData = {
   collectionId?: string;
@@ -32,7 +34,10 @@ type CloudEventData = {
 export class CloudEventsService {
   private readonly logger = new Logger(CloudEventsService.name);
 
-  constructor(private readonly collectionsService: CollectionsService) {}
+  constructor(
+    private readonly collectionsService: CollectionsService,
+    private readonly pinService: PinService,
+  ) {}
 
   async handleEvent(body: Record<string, unknown>) {
     const eventType = body?.type as string | undefined;
@@ -56,6 +61,15 @@ export class CloudEventsService {
       }
     } else {
       data = (rawData ?? body) as CloudEventData;
+    }
+
+    // PIN state is keyed on the profile inside the payload, not on the
+    // caller — the controller's bearer check is the only gate needed here.
+    if (PIN_EVENT_TYPES.has(eventType as string)) {
+      return this.pinService.handlePinEvent(
+        eventType as string,
+        data as PinEventData,
+      );
     }
 
     // todo: check how it actually comes and remove redundant checks
