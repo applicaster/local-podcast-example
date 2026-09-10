@@ -5,8 +5,7 @@ describe('ProfilesController', () => {
   const feed = { id: 'viewer-profiles', entry: [] };
   const service = { getProfilesFeed: jest.fn(async () => feed) };
 
-  const controller = () =>
-    new ProfilesController(service as any, undefined as any, undefined as any);
+  const controller = () => new ProfilesController(service as any);
 
   const req = (authorization?: string) =>
     ({ headers: authorization ? { authorization } : {} }) as any;

@@ -21,7 +21,7 @@ describe('PinPersistenceService', () => {
         const suffix = key.replace('@lib/mock-podcast.config.', '');
         return config[suffix];
       }),
-    } as any);
+    }) as any;
 
   const record: PinRecord = {
     profile: '12345',

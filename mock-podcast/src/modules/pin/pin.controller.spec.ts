@@ -19,7 +19,7 @@ describe('PinController', () => {
       headers: authorization ? { authorization } : {},
       protocol: 'http',
       get: (name: string) => (name === 'host' ? 'localhost:3000' : undefined),
-    } as any);
+    }) as any;
 
   it('requires a bearer token', () => {
     expect(() =>
@@ -86,7 +86,7 @@ describe('PinController actions feed', () => {
       headers: authorization ? { authorization } : {},
       protocol: 'http',
       get: (name: string) => (name === 'host' ? 'localhost:3000' : undefined),
-    } as any);
+    }) as any;
 
   const feedFor = (hasPin: boolean, profile?: string) =>
     new PinController(
@@ -258,7 +258,7 @@ describe('PinController actions feed, profile from ctx', () => {
       protocol: 'http',
       get: (name: string) => (name === 'host' ? 'localhost:3000' : undefined),
       query,
-    } as any);
+    }) as any;
 
   // A dev override that rewrites the url drops its query, so ctx is the only
   // carrier that survives to the server.
@@ -321,7 +321,7 @@ describe('PinController actions feed refreshes after every action', () => {
       protocol: 'http',
       get: (name: string) => (name === 'host' ? 'localhost:3000' : undefined),
       query: {},
-    } as any);
+    }) as any;
 
   const feedFor = (hasPin: boolean) =>
     new PinController(
@@ -363,7 +363,7 @@ describe('PinController cloud events url', () => {
       protocol: 'http',
       get: (name: string) => (name === 'host' ? 'localhost:3000' : undefined),
       query: {},
-    } as any);
+    }) as any;
 
   const controllerWith = (cloudEventsUrl?: string) =>
     new PinController(
@@ -432,7 +432,7 @@ describe('PinController manage actions feed', () => {
       protocol: 'http',
       get: (name: string) => (name === 'host' ? 'localhost:3000' : undefined),
       query: {},
-    } as any);
+    }) as any;
 
   const feedFor = (hasPin: boolean, owner: string = OWNER, profile = 'kid') =>
     new PinController(
@@ -529,7 +529,7 @@ describe('PinController when the owner has no pin', () => {
       protocol: 'http',
       get: (name: string) => (name === 'host' ? 'localhost:3000' : undefined),
       query: {},
-    } as any);
+    }) as any;
 
   // The target holds a PIN, the owner does not.
   const controller = new PinController(
