@@ -15,7 +15,7 @@ describe('ProfilesFormController', () => {
       protocol: 'http',
       get: (n: string) => (n === 'host' ? 'localhost:3000' : undefined),
       query: {},
-    } as any);
+    }) as any;
 
   beforeEach(() => jest.clearAllMocks());
 
