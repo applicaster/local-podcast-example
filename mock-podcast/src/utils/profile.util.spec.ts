@@ -7,7 +7,7 @@ describe('getProfileFromRequest', () => {
   const reqWith = (
     query: Record<string, unknown>,
     headers: Record<string, unknown> = {},
-  ) => ({ query, headers } as any);
+  ) => ({ query, headers }) as any;
 
   it('prefers an explicit profile over the context', () => {
     const req = reqWith({ ctx: ctxParam({ profile: 'from-ctx' }) });
@@ -78,7 +78,7 @@ describe('getProfileFromRequest', () => {
 
 describe('getProfileFromRequest and X-VIEWER-ID', () => {
   const req = (headers: Record<string, unknown>, query = {}) =>
-    ({ headers, query } as any);
+    ({ headers, query }) as any;
 
   // The form screen's url cannot carry a parameter — the loader refuses any
   // url containing {{...}} — so the header is the only way it can say which

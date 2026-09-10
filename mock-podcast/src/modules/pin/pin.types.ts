@@ -35,9 +35,3 @@ export type PinAck = {
   id: string;
   time: string;
 };
-
-/** One profile's starting PIN, used only to seed a store that is still empty. */
-export type PinSeed = {
-  profile: string;
-  pinCode: string;
-};

@@ -23,15 +23,6 @@ export const EMPTY_FEED: ProfilesFeed = {
   entry: [],
 };
 
-/** Everyone starts here, except the account owner (see below). */
-export const DEFAULT_PIN = '1111';
-
-/**
- * The account owner starts on its own code, purely so a local run can tell
- * whether a prompt is asking for parental authority or just for a profile.
- */
-export const OWNER_PIN = '0000';
-
 /**
  * Whether a profile carries account-owner authority.
  *
@@ -45,13 +36,24 @@ export const isMaster = (value: unknown): boolean =>
   value === true || value === 1 || value === '1';
 
 /**
- * The viewer profiles fixture, read once and shared.
+ * What the mock currently believes the account's profiles to be.
  *
- * It is a repository rather than part of `ProfilesService` because two
- * modules need it and they cannot both depend on each other: `ProfilesService`
- * already depends on `PinService` to answer `has_pin`, and `PinService` needs
- * to know which profile is the account owner. Loading lives here, at the
- * bottom, where both can reach it.
+ * Two sources, in that order of preference:
+ *
+ * 1. the last profile list the customer's backend answered with, cached here
+ *    by `ProfilesService` on every successful fetch;
+ * 2. `data/viewer-profiles.json`, read once at start-up, used until the first
+ *    fetch succeeds and whenever one fails.
+ *
+ * The cache exists because `PinService` asks `ownerId()` while handling a
+ * cloud event, where there is no request to borrow credentials from — it
+ * cannot go upstream itself, and the answer has to already be here.
+ *
+ * It is a repository rather than part of `ProfilesService` because two modules
+ * need it and they cannot both depend on each other: `ProfilesService` already
+ * depends on `PinService` to answer `has_pin`, and `PinService` needs to know
+ * which profile is the account owner. It lives at the bottom, where both can
+ * reach it.
  */
 @Injectable()
 export class ProfilesRepository implements OnModuleInit {
@@ -61,11 +63,14 @@ export class ProfilesRepository implements OnModuleInit {
     'data',
     'viewer-profiles.json',
   );
-  private feed: ProfilesFeed = EMPTY_FEED;
+  private fixture: ProfilesFeed = EMPTY_FEED;
+  private live?: ProfilesFeed;
 
   async onModuleInit(): Promise<void> {
-    this.feed = this.normalize(await this.loadFeed());
-    this.logger.log(`Loaded ${this.feed.entry.length} viewer profile(s)`);
+    this.fixture = this.normalize(await this.loadFeed());
+    this.logger.log(
+      `Loaded ${this.fixture.entry.length} viewer profile(s) from the fixture`,
+    );
 
     const owner = this.ownerId();
     this.logger.log(
@@ -75,13 +80,43 @@ export class ProfilesRepository implements OnModuleInit {
     );
   }
 
-  /** The fixture as loaded, without the per-request decoration. */
+  /** The freshest list known, without the per-request decoration. */
   getFeed(): ProfilesFeed {
-    return this.feed;
+    return this.live || this.fixture;
+  }
+
+  /**
+   * Remembers a list the backend just answered with.
+   *
+   * A malformed one is refused rather than stored: everything downstream maps
+   * over `entry`, and a bad cache would outlive the request that produced it.
+   */
+  cache(feed: ProfilesFeed): void {
+    if (!Array.isArray(feed?.entry)) {
+      this.logger.warn(`Upstream profiles have no entry array — not cached`);
+
+      return;
+    }
+
+    const owner = this.ownerIdOf(feed);
+    const changed =
+      !this.live ||
+      this.live.entry.length !== feed.entry.length ||
+      owner !== this.ownerId();
+
+    this.live = feed;
+
+    if (changed) {
+      this.logger.log(
+        `Cached ${feed.entry.length} profile(s) from upstream; owner is "${
+          owner || 'none'
+        }"`,
+      );
+    }
   }
 
   profileIds(): string[] {
-    return this.feed.entry.map((entry) => String(entry.id));
+    return this.getFeed().entry.map((entry) => String(entry.id));
   }
 
   /**
@@ -91,7 +126,11 @@ export class ProfilesRepository implements OnModuleInit {
    * "no parental authority exists", never as "the app-wide profile".
    */
   ownerId(): string {
-    const owners = this.feed.entry.filter((entry) =>
+    return this.ownerIdOf(this.getFeed());
+  }
+
+  private ownerIdOf(feed: ProfilesFeed): string {
+    const owners = feed.entry.filter((entry) =>
       isMaster(entry.extensions?.master),
     );
 
@@ -102,16 +141,6 @@ export class ProfilesRepository implements OnModuleInit {
     }
 
     return owners.length > 0 ? String(owners[0].id) : '';
-  }
-
-  /**
-   * The code a profile starts on, used only to seed an empty store.
-   *
-   * A profile the fixture does not know is not the owner, so it falls back to
-   * the ordinary default rather than refusing and leaving nothing to set.
-   */
-  defaultPinFor(profile: string): string {
-    return profile && profile === this.ownerId() ? OWNER_PIN : DEFAULT_PIN;
   }
 
   /**

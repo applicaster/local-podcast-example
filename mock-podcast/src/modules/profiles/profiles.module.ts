@@ -5,10 +5,11 @@ import { ProfilesRepositoryModule } from './profiles.repository.module';
 import { ProfilesController } from './profiles.controller';
 import { ProfilesService } from './profiles.service';
 import { ProfilesFormService } from './profiles.form.service';
+import { UpstreamService } from './upstream.service';
 
 @Module({
   imports: [PinModule, ProfilesRepositoryModule, HttpModule],
-  providers: [ProfilesService, ProfilesFormService],
+  providers: [ProfilesService, ProfilesFormService, UpstreamService],
   controllers: [ProfilesController],
   exports: [ProfilesService],
 })

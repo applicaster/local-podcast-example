@@ -83,18 +83,18 @@ export class ProfilesController {
   /**
    * GET /viewer-profiles
    *
-   * Stands in for the customer's CRM/v3/viewer-profiles. The profiles are
-   * fixture data; `has_pin` is answered from this server's PIN store, so
-   * turning a PIN off is visible here on the next load.
+   * The customer's own profile list, proxied and rewritten: `has_pin` comes
+   * from this server's PIN store, a protected profile is gated behind its own
+   * PIN, and `type` becomes `action` so the cell does not navigate twice.
    */
   @Get()
-  getProfilesFeed(@Req() req?: Request) {
+  async getProfilesFeed(@Req() req?: Request) {
     if (!isUserLoggedIn(req)) {
       throw new UnauthorizedException(
         'Authorization header with Bearer token is required',
       );
     }
 
-    return this.profilesService.getProfilesFeed();
+    return this.profilesService.getProfilesFeed(req);
   }
 }

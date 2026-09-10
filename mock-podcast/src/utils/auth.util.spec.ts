@@ -35,7 +35,7 @@ describe('isUserLoggedIn', () => {
 
 describe('getBearerToken', () => {
   const reqWith = (authorization?: string) =>
-    ({ headers: authorization ? { authorization } : {} } as any);
+    ({ headers: authorization ? { authorization } : {} }) as any;
 
   it('extracts the token regardless of header case', () => {
     expect(getBearerToken(reqWith('bearer tok'))).toBe('tok');

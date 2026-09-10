@@ -72,27 +72,6 @@ describe('ProfilesRepository', () => {
     expect(repository.ownerId()).toBe('first');
   });
 
-  // Two codes, so a local run can tell a request for parental authority from
-  // a request to enter a profile.
-  it('starts the owner on its own code and everyone else on the default', async () => {
-    const repository = await build();
-
-    expect(repository.defaultPinFor('owner')).toBe('0000');
-    expect(repository.defaultPinFor('kid')).toBe('1111');
-    expect(repository.defaultPinFor('adult')).toBe('1111');
-    expect(repository.defaultPinFor('nobody')).toBe('1111');
-  });
-
-  it('gives nobody the owner code when there is no owner', async () => {
-    const repository = await build({
-      ...feed,
-      entry: [{ id: 'adult', extensions: { master: 0 } }],
-    });
-
-    expect(repository.defaultPinFor('adult')).toBe('1111');
-    expect(repository.defaultPinFor('')).toBe('1111');
-  });
-
   it('serves an empty feed when the fixture is unusable', async () => {
     const repository = await build({ id: 'x', entry: 'not-an-array' });
 

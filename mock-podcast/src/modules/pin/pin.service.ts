@@ -10,7 +10,7 @@ import { CLOUD_EVENT_TYPES } from '../../constants/cloud-event-types.constants';
 import { PinPersistenceService } from './pin.persistence.service';
 import { PinGrantService } from './pin.grant.service';
 import { ProfilesRepository } from '../profiles/profiles.repository';
-import { PinAck, PinEventData, PinRecord, PinSeed } from './pin.types';
+import { PinAck, PinEventData, PinRecord } from './pin.types';
 
 export const PIN_EVENT_TYPES: ReadonlySet<string> = new Set([
   CLOUD_EVENT_TYPES.PIN_CODE,
@@ -106,41 +106,6 @@ export class PinService implements OnModuleInit {
       );
       throw error;
     }
-  }
-
-  /**
-   * Gives each named profile its default PIN — but only on a store that holds
-   * nothing yet.
-   *
-   * The caller decides which code each profile gets, because the reason they
-   * differ lives in the profile, not here: a kid's profile is seeded with a
-   * different code so a local run can tell the two apart at a glance.
-   *
-   * Seeding an empty store makes a fresh checkout usable immediately. Seeding
-   * a populated one would undo deletions: whoever turned a PIN off meant it,
-   * and a restart is not consent to put it back. Delete `data/pins.json` to
-   * get the defaults again.
-   *
-   * @returns whether anything was seeded
-   */
-  async seedIfEmpty(seeds: PinSeed[]): Promise<boolean> {
-    if (this.pins.length > 0 || seeds.length === 0) {
-      return false;
-    }
-
-    const updatedAt = new Date().toISOString();
-    this.pins = seeds.map(({ profile, pinCode }) => ({
-      profile,
-      pinCode,
-      updatedAt,
-    }));
-
-    await this.persistence.savePins(this.pins);
-    this.logger.log(
-      `Seeded the default PIN for ${seeds.length} profile(s) on an empty store`,
-    );
-
-    return true;
   }
 
   /**

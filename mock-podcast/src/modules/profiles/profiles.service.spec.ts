@@ -1,158 +1,212 @@
+import { HttpException } from '@nestjs/common';
 import { ProfilesService } from './profiles.service';
 
 describe('ProfilesService', () => {
   const pinService = (withPin: string[] = []) => ({
     hasPin: jest.fn((profile: string) => withPin.includes(profile)),
-    seedIfEmpty: jest.fn(async () => true),
   });
 
-  const feed = {
+  const sessionActions = [
+    { type: 'sessionStorageSet', options: {} },
+    { type: 'finishHook', options: { success: true } },
+  ];
+
+  const feed = (withActions = false) => ({
     id: 'viewer-profiles',
     title: 'Viewer Profiles',
     type: { value: 'feed' },
-    entry: [
-      { id: 'owner', title: 'Owner', extensions: { master: true } },
-      { id: 'child', title: 'Child', extensions: { master: false } },
-    ],
-  };
+    entry: ['owner', 'child'].map((id) => ({
+      id,
+      title: id,
+      type: { value: 'profile' },
+      extensions: {
+        master: id === 'owner',
+        ...(withActions ? { tap_actions: { actions: sessionActions } } : {}),
+      },
+    })),
+  });
 
   /**
-   * The repository is a stub rather than the real thing: this service no
-   * longer reads the fixture, it decorates whatever it is handed.
+   * The repository is a stub: this service does not read the fixture, it caches
+   * what the upstream answered and decorates whatever comes back.
    */
-  const repository = (
-    loaded: any = feed,
-    defaults: Record<string, string> = {},
-  ) => ({
-    getFeed: () => loaded,
-    profileIds: () =>
-      Array.isArray(loaded?.entry)
-        ? loaded.entry.map((e: any) => String(e.id))
-        : [],
-    defaultPinFor: (profile: string) => defaults[profile] || '1111',
-  });
+  const repository = (fallback: any) => {
+    let held = fallback;
 
-  const build = async (
-    pins: string[] = [],
-    loaded: any = feed,
-    defaults: Record<string, string> = {},
-  ): Promise<{
-    service: ProfilesService;
-    pin: ReturnType<typeof pinService>;
-  }> => {
-    const pin = pinService(pins);
-    const service = new ProfilesService(
-      pin as any,
-      repository(loaded, defaults) as any,
-    );
-    await service.onModuleInit();
-
-    return { service, pin };
+    return {
+      getFeed: () => held,
+      cache: jest.fn((f: any) => {
+        held = f;
+      }),
+    };
   };
 
-  it('answers has_pin from the pin store, not the fixture', async () => {
-    const { service } = await build(['owner']);
+  const build = ({
+    pins = [] as string[],
+    upstreamFeed = feed() as any,
+    fallback = feed() as any,
+    fails = false,
+    failsWith = undefined as HttpException | undefined,
+  } = {}) => {
+    const pin = pinService(pins);
+    const repo = repository(fallback);
+    const upstream = {
+      get: jest.fn(async () => {
+        if (failsWith) {
+          throw failsWith;
+        }
 
-    const entries = service.getProfilesFeed().entry;
+        if (fails) {
+          throw new Error('ECONNREFUSED');
+        }
 
-    expect(entries.map((e: any) => [e.id, e.extensions.has_pin])).toEqual([
-      ['owner', true],
-      ['child', false],
-    ]);
-  });
-
-  it('keeps everything else about a profile untouched', async () => {
-    const { service } = await build(['owner']);
-
-    const owner = service.getProfilesFeed().entry[0] as any;
-
-    expect(owner.title).toBe('Owner');
-    expect(owner.extensions.master).toBe(true);
-  });
-
-  it('does not mutate the loaded fixture', async () => {
-    const { service } = await build(['owner']);
-
-    service.getProfilesFeed();
-
-    expect(feed.entry[0].extensions).not.toHaveProperty('has_pin');
-  });
-
-  it('reflects a PIN being turned off on the next read', async () => {
-    const pin = pinService(['owner']);
-    const service = new ProfilesService(pin as any, repository() as any);
-    await service.onModuleInit();
-
-    expect((service.getProfilesFeed().entry[0] as any).extensions.has_pin).toBe(
-      true,
-    );
-
-    pin.hasPin.mockImplementation(() => false);
-
-    expect((service.getProfilesFeed().entry[0] as any).extensions.has_pin).toBe(
-      false,
-    );
-  });
-
-  it('seeds the default pin for every profile it loaded', async () => {
-    const { pin } = await build();
-
-    expect(pin.seedIfEmpty).toHaveBeenCalledWith([
-      { profile: 'owner', pinCode: '1111' },
-      { profile: 'child', pinCode: '1111' },
-    ]);
-  });
-
-  // Kids start on their own code so a PIN prompt during a local run says
-  // which kind of profile it belongs to without opening the store.
-  // Which profile gets which code is the repository's call; this service
-  // only asks and passes it on.
-  it('seeds each profile with the code the repository names', async () => {
-    const { pin } = await build([], feed, { owner: '0000' });
-
-    expect(pin.seedIfEmpty).toHaveBeenCalledWith([
-      { profile: 'owner', pinCode: '0000' },
-      { profile: 'child', pinCode: '1111' },
-    ]);
-  });
-
-  describe('gating a protected profile', () => {
-    const withActions = {
-      ...feed,
-      entry: feed.entry.map((e) => ({
-        ...e,
-        extensions: {
-          ...e.extensions,
-          tap_actions: {
-            actions: [
-              { type: 'sessionStorageSet', options: {} },
-              { type: 'finishHook', options: { success: true } },
-            ],
-          },
-        },
-      })),
+        return upstreamFeed;
+      }),
     };
+    const service = new ProfilesService(
+      pin as any,
+      repo as any,
+      upstream as any,
+      { get: jest.fn(() => undefined) } as any,
+    );
 
-    const actionsOf = (service: ProfilesService, id: string) =>
-      (service.getProfilesFeed().entry.find((e: any) => e.id === id) as any)
-        .extensions.tap_actions.actions;
+    return { service, pin, repo, upstream };
+  };
 
-    // Entering a protected profile asks for THAT profile's own PIN, and a
-    // cancelled pinCode stops the chain — so the session is never written.
-    it('puts a pinCode verify in front of the session actions', async () => {
-      const { service } = await build(['owner'], withActions);
+  const entries = async (service: ProfilesService) =>
+    (await service.getProfilesFeed()).entry as any[];
 
-      expect(actionsOf(service, 'owner').map((a: any) => a.type)).toEqual([
-        'pinCode',
-        'sessionStorageSet',
-        'finishHook',
+  const actionsOf = async (service: ProfilesService, id: string) =>
+    (await entries(service)).find((e) => e.id === id).extensions.tap_actions
+      .actions;
+
+  describe('what it asks for', () => {
+    it('fetches the customer list on every request', async () => {
+      const { service, upstream } = build();
+
+      await service.getProfilesFeed();
+      await service.getProfilesFeed();
+
+      expect(upstream.get).toHaveBeenCalledTimes(2);
+    });
+
+    // PinService asks ownerId() while handling a cloud event, where there is no
+    // request to borrow credentials from. The answer has to already be here.
+    it('caches what the upstream answered', async () => {
+      const fresh = feed();
+      const { service, repo } = build({ upstreamFeed: fresh });
+
+      await service.getProfilesFeed();
+
+      expect(repo.cache).toHaveBeenCalledWith(fresh);
+    });
+
+    // The mock exists to keep the client testable; refusing to serve profiles
+    // because a QA environment is down would stop the work it supports.
+    it('falls back to what it already had when the upstream is unreachable', async () => {
+      const { service, repo } = build({ fails: true });
+
+      expect((await entries(service)).map((e) => e.id)).toEqual([
+        'owner',
+        'child',
+      ]);
+      expect(repo.cache).not.toHaveBeenCalled();
+    });
+
+    it('falls back on a 5xx too — the backend is up but broken', async () => {
+      const { service } = build({
+        failsWith: new HttpException('boom', 503),
+      });
+
+      expect((await entries(service)).map((e) => e.id)).toEqual([
+        'owner',
+        'child',
       ]);
     });
 
-    it('asks for the profile own id, not some other profile', async () => {
-      const { service } = await build(['owner'], withActions);
+    // A 401 means the token the client sent was rejected. Answering it with a
+    // profile list hides that, and hands profiles to a caller who just failed
+    // to authenticate.
+    it('passes a refusal through rather than masking it', async () => {
+      const { service } = build({
+        failsWith: new HttpException('Unauthorized', 401),
+      });
 
-      expect(actionsOf(service, 'owner')[0].options).toEqual({
+      await expect(service.getProfilesFeed()).rejects.toMatchObject({
+        status: 401,
+      });
+    });
+  });
+
+  describe('what it rewrites', () => {
+    it('answers has_pin from the pin store, not from upstream', async () => {
+      const { service } = build({ pins: ['owner'] });
+
+      expect(
+        (await entries(service)).map((e) => [e.id, e.extensions.has_pin]),
+      ).toEqual([
+        ['owner', true],
+        ['child', false],
+      ]);
+    });
+
+    // A profile cell runs its tap actions. Left as `profile`, the client also
+    // navigates to whatever that type maps to, so the home screen the chain
+    // ends on is pushed a second time.
+    it('turns the entry type into an action', async () => {
+      const { service } = build();
+
+      expect((await entries(service)).map((e) => e.type)).toEqual([
+        { value: 'action' },
+        { value: 'action' },
+      ]);
+    });
+
+    it('keeps everything else the upstream sent', async () => {
+      const { service } = build({ pins: ['owner'] });
+
+      const owner = (await entries(service))[0];
+
+      expect(owner.title).toBe('owner');
+      expect(owner.extensions.master).toBe(true);
+    });
+
+    it('does not mutate what it cached', async () => {
+      const fresh = feed();
+      const { service } = build({ upstreamFeed: fresh });
+
+      await service.getProfilesFeed();
+
+      expect(fresh.entry[0].extensions).not.toHaveProperty('has_pin');
+      expect(fresh.entry[0].type).toEqual({ value: 'profile' });
+    });
+
+    it('reflects a PIN being turned off on the next read', async () => {
+      const { service, pin } = build({ pins: ['owner'] });
+
+      expect((await entries(service))[0].extensions.has_pin).toBe(true);
+
+      pin.hasPin.mockImplementation(() => false);
+
+      expect((await entries(service))[0].extensions.has_pin).toBe(false);
+    });
+  });
+
+  describe('gating a protected profile', () => {
+    // Entering a protected profile asks for THAT profile's own PIN, and a
+    // cancelled pinCode stops the chain — so the session is never written.
+    it('puts a pinCode verify in front of the session actions', async () => {
+      const { service } = build({ pins: ['owner'], upstreamFeed: feed(true) });
+
+      expect(
+        (await actionsOf(service, 'owner')).map((a: any) => a.type),
+      ).toEqual(['pinCode', 'sessionStorageSet', 'finishHook']);
+    });
+
+    it('asks for the profile own id, not some other profile', async () => {
+      const { service } = build({ pins: ['owner'], upstreamFeed: feed(true) });
+
+      expect((await actionsOf(service, 'owner'))[0].options).toEqual({
         typeMapping: 'parent-lock',
         flow: 'verify-pin',
         cloudEventPayload: { profile: 'owner' },
@@ -160,35 +214,34 @@ describe('ProfilesService', () => {
     });
 
     it('leaves an unprotected profile untouched', async () => {
-      const { service } = await build(['owner'], withActions);
+      const { service } = build({ pins: ['owner'], upstreamFeed: feed(true) });
 
-      expect(actionsOf(service, 'child').map((a: any) => a.type)).toEqual([
-        'sessionStorageSet',
-        'finishHook',
-      ]);
+      expect(
+        (await actionsOf(service, 'child')).map((a: any) => a.type),
+      ).toEqual(['sessionStorageSet', 'finishHook']);
     });
 
     it('stops gating once the PIN is turned off', async () => {
-      const pin = pinService(['owner']);
-      const service = new ProfilesService(
-        pin as any,
-        repository(withActions) as any,
-      );
-      await service.onModuleInit();
+      const { service, pin } = build({
+        pins: ['owner'],
+        upstreamFeed: feed(true),
+      });
 
-      expect(actionsOf(service, 'owner')[0].type).toBe('pinCode');
+      expect((await actionsOf(service, 'owner'))[0].type).toBe('pinCode');
 
       pin.hasPin.mockImplementation(() => false);
 
-      expect(actionsOf(service, 'owner')[0].type).toBe('sessionStorageSet');
+      expect((await actionsOf(service, 'owner'))[0].type).toBe(
+        'sessionStorageSet',
+      );
     });
 
     it('copes with a profile that has no tap actions at all', async () => {
-      const { service } = await build(['owner']);
+      const { service } = build({ pins: ['owner'] });
 
-      expect(actionsOf(service, 'owner').map((a: any) => a.type)).toEqual([
-        'pinCode',
-      ]);
+      expect(
+        (await actionsOf(service, 'owner')).map((a: any) => a.type),
+      ).toEqual(['pinCode']);
     });
   });
 });

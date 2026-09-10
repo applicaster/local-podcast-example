@@ -1,26 +1,16 @@
-import { HttpException, Injectable, Logger } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import { firstValueFrom } from 'rxjs';
-import { AxiosError } from 'axios';
 import { buildResetActions } from '../pin/pin.actions';
 import { PinService } from '../pin/pin.service';
 import { ProfilesRepository } from './profiles.repository';
+import { UpstreamService } from './upstream.service';
 
 const configModule = '@lib/mock-podcast';
 
 /** Where the real form lives when nothing is configured. */
 export const DEFAULT_PROFILES_FORM_URL =
   'https://api-qa.aio.focusonthefamily.com/CMS/profiles/form';
-
-/**
- * Headers the upstream needs, named exactly as the Zapp endpoint config
- * produces them: `quick-brick-login-flow.access_token` as a bearer header and
- * `user_account.profile` mapped to `X-VIEWER-ID`. They are forwarded verbatim
- * rather than rebuilt — the mock has no account and could not mint either.
- */
-const FORWARDED_HEADERS = ['authorization', 'x-viewer-id', 'accept'] as const;
 
 type FormProperty = {
   id?: string;
@@ -52,7 +42,7 @@ export class ProfilesFormService {
   private readonly logger = new Logger(ProfilesFormService.name);
 
   constructor(
-    private readonly http: HttpService,
+    private readonly upstream: UpstreamService,
     private readonly configService: ConfigService,
     private readonly pinService: PinService,
     private readonly profiles: ProfilesRepository,
@@ -63,75 +53,19 @@ export class ProfilesFormService {
     req: Request | undefined,
     cloudEventsUrl: string,
   ): Promise<ProfileForm> {
-    const url = this.upstreamUrl();
-    const headers = this.forwardedHeaders(req);
-
-    this.logger.log(
-      `Profile form requested profile="${
-        profile || '-'
-      }" upstream="${url}" headers=[${Object.keys(headers).join(', ')}]`,
-    );
-
     if (!profile) {
       this.logger.warn(
         `Profile form carries no profile — the reset button will have no target`,
       );
     }
 
-    const form = await this.fetch(url, headers);
+    const form = await this.upstream.get<ProfileForm>(
+      `Profile form profile="${profile || '-'}"`,
+      this.upstreamUrl(),
+      req,
+    );
 
     return this.withResetButton(form, profile, cloudEventsUrl);
-  }
-
-  private async fetch(
-    url: string,
-    headers: Record<string, string>,
-  ): Promise<ProfileForm> {
-    try {
-      const response = await firstValueFrom(
-        this.http.get<ProfileForm>(url, { headers }),
-      );
-
-      this.logger.log(
-        `Profile form upstream answered status=${response.status}`,
-      );
-
-      return response.data;
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      const status = axiosError.response?.status ?? 502;
-
-      // Answering with the upstream's own status matters: a 401 here means
-      // the token the client sent was refused, and turning that into a 500
-      // would send whoever is debugging looking in the wrong place.
-      this.logger.warn(
-        `Profile form upstream failed status=${status} message="${axiosError.message}"`,
-      );
-
-      throw new HttpException(
-        axiosError.response?.data || 'Profile form upstream failed',
-        status,
-      );
-    }
-  }
-
-  /**
-   * Only these headers travel. Copying the whole set would forward the
-   * client's Host and content negotiation for a different server, and the
-   * upstream reads nothing else from us.
-   */
-  private forwardedHeaders(req?: Request): Record<string, string> {
-    const headers: Record<string, string> = {};
-
-    for (const name of FORWARDED_HEADERS) {
-      const value = req?.headers?.[name];
-
-      if (typeof value === 'string' && value) {
-        headers[name] = value;
-      }
-    }
-
-    return headers;
   }
 
   /**
