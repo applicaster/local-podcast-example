@@ -256,7 +256,7 @@ describe('CollectionsService', () => {
       const entry = (service as any).toFeedEntry(
         singleItemCollection,
         'http://localhost:3000/events',
-        null,
+        undefined,
         'http://localhost:3000',
         false,
       );
@@ -291,7 +291,7 @@ describe('CollectionsService', () => {
       const entry = (service as any).toFeedEntry(
         multiItemCollection,
         'http://localhost:3000/events',
-        null,
+        undefined,
         'http://localhost:3000',
         false,
       );

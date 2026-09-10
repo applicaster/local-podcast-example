@@ -8,8 +8,8 @@ It allows backend services (such as `@lib/mock-podcast`) to construct dynamic, r
 
 ## 1. Key Features
 
-*   **`EntryBuilder`**: Fluent chainable API for generating standard Zapp entry objects with title, summary, media group, and extensions.
-*   **`ActionsBuilder`**: Fluent chainable API for generating entry actions (`openBottomSheet`, `showTextInput`, `sendCloudEvent`, `playAll`, `addToPlaylist`) and cell tap actions.
+*   **`EntryBuilder`**: Fluent chainable API for generating standard Zapp entry objects with title, cover images, extensions, and actions.
+*   **`ActionsBuilder`**: Fluent chainable API for generating entry actions (`openBottomSheet`, `showTextInput`, `sendCloudEvent`, `addToQueue`, `addAllToQueue`, `showToast`) and cell tap actions.
 *   **Feed Construction Helpers**: Utilities (`buildPreferenceFeed`, `buildDynamicCollectionFeed`, `buildCollectionSelectorFeed`) for generating feeds with appropriate `role`, `behavior`, and `dynamic_collection_options` tags.
 *   **Zod Runtime Validation**: Schemas (`validateZappFeed`, `validateActionPayload`) for validating feed and action payloads at runtime.
 
@@ -23,44 +23,28 @@ It allows backend services (such as `@lib/mock-podcast`) to construct dynamic, r
 import { EntryBuilder, ActionsBuilder } from '@lib/feed-decorators';
 
 // Build interactive entry actions
-const actions = new ActionsBuilder()
-  .addOpenBottomSheetAction({
-    id: 'edit_playlist',
-    alias: 'edit',
-    headerTitle: 'Edit Playlist',
-    itemsUrl: 'https://api.example.com/user/collections/123?editable=true',
+const actions = new ActionsBuilder();
+actions
+  .openBottomSheet({
+    header: {
+      title: 'Edit Playlist',
+    },
+    content: {
+      title: 'Your Collections',
+      itemsUrl: 'https://api.example.com/user/collections/123?editable=true',
+      items: [],
+    },
   })
-  .addShowTextInputAction({
-    id: 'rename_playlist',
-    alias: 'edit_name',
-    headerTitle: 'Rename Playlist',
-    inputLabel: 'Playlist Name',
-    defaultValue: 'My Playlist',
-    buttonLabel: 'Save',
-    postUrl: 'https://api.example.com/cloud-events',
-    cloudEventType: 'com.applicaster.collection.rename.v1',
-    collectionId: '123',
-  })
-  .build();
+  .showToast('Updated');
 
 // Build a Zapp entry
-const entry = new EntryBuilder('collection-123', 'My Playlist')
-  .setType('link')
-  .setSummary('10 tracks')
-  .setMediaGroup([
-    {
-      type: 'image',
-      media_item: [{ src: 'https://example.com/cover.jpg', key: 'thumbnail' }],
-    },
-  ])
-  .setExtensions({
-    role: 'dynamic_collection',
-    dynamic_collection_options: {
-      postUrl: 'https://api.example.com/cloud-events',
-      operations: 'remove,reorder',
-    },
-  })
-  .setActions(actions)
+const entry = new EntryBuilder(actions, {
+  id: 'collection-123',
+  type: { value: 'link' },
+})
+  .setTitle('My Playlist')
+  .addCoverImage({ url: 'https://example.com/cover.jpg' })
+  .addExtension('role', 'dynamic_collection')
   .setUpNextFeed('https://api.example.com/media/up-next') // Auto-chaining recommendation feed
   .build();
 ```
