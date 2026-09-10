@@ -7,7 +7,18 @@ describe('ProfilesService', () => {
   });
 
   const sessionActions = [
-    { type: 'sessionStorageSet', options: {} },
+    {
+      type: 'sessionStorageSet',
+      options: {
+        content: {
+          user_account: {
+            profile: 'owner',
+            kids: false,
+            profile_selected: true,
+          },
+        },
+      },
+    },
     { type: 'finishHook', options: { success: true } },
   ];
 
@@ -19,6 +30,12 @@ describe('ProfilesService', () => {
       id,
       title: id,
       type: { value: 'profile' },
+      media_group: [
+        {
+          type: 'image',
+          media_item: [{ key: 'image_base', src: `https://cdn/${id}.webp` }],
+        },
+      ],
       extensions: {
         master: id === 'owner',
         ...(withActions ? { tap_actions: { actions: sessionActions } } : {}),
@@ -189,6 +206,54 @@ describe('ProfilesService', () => {
       pin.hasPin.mockImplementation(() => false);
 
       expect((await entries(service))[0].extensions.has_pin).toBe(false);
+    });
+  });
+
+  describe('what selecting a profile persists', () => {
+    const sessionOf = async (service: ProfilesService, id: string) =>
+      (await actionsOf(service, id)).find(
+        (a: any) => a.type === 'sessionStorageSet',
+      ).options.content.user_account;
+
+    // The id is all that is stored today, and an id renders as nothing — the
+    // navigation's profile button shows the avatar on every screen.
+    it('adds the profile name and avatar', async () => {
+      const { service } = build({ upstreamFeed: feed(true) });
+
+      expect(await sessionOf(service, 'child')).toEqual({
+        profile: 'owner',
+        kids: false,
+        profile_selected: true,
+        profile_name: 'child',
+        profile_avatar: 'https://cdn/child.webp',
+      });
+    });
+
+    it('adds them to a protected profile too, behind its gate', async () => {
+      const { service } = build({ pins: ['owner'], upstreamFeed: feed(true) });
+
+      const types = (await actionsOf(service, 'owner')).map((a: any) => a.type);
+      expect(types).toEqual(['pinCode', 'sessionStorageSet', 'finishHook']);
+      expect((await sessionOf(service, 'owner')).profile_name).toBe('owner');
+    });
+
+    it('leaves an entry with no image with an empty avatar', async () => {
+      const noImage = {
+        ...feed(true),
+        entry: feed(true).entry.map((e: any) => ({ ...e, media_group: [] })),
+      };
+      const { service } = build({ upstreamFeed: noImage });
+
+      expect((await sessionOf(service, 'child')).profile_avatar).toBe('');
+    });
+
+    it('touches no action other than the session write', async () => {
+      const { service } = build({ upstreamFeed: feed(true) });
+
+      const finish = (await actionsOf(service, 'child')).find(
+        (a: any) => a.type === 'finishHook',
+      );
+      expect(finish.options).toEqual({ success: true });
     });
   });
 

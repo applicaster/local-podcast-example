@@ -167,8 +167,7 @@ export class ProfilesService implements OnModuleInit {
     profile: string,
     hasPin: boolean,
   ): unknown[] {
-    const existing =
-      (entry.extensions?.tap_actions as { actions?: unknown[] })?.actions || [];
+    const existing = this.withProfileDetails(entry);
 
     if (!hasPin) {
       return existing;
@@ -185,6 +184,74 @@ export class ProfilesService implements OnModuleInit {
       },
       ...existing,
     ];
+  }
+
+  /**
+   * Adds the profile's name and avatar to what selecting it persists.
+   *
+   * The write carries only the id today, and an id renders as nothing: the
+   * navigation's profile button shows the active profile's avatar, and other
+   * screens show its name, on every screen and after a restart. Resolving them
+   * by re-fetching the list would put a network round trip on screens that
+   * need none, and would fail exactly when it matters — offline, or before the
+   * list has been fetched in this session.
+   *
+   * The values come from the entry itself, so what is stored is exactly what
+   * the list displayed. Anything already in `user_account` is kept.
+   */
+  private withProfileDetails(entry: ProfileEntry): unknown[] {
+    const existing =
+      (entry.extensions?.tap_actions as { actions?: unknown[] })?.actions || [];
+
+    return existing.map((action) => {
+      const step = action as {
+        type?: string;
+        options?: { content?: Record<string, unknown> };
+      };
+
+      if (step?.type !== 'sessionStorageSet' || !step.options?.content) {
+        return action;
+      }
+
+      const account = (step.options.content.user_account || {}) as Record<
+        string,
+        unknown
+      >;
+
+      return {
+        ...step,
+        options: {
+          ...step.options,
+          content: {
+            ...step.options.content,
+            user_account: {
+              ...account,
+              profile_name: entry.title,
+              profile_avatar: this.avatarUrl(entry),
+            },
+          },
+        },
+      };
+    });
+  }
+
+  /** The entry's own `image_base`, or an empty string when it has none. */
+  private avatarUrl(entry: ProfileEntry): string {
+    const groups = (entry.media_group || []) as Array<{
+      media_item?: Array<{ key?: string; src?: string }>;
+    }>;
+
+    for (const group of groups) {
+      const item = (group.media_item || []).find(
+        (media) => media?.key === 'image_base',
+      );
+
+      if (item?.src) {
+        return item.src;
+      }
+    }
+
+    return '';
   }
 
   profileIds(): string[] {

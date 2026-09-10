@@ -34,13 +34,16 @@ and the app talks to you directly.
 | `GET /CMS/profiles/select` | `extensions.has_pin` per entry; a `pinCode` action in front of `tap_actions` when it is true; `type.value` of `action` instead of `profile`; the avatar url and profile name added to what selecting a profile persists |
 | `GET /CMS/profiles/form` | accept `?profile=<id>`; add one button that resets that profile's PIN |
 
-Nothing else in either response changes. Avatars, `denied_actions`, the session
-actions, the form's fields, its Save and Cancel — all stay exactly as they are.
+Nothing else in either response changes. Avatars, `denied_actions`, the form's
+fields, its Save and Cancel all stay exactly as they are. The one exception is
+inside the profile entry's own `sessionStorageSet`, which gains two values —
+Addition 4 in §3; every other action in the chain is untouched.
 
 ### What is new
 
-Three feeds that do not exist yet (§4), and the cloud events behind them (§5):
-setting, verifying, changing, disabling, resetting and recovering a PIN.
+Three feeds that do not exist yet (§4.1, §4.2, §4.3), and the cloud events
+behind them (§5): setting, verifying, changing, disabling, resetting and
+recovering a PIN.
 
 Out of scope: content restrictions, Manage Profiles as a screen, profile
 creation and deletion.
@@ -449,6 +452,50 @@ anything — the app continues past a failed action and only stops on an explici
 
 ---
 
+### 4.3 The forgot-PIN screen
+
+```
+GET /pin/recover
+```
+
+One entry, whose tap action asks for the PIN to be recovered. It exists so a
+"Forgot PIN" screen has a feed of its own, separate from the settings list in
+§4.1.
+
+```json
+{
+  "id": "recover-pin-code-feed",
+  "title": "Recover Pin Code",
+  "type": { "value": "recover-pin-code-feed" },
+  "entry": [
+    {
+      "id": "recover-pin-code",
+      "title": "Recover Pin Code",
+      "type": { "value": "action" },
+      "extensions": {
+        "tap_actions": {
+          "actions": [
+            { "type": "sendCloudEvent",
+              "options": {
+                "url": "<events endpoint>",
+                "type": "com.applicaster.pin.recovery.requested.v1",
+                "subject": "recover_pin_code",
+                "data": { "profile": "<profile id>" } } }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
+
+This route takes no profile of its own — it is reached from a screen, not from a
+row — so the profile comes off the request the way §2 describes. Without it the
+event names no profile and asks about the account-wide PIN instead of the one on
+screen.
+
+---
+
 ## 5. Cloud events
 
 ```
@@ -517,11 +564,25 @@ path is never the only path.
 
 The old code is never asked for — a reset exists precisely because nobody knows it.
 
-- Requires parental authority (§7); **403** without it.
+- Requires parental authority (§7); **403** without it — **unless the account
+  owner has no PIN**, see below.
 - `pin_code` optional. Omitted, the backend decides what the profile lands on: in
   production, the code the user picks from the recovery email; in the mock, a fixed
   known code.
 - `subject: "PIN was successfully reset"`
+
+#### When the account owner has no PIN
+
+Accept the reset on the account token alone, and log it.
+
+The owner PIN is optional while theirs is the only profile, so this is a state
+the product allows. In it there is nothing to prove: no code exists to ask for,
+and the feed correspondingly omits the verification step (§4.2, §6). Requiring
+authority anyway would not protect anything — it would make reset impossible for
+everyone, including the owner.
+
+This is the **only** case in which a reset is accepted without a verification.
+Once the owner has a PIN, the rule in §7 applies without exception.
 
 ### 5.5 Forgot — `com.applicaster.pin.recovery.requested.v1`
 
@@ -675,6 +736,10 @@ backend must therefore carry the authority between them. Either is acceptable:
 
 What must not happen: accepting a reset because the request *says* it is authorised.
 The event carries no proof, and anything derived from it is forgeable.
+
+**The one exception** is an account whose owner has no PIN — see §5.4. There is
+no authority to prove, the feed sends no verification, and the reset is accepted
+on the account token. Everywhere else, no verification means 403.
 
 **One trap.** If any successful verification opened the window, the owner unlocking
 their **own profile** at sign-in would gain the right to rewrite every other PIN for
