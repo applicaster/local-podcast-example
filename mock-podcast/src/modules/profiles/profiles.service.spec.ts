@@ -247,6 +247,44 @@ describe('ProfilesService', () => {
       expect((await sessionOf(service, 'child')).profile_avatar).toBe('');
     });
 
+    // A chain may hold more than one session write. One that writes a
+    // different namespace must come through untouched — giving it a
+    // user_account it never had would be inventing state, not carrying it.
+    it('leaves a session write for another namespace alone', async () => {
+      const withOther = {
+        ...feed(true),
+        entry: feed(true).entry.map((e: any) => ({
+          ...e,
+          extensions: {
+            ...e.extensions,
+            tap_actions: {
+              actions: [
+                {
+                  type: 'sessionStorageSet',
+                  options: {
+                    content: {
+                      'quick-brick-login-flow': { account_token: 'x' },
+                    },
+                  },
+                },
+                ...e.extensions.tap_actions.actions,
+              ],
+            },
+          },
+        })),
+      };
+      const { service } = build({ upstreamFeed: withOther });
+
+      const writes = (await actionsOf(service, 'child')).filter(
+        (a: any) => a.type === 'sessionStorageSet',
+      );
+
+      expect(writes[0].options.content).toEqual({
+        'quick-brick-login-flow': { account_token: 'x' },
+      });
+      expect(writes[1].options.content.user_account.profile_name).toBe('child');
+    });
+
     it('touches no action other than the session write', async () => {
       const { service } = build({ upstreamFeed: feed(true) });
 

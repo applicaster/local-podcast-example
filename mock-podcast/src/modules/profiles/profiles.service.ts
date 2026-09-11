@@ -211,14 +211,17 @@ export class ProfilesService implements OnModuleInit {
         options?: { content?: Record<string, unknown> };
       };
 
-      if (step?.type !== 'sessionStorageSet' || !step.options?.content) {
+      const account = step?.options?.content?.user_account as
+        | Record<string, unknown>
+        | undefined;
+
+      // The action is recognised by what it already writes, not merely by its
+      // type. A chain may hold more than one `sessionStorageSet`, and one that
+      // writes a different namespace must come through untouched — adding a
+      // `user_account` it never had would be inventing state, not carrying it.
+      if (step?.type !== 'sessionStorageSet' || !account) {
         return action;
       }
-
-      const account = (step.options.content.user_account || {}) as Record<
-        string,
-        unknown
-      >;
 
       return {
         ...step,
