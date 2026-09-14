@@ -46,6 +46,7 @@ describe('Controllers Authorization Checks', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
         unauthReq,
       );
 
@@ -66,6 +67,7 @@ describe('Controllers Authorization Checks', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
         authReq,
       );
 
@@ -77,6 +79,46 @@ describe('Controllers Authorization Checks', () => {
         false,
       );
       expect(res.entry).toHaveLength(1);
+    });
+
+    it('passes source_collection_id as collectionId for bulk selector mode', () => {
+      const authReq = { headers: { authorization: 'Bearer my-token' } } as any;
+      collectionsController.getCollections(
+        undefined,
+        undefined,
+        'source-col-1',
+        undefined,
+        undefined,
+        authReq,
+      );
+
+      expect(mockCollectionsService.getCollectionsFeed).toHaveBeenCalledWith(
+        undefined,
+        'https://localhost:3000',
+        'source-col-1',
+        true,
+        false,
+      );
+    });
+
+    it('prefers collection_id when both collection query params are present', () => {
+      const authReq = { headers: { authorization: 'Bearer my-token' } } as any;
+      collectionsController.getCollections(
+        undefined,
+        'col-explicit',
+        'source-col-1',
+        undefined,
+        undefined,
+        authReq,
+      );
+
+      expect(mockCollectionsService.getCollectionsFeed).toHaveBeenCalledWith(
+        undefined,
+        'https://localhost:3000',
+        'col-explicit',
+        true,
+        false,
+      );
     });
 
     it('throws UnauthorizedException on POST /user/collections when unauthenticated', () => {

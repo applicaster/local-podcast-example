@@ -700,6 +700,7 @@ export class CollectionsService implements OnModuleInit {
         .refreshComponent();
 
       if (isCollectionMode) {
+        tapActions.showToast(`Added to ${collection.name}`);
         tapActions.addAction({ type: 'dismissBottomSheet', options: {} });
       }
     }

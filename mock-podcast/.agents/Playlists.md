@@ -38,7 +38,7 @@ This section defines the business rules, capabilities, and behaviors of the play
     *   **Delete Playlist:** Tapping this deletes the custom playlist entirely (emits `com.applicaster.collection.delete.v1` Cloud Event).
     *   **Add all to Queue:** Non-queue playlists (both system and custom user playlists) expose an action to bulk-add all their tracks to the back of the active playback queue.
     *   **Play All:** Non-queue playlists with tracks expose an action (`alias: "play_all"`) to start playing the first track of the playlist and chain subsequent tracks via `play_next_feed_url`.
-    *   **Add to Playlist (Add all to Playlist):** Non-queue playlists expose an action (`alias: "add_to_playlist"`) to open the playlist selector sheet (`itemsUrl: ${baseUrl}/user/collections?collection_id=${id}`), enabling users to bulk-add all tracks from this collection into another target playlist (`com.applicaster.collection.add.collection.v1`).
+    *   **Add to Playlist (Add all to Playlist):** Non-queue playlists expose an action (`alias: "add_to_playlist"`) to open the playlist selector sheet (`itemsUrl: ${baseUrl}/user/collections?collection_id=${id}` (alias: `source_collection_id=${id}`)), enabling users to bulk-add all tracks from this collection into another target playlist (`com.applicaster.collection.add.collection.v1`).
 
 ### B. Item Membership (Adding & Removing Tracks)
 

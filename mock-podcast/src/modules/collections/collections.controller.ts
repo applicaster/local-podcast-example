@@ -27,7 +27,8 @@ export class CollectionsController {
    * Retrieves custom user collections or selector feeds.
    * 
    * @param itemId Optional track ID for "selector mode" (`GET /user/collections?item_id=<id>`), returning collections with `role: "collection_selector"`.
-   * @param collectionId Optional collection ID filter.
+   * @param collectionId Optional collection ID filter. Also used for bulk Add All selector mode.
+   * @param sourceCollectionId Optional source collection ID for bulk Add All selector mode (`GET /user/collections?source_collection_id=<id>`). Ignored when `collection_id` is present.
    * @param editable Optional flag (`editable=true`) to tag collections with `role: "dynamic_collection"` for editable list views.
    * @returns Standard Zapp DSP Feed containing user collections.
    */
@@ -35,6 +36,7 @@ export class CollectionsController {
   getCollections(
     @Query('item_id') itemId?: string,
     @Query('collection_id') collectionId?: string,
+    @Query('source_collection_id') sourceCollectionId?: string,
     @Query('editable') editable?: string,
     @CurrentRoute() baseUrl?: string,
     @Req() req?: Request,
@@ -44,7 +46,7 @@ export class CollectionsController {
     return this.collectionsService.getCollectionsFeed(
       itemId,
       cleanBaseUrl,
-      collectionId,
+      collectionId ?? sourceCollectionId,
       loggedIn,
       editable === 'true',
     );
