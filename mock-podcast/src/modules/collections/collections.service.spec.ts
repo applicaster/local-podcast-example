@@ -190,6 +190,48 @@ describe('CollectionsService', () => {
         expect(deleteAction).toBeUndefined();
       }
     });
+
+    it('bulk selector tap_actions add collection, toast, then dismiss', async () => {
+      const target = await service.createCollection('Morning Mix');
+      const feed = service.getCollectionsFeed(
+        undefined,
+        'http://localhost:3000',
+        'system_gsc',
+      );
+      const row = feed.entry.find((entry) => entry.id === target.id);
+      const types = row?.extensions?.tap_actions?.actions?.map(
+        (action: { type: string }) => action.type,
+      );
+
+      expect(feed.extensions?.role).toBe('collection_selector');
+      expect(feed.extensions?.behavior).toEqual({
+        select_mode: 'none',
+        current_selection: [],
+      });
+      expect(feed.entry.find((entry) => entry.id === 'system_gsc')).toBeUndefined();
+      expect(types).toEqual([
+        'sendCloudEvent',
+        'refreshComponent',
+        'showToast',
+        'dismissBottomSheet',
+      ]);
+
+      const toast = row?.extensions?.tap_actions?.actions?.find(
+        (action: { type: string }) => action.type === 'showToast',
+      );
+      expect(toast?.options?.message).toBe('Added to Morning Mix');
+
+      const event = row?.extensions?.tap_actions?.actions?.find(
+        (action: { type: string }) => action.type === 'sendCloudEvent',
+      );
+      expect(event?.options?.type).toBe(
+        'com.applicaster.collection.add.collection.v1',
+      );
+      expect(event?.options?.data).toEqual({
+        collectionId: target.id,
+        sourceCollectionId: 'system_gsc',
+      });
+    });
   });
 
   describe('upNextFeed decoration', () => {
