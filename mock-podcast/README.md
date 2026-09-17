@@ -18,6 +18,7 @@ It provides a local server that simulates real-world radio and podcast workflows
 *   **Item Membership & Multi-Select Integration:**
     *   Supports **Selector Mode** (`GET /user/collections?item_id=<song_id>`), returning collections with `role: "collection_selector"` and multi-select behavior.
     *   Each collection entry includes dynamic tap actions to explicitly add (`com.applicaster.collection.add.v1`) or remove (`com.applicaster.collection.remove.v1`) a track.
+    *   **Add all to playlist** (`GET /user/collections?collection_id=<id>`) uses `select_mode: "none"`. Target row `tap_actions` run merge (`com.applicaster.collection.add.collection.v1`), then `showToast` (`"Added to playlist"`), then `refreshComponent`.
 *   **Dynamic Collections (Editable Mode):**
     *   Calling `/user/collections?editable=true` or `/user/collections/:id?editable=true` marks feeds with `role: "dynamic_collection"` and `dynamic_collection_options: { postUrl: ".../cloud-events", operations: "remove,reorder" }`.
     *   To support item-scoped operations, every entry in an editable feed includes corresponding item-scoped actions in `extensions.entry_action`: `alias: "remove_item"` (dispatches `com.applicaster.collection.remove.v1` / `delete.v1`) and `alias: "reorder_item"` (dispatches `com.applicaster.collection.reorder.v1`).

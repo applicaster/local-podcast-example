@@ -26,7 +26,7 @@ A semantic string extension on a Feed (`extensions.role`) that dictates the high
 
 ### 5. Behavior (`behavior`)
 A Feed extension object (`extensions.behavior`) declaring interactive client state constraints.
-*   **`select_mode`**: Specifies selection behavior (`"single"` or `"multi"`).
+*   **`select_mode`**: Specifies selection behavior (`"single"`, `"multi"`, or `"none"`).
 *   **`current_selection`**: An array of item IDs representing currently selected items (e.g., playlists containing a specific track).
 
 ### 6. Dynamic Collection Options (`dynamic_collection_options`)
