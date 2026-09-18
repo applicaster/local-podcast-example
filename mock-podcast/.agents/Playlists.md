@@ -38,7 +38,7 @@ This section defines the business rules, capabilities, and behaviors of the play
     *   **Delete Playlist:** Tapping this deletes the custom playlist entirely (emits `com.applicaster.collection.delete.v1` Cloud Event).
     *   **Add all to Queue:** Non-queue playlists (both system and custom user playlists) expose an action to bulk-add all their tracks to the back of the active playback queue.
     *   **Play All:** Non-queue playlists with tracks expose an action (`alias: "play_all"`) to start playing the first track of the playlist and chain subsequent tracks via `play_next_feed_url`.
-    *   **Add to Playlist (Add all to Playlist):** Non-queue playlists expose an action (`alias: "add_to_playlist"`) to open the playlist selector sheet (`itemsUrl: ${baseUrl}/user/collections?collection_id=${id}` (alias: `source_collection_id=${id}`)), enabling users to bulk-add all tracks from this collection into another target playlist (`com.applicaster.collection.add.collection.v1`).
+    *   **Add to Playlist (Add all to Playlist):** Non-queue playlists expose an action (`alias: "add_to_playlist"`) to open the playlist selector sheet (`itemsUrl: ${baseUrl}/user/collections?collection_id=${id}` (alias: `source_collection_id=${id}`)), enabling users to bulk-add all tracks from this collection into another target playlist (`com.applicaster.collection.add.collection.v1`). The selector feed uses `role: "collection_selector"` and `behavior: { select_mode: "none" }`. Each target playlist row's `tap_actions` run in order: `sendCloudEvent` (`com.applicaster.collection.add.collection.v1`) → `showToast` (`"Added to playlist"`) → `refreshComponent` → `dismissBottomSheet`.
 
 ### B. Item Membership (Adding & Removing Tracks)
 
@@ -218,6 +218,7 @@ On the client side, `@lib/feed-decorators` intercepts the feeds and merges these
 | `/user/collections` | `GET` | Retrieve playlist feeds | Returns list of playlists. Appends a synthetic "Create collection" option in default view. |
 | `/user/collections?editable=true` | `GET` | Editable Collections List | Returns list of playlists with `role: "dynamic_collection"` and `dynamic_collection_options: { postUrl, operations: "remove,reorder" }`. |
 | `/user/collections?item_id=<id>` | `GET` | Selector Mode | Returns playlists with `role: "collection_selector"` and `behavior: { select_mode: "multi", current_selection: [...] }`. |
+| `/user/collections?collection_id=<id>` | `GET` | Add-all-to-playlist selector | Returns playlists with `role: "collection_selector"` and `behavior: { select_mode: "none" }`. Target row `tap_actions`: `sendCloudEvent` (`add.collection.v1`) → `showToast` (`"Added to playlist"`) → `refreshComponent` → `dismissBottomSheet`. |
 | `/user/collections/:id` | `GET` | Playlist Tracks | Returns the list of tracks belonging to collection `:id`. |
 | `/user/collections/:id?editable=true` | `GET` | Editable Collection Tracks | Returns tracks belonging to collection `:id` with `role: "dynamic_collection"` and `dynamic_collection_options: { postUrl, operations: "remove,reorder" }`. |
 | `/user/collections/:collectionId/play_next/:itemId` | `GET` | Play Next Feed | Returns the next tracks in collection `:collectionId` starting after `:itemId` for playback chaining. |

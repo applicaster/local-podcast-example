@@ -26,9 +26,11 @@ This guide explains how frontend applications, QuickBrick renderers, and API con
 ### Pattern A: Multi-Select Playlist Choice Lists (`role: "collection_selector"`)
 When a user opens an "Add to Playlist" sheet or track selector modal:
 - **Feed Extension:** The backend decorates the feed with `"role": "collection_selector"`.
-- **Selection Behavior:** Includes a `behavior` block defining `select_mode` (`"single"` | `"multi"`) and `current_selection` (array of collection IDs that currently contain the track).
+- **Selection Behavior:** Includes a `behavior` block defining `select_mode` (`"single"` | `"multi"` | `"none"`) and `current_selection`.
 - **Client Rendering:** QuickBrick multi-select list components inspect `current_selection` to render pre-selected checkboxes/switches without client-side state mapping.
-- **Entry Actions:** Tapping a collection item executes the entry action (`com.applicaster.collection.add.v1` or `com.applicaster.collection.remove.v1`) to toggle membership.
+- **Entry Actions:**
+  - Track add/remove (`GET /user/collections?item_id=<id>`): `select_mode: "multi"`. Tapping a collection executes `com.applicaster.collection.add.v1` or `com.applicaster.collection.remove.v1`.
+  - Add all to playlist (`GET /user/collections?collection_id=<id>`): `select_mode: "none"`. Tapping a target collection runs `com.applicaster.collection.add.collection.v1`, then `showToast` (`"Added to playlist"`), then `refreshComponent`, then `dismissBottomSheet`.
 
 ### Pattern B: Interactive Editable Lists (`role: "dynamic_collection"`)
 When a user opens an editable playlist or queue screen:

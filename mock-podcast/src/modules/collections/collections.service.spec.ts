@@ -211,15 +211,15 @@ describe('CollectionsService', () => {
       expect(feed.entry.find((entry) => entry.id === 'system_gsc')).toBeUndefined();
       expect(types).toEqual([
         'sendCloudEvent',
-        'refreshComponent',
         'showToast',
+        'refreshComponent',
         'dismissBottomSheet',
       ]);
 
       const toast = row?.extensions?.tap_actions?.actions?.find(
         (action: { type: string }) => action.type === 'showToast',
       );
-      expect(toast?.options?.message).toBe('Added to Morning Mix');
+      expect(toast?.options?.message).toBe('Added to playlist');
 
       const event = row?.extensions?.tap_actions?.actions?.find(
         (action: { type: string }) => action.type === 'sendCloudEvent',

@@ -696,11 +696,15 @@ export class CollectionsService implements OnModuleInit {
           data: isCollectionMode
             ? { collectionId: collection.id, sourceCollectionId: itemId }
             : { collectionId: collection.id, itemId },
-        })
-        .refreshComponent();
+        });
 
       if (isCollectionMode) {
-        tapActions.showToast(`Added to ${collection.name}`);
+        tapActions.showToast('Added to playlist');
+      }
+
+      tapActions.refreshComponent();
+
+      if (isCollectionMode) {
         tapActions.addAction({ type: 'dismissBottomSheet', options: {} });
       }
     }
