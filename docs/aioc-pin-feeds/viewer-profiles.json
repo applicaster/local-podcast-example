@@ -44,7 +44,9 @@
                                     "user_account": {
                                         "kids": false,
                                         "profile_selected": true,
-                                        "profile": "a3JVE000005wcej2AA"
+                                        "profile": "a3JVE000005wcej2AA",
+                                        "profile_name": "Tester Test",
+                                        "profile_avatar": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDVjS1I2UUFNLXRodW1iLnBuZw.webp"
                                     },
                                     "quick-brick-login-flow": {
                                         "account_token": "a3JVE000005wcej2AA"
@@ -115,7 +117,9 @@
                                     "user_account": {
                                         "kids": false,
                                         "profile_selected": true,
-                                        "profile": "a3JVE000007CgIn2AK"
+                                        "profile": "a3JVE000007CgIn2AK",
+                                        "profile_name": "Fit Whit",
+                                        "profile_avatar": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDVjS1RNUUEyLXRodW1iLnBuZw.webp"
                                     },
                                     "quick-brick-login-flow": {
                                         "account_token": "a3JVE000007CgIn2AK"
@@ -176,7 +180,9 @@
                                     "user_account": {
                                         "kids": true,
                                         "profile_selected": true,
-                                        "profile": "a3JVE000006XF1d2AG"
+                                        "profile": "a3JVE000006XF1d2AG",
+                                        "profile_name": "Renamed Profile",
+                                        "profile_avatar": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0VWgwMDAwMDAwTENYSUEyLXRodW1iLnBuZw.webp"
                                     },
                                     "quick-brick-login-flow": {
                                         "account_token": "a3JVE000006XF1d2AG"
@@ -235,7 +241,9 @@
                                     "user_account": {
                                         "kids": true,
                                         "profile_selected": true,
-                                        "profile": "a3JVE000006XEyP2AW"
+                                        "profile": "a3JVE000006XEyP2AW",
+                                        "profile_name": "Tester Testing",
+                                        "profile_avatar": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDVjS1FoUUFNLXRodW1iLnBuZw.webp"
                                     },
                                     "quick-brick-login-flow": {
                                         "account_token": "a3JVE000006XEyP2AW"
@@ -296,7 +304,9 @@
                                     "user_account": {
                                         "kids": false,
                                         "profile_selected": true,
-                                        "profile": "a3JVE000007CxBZ2A0"
+                                        "profile": "a3JVE000007CxBZ2A0",
+                                        "profile_name": "This Guy",
+                                        "profile_avatar": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDVjS1JrUUFNLXRodW1iLnBuZw.webp"
                                     },
                                     "quick-brick-login-flow": {
                                         "account_token": "a3JVE000007CxBZ2A0"
@@ -357,7 +367,9 @@
                                     "user_account": {
                                         "kids": false,
                                         "profile_selected": true,
-                                        "profile": "a3JVE000007Cxeb2AC"
+                                        "profile": "a3JVE000007Cxeb2AC",
+                                        "profile_name": "This Lady",
+                                        "profile_avatar": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDNxMTVsUUFBLXRodW1iLnBuZw.webp"
                                     },
                                     "quick-brick-login-flow": {
                                         "account_token": "a3JVE000007Cxeb2AC"

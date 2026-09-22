@@ -26,14 +26,16 @@ export const DEFAULT_PROFILES_FEED_URL =
  *
  * It is proxied rather than reproduced. A profile renamed through their form
  * is renamed in their backend, and a fixture would keep showing the old name;
- * proxying keeps the two feeds telling the same story. Their avatars, denied
- * actions and session actions are theirs and travel untouched.
+ * proxying keeps the two feeds telling the same story. Their avatars and
+ * denied actions are theirs and travel untouched.
  *
- * Three things are rewritten, and only these:
+ * Four things are rewritten, and only these:
  *
  * - `has_pin`, answered from this mock's PIN store rather than from upstream,
  *   which knows nothing about it;
  * - `tap_actions`, gated behind that profile's own PIN when it has one;
+ * - the entry's own `sessionStorageSet` inside those actions, which gains the
+ *   profile's name and avatar — every other action in the chain is left alone;
  * - `type.value`, `profile` to `action` — see below.
  *
  * When the upstream cannot be reached the fixture stands in, so the stand
@@ -167,8 +169,7 @@ export class ProfilesService implements OnModuleInit {
     profile: string,
     hasPin: boolean,
   ): unknown[] {
-    const existing =
-      (entry.extensions?.tap_actions as { actions?: unknown[] })?.actions || [];
+    const existing = this.withProfileDetails(entry);
 
     if (!hasPin) {
       return existing;
@@ -185,6 +186,83 @@ export class ProfilesService implements OnModuleInit {
       },
       ...existing,
     ];
+  }
+
+  /**
+   * Adds the profile's name and avatar to what selecting it persists.
+   *
+   * The write carries only the id today, and an id renders as nothing: the
+   * navigation's profile button shows the active profile's avatar, and other
+   * screens show its name, on every screen and after a restart. Resolving them
+   * by re-fetching the list would put a network round trip on screens that
+   * need none, and would fail exactly when it matters — offline, or before the
+   * list has been fetched in this session.
+   *
+   * The values come from the entry itself, so what is stored is exactly what
+   * the list displayed. Anything already in `user_account` is kept.
+   */
+  private withProfileDetails(entry: ProfileEntry): unknown[] {
+    const existing =
+      (entry.extensions?.tap_actions as { actions?: unknown[] })?.actions || [];
+
+    return existing.map((action) => {
+      const step = action as {
+        type?: string;
+        options?: { content?: Record<string, unknown> };
+      };
+      const options = step?.options;
+      const content = options?.content;
+      const account = content?.user_account as
+        | Record<string, unknown>
+        | undefined;
+
+      // The action is recognised by what it already writes, not merely by its
+      // type. A chain may hold more than one `sessionStorageSet`, and one that
+      // writes a different namespace must come through untouched — adding a
+      // `user_account` it never had would be inventing state, not carrying it.
+      if (
+        step?.type !== 'sessionStorageSet' ||
+        !options ||
+        !content ||
+        !account
+      ) {
+        return action;
+      }
+
+      return {
+        ...step,
+        options: {
+          ...options,
+          content: {
+            ...content,
+            user_account: {
+              ...account,
+              profile_name: entry.title,
+              profile_avatar: this.avatarUrl(entry),
+            },
+          },
+        },
+      };
+    });
+  }
+
+  /** The entry's own `image_base`, or an empty string when it has none. */
+  private avatarUrl(entry: ProfileEntry): string {
+    const groups = (entry.media_group || []) as Array<{
+      media_item?: Array<{ key?: string; src?: string }>;
+    }>;
+
+    for (const group of groups) {
+      const item = (group.media_item || []).find(
+        (media) => media?.key === 'image_base',
+      );
+
+      if (item?.src) {
+        return item.src;
+      }
+    }
+
+    return '';
   }
 
   profileIds(): string[] {
