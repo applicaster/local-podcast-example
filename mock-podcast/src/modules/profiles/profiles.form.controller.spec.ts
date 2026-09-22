@@ -9,12 +9,12 @@ describe('ProfilesFormController', () => {
   const controller = () =>
     new ProfilesFormController(formService as any, config as any);
 
-  const req = (authorization?: string, headers = {}) =>
+  const req = (authorization?: string, headers = {}, query = {}) =>
     ({
       headers: { ...(authorization ? { authorization } : {}), ...headers },
       protocol: 'http',
       get: (n: string) => (n === 'host' ? 'localhost:3000' : undefined),
-      query: {},
+      query,
     }) as any;
 
   beforeEach(() => jest.clearAllMocks());
@@ -32,29 +32,47 @@ describe('ProfilesFormController', () => {
     ).resolves.toBe(form);
   });
 
-  it('passes the profile, the request and the cloud events url on', async () => {
+  it('passes the profile and the request on', async () => {
     const request = req('Bearer tok');
 
     await controller().getProfileForm('kid', undefined, request);
 
-    expect(formService.getForm).toHaveBeenCalledWith(
-      'kid',
-      request,
-      'http://localhost:3000/cloud-events',
-    );
+    expect(formService.getForm).toHaveBeenCalledWith('kid', request);
   });
 
-  // The client's endpoint config attaches the profile as a header; a request
-  // that names none in the query still has to find its subject.
-  it('falls back to the profile the request carries', async () => {
-    const request = req('Bearer tok', { profile: 'from-header' });
+  // The viewer is the parent while a child is being edited, so a header must
+  // never decide whose form this is: it would point the PIN button at the
+  // parent and change their code instead of the child's.
+  it('refuses to take the subject from a header', async () => {
+    const request = req('Bearer tok', { profile: 'the-parent' });
 
     await controller().getProfileForm(undefined, undefined, request);
 
-    expect(formService.getForm).toHaveBeenCalledWith(
-      'from-header',
-      request,
-      expect.any(String),
-    );
+    expect(formService.getForm).toHaveBeenCalledWith('', request);
   });
+
+  // How Zapp puts a context key in a url: an endpoint configured with
+  // `user_account.profile` sends it base64 in `ctx`, as the PIN feeds already
+  // receive it. Still the url, so still not the viewer's header.
+  it('reads the subject out of ctx', async () => {
+    const ctx = Buffer.from(JSON.stringify({ profile: 'the-child' })).toString(
+      'base64',
+    );
+    const request = req('Bearer tok', {}, { ctx });
+
+    await controller().getProfileForm(undefined, undefined, request);
+
+    expect(formService.getForm).toHaveBeenCalledWith('the-child', request);
+  });
+
+  it.each([['profileId'], ['profile_id'], ['id']])(
+    'reads the subject from ?%s=',
+    async (key) => {
+      const request = req('Bearer tok', {}, { [key]: 'the-child' });
+
+      await controller().getProfileForm(undefined, undefined, request);
+
+      expect(formService.getForm).toHaveBeenCalledWith('the-child', request);
+    },
+  );
 });

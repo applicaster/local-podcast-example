@@ -1,8 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import { buildResetActions } from '../pin/pin.actions';
+import { buildManagePinActions } from '../pin/pin.actions';
 import { PinService } from '../pin/pin.service';
+import {
+  buildOwnerNudge,
+  buildParentalControls,
+} from '../../builders/ParentalControlsBuilder';
 import { ProfilesRepository } from './profiles.repository';
 import { UpstreamService } from './upstream.service';
 
@@ -51,11 +55,10 @@ export class ProfilesFormService {
   async getForm(
     profile: string,
     req: Request | undefined,
-    cloudEventsUrl: string,
   ): Promise<ProfileForm> {
     if (!profile) {
       this.logger.warn(
-        `Profile form carries no profile — the reset button will have no target`,
+        `Profile form carries no profile — the PIN button will have no target`,
       );
     }
 
@@ -65,7 +68,7 @@ export class ProfilesFormService {
       req,
     );
 
-    return this.withResetButton(form, profile, cloudEventsUrl);
+    return profile ? this.withManagePinButton(form, profile) : form;
   }
 
   /**
@@ -77,11 +80,7 @@ export class ProfilesFormService {
    * would land somewhere unpredictable, and losing the button is a smaller
    * failure than corrupting the form.
    */
-  private withResetButton(
-    form: ProfileForm,
-    profile: string,
-    cloudEventsUrl: string,
-  ): ProfileForm {
+  private withManagePinButton(form: ProfileForm, profile: string): ProfileForm {
     // The upstream has been seen both ways — `properties` at the top level and
     // wrapped in `body` — so the patch finds the array wherever it is and puts
     // the form back together the same shape it arrived in.
@@ -101,27 +100,29 @@ export class ProfilesFormService {
 
     if (!owner) {
       this.logger.warn(
-        `No profile carries master — the form gets no reset button, since nobody could authorise it`,
+        `No profile carries master — the form gets no PIN button, since nobody could authorise it`,
       );
 
       return form;
     }
 
-    const button = this.resetButton(profile, owner, cloudEventsUrl);
+    const button = this.managePinButton(profile, owner);
+    const section = this.parentalControls(profile, owner);
     const firstButton = properties.findIndex(
       (property) => property.type === 'button',
     );
     const at = firstButton === -1 ? properties.length : firstButton;
     const patched = [
       ...properties.slice(0, at),
+      ...section,
       button,
       ...properties.slice(at),
     ];
 
     this.logger.log(
-      `Profile form patched: "${button.options.title}" for profile="${
-        profile || '-'
-      }" at index ${at}`,
+      `Profile form patched for profile="${profile || '-'}" at index ${at}: "${
+        button.options.title
+      }" and ${section.length} parental-control field(s)`,
     );
 
     return nested
@@ -129,26 +130,55 @@ export class ProfilesFormService {
       : { ...form, properties: patched };
   }
 
-  private resetButton(profile: string, owner: string, cloudEventsUrl: string) {
-    const actions = buildResetActions({
+  /**
+   * The section the customer's form does not have yet.
+   *
+   * On the owner's own profile it is a nudge instead: restrictions belong to a
+   * child's profile, and an owner restricting themselves protects nobody.
+   * Everywhere else it is the five permissions, ticked from what the profile
+   * list says the profile is denied.
+   */
+  private parentalControls(
+    profile: string,
+    owner: string,
+  ): Record<string, unknown>[] {
+    if (profile === owner) {
+      return buildOwnerNudge(
+        this.copy('ownerParentalControlsNote') || undefined,
+      );
+    }
+
+    return buildParentalControls(this.profiles.entryOf(profile));
+  }
+
+  /** Placeholder copy is ours to guess; a configured string wins. */
+  private copy(key: string): string {
+    const configured = this.configService?.get(`${configModule}.config.${key}`);
+
+    return typeof configured === 'string' ? configured : '';
+  }
+
+  private managePinButton(profile: string, owner: string) {
+    const actions = buildManagePinActions({
       target: profile,
+      targetName: this.profiles.nameOf(profile),
       owner,
+      ownerName: this.profiles.nameOf(owner),
       ownerHasPin: this.pinService.hasPin(owner),
-      cloudEventsUrl,
       // A feed re-reads itself after a PIN changes; this form shows nothing
       // that depends on one, so there is nothing to refresh.
       refresh: false,
     });
 
     return {
-      id: 'buttonResetPin',
+      id: 'buttonManagePin',
       // Presets are presentation only — the form's own Cancel carries its
       // behaviour in tap_actions, not in its preset — so borrowing this one
       // styles the control without inheriting anything from Save.
       preset: 'FormButtonSave',
       type: 'button',
       options: {
-        title: this.pinService.hasPin(profile) ? 'Reset PIN' : 'Set PIN',
+        title: this.pinService.hasPin(profile) ? 'Change PIN' : 'Set PIN',
         extensions: { tap_actions: { actions } },
       },
     };

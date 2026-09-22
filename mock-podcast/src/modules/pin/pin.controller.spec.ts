@@ -5,7 +5,13 @@ import { CLOUD_EVENT_TYPES } from '../../constants/cloud-event-types.constants';
 const OWNER = 'owner-profile';
 
 /** The fixture side of the controller: who, if anyone, holds authority. */
-const ownerRepo = (ownerId: string = OWNER) => ({ ownerId: () => ownerId });
+const ownerRepo = (ownerId: string = OWNER, ids: string[] = [ownerId]) => ({
+  ownerId: () => ownerId,
+  profileIds: () => ids,
+  // The fixture the controller reads names nobody in these tests; the prompts
+  // fall back to wording that names nobody, which is what we assert.
+  nameOf: () => '',
+});
 
 describe('PinController', () => {
   const controller = new PinController(
@@ -124,20 +130,61 @@ describe('PinController actions feed', () => {
     });
   });
 
-  // Reset has its own feed, but is offered here too while the app has no
-  // Manage Profiles screen — see the note on getPinActionsFeed.
-  it('offers change, disable, reset and forgot when a pin is set', () => {
+  // The owner's control has its own feed, but is offered here too while the
+  // app has no Manage Profiles screen — see the note on getPinActionsFeed.
+  // The owner's control says whose code it wants: on a profile's own settings
+  // it sits beside that profile's own Change PIN.
+  it('names the owner on the control offered in a profile own settings', () => {
+    const feed = feedFor(true, '12345');
+    const entry: any = feed.entry.find((e: any) => e.id === 'manage-pin');
+
+    expect(entry.title).toBe('Change PIN (account owner)');
+  });
+
+  it('offers change, disable, the owner control and forgot when a pin is set', () => {
     const feed = feedFor(true, '12345');
 
     expect(feed.entry.map((e: any) => e.id)).toEqual([
       'change-pin',
       'disable-pin',
-      'reset-pin',
+      'manage-pin',
       'forgot-pin',
     ]);
   });
 
-  it('drops reset when the fixture has no owner to authorise it', () => {
+  // BR-12. The owner's code is what authorises every parental act, so taking
+  // it away while there is anyone to be a parent to leaves the other profiles'
+  // PINs unsettable for good.
+  it('hides disable on the owner once the account has a second profile', () => {
+    const feed = new PinController(
+      pinService(true) as any,
+      undefined as any,
+      ownerRepo(OWNER, [OWNER, 'kid']) as any,
+    ).getPinActionsFeed(
+      OWNER,
+      'http://localhost:3000/pin/actions',
+      req('Bearer tok'),
+    ) as any;
+
+    expect(feed.entry.map((e: any) => e.id)).not.toContain('disable-pin');
+  });
+
+  // Nobody to be a parent to, so the code guards nothing but its own profile.
+  it('leaves disable on a lone owner', () => {
+    const feed = new PinController(
+      pinService(true) as any,
+      undefined as any,
+      ownerRepo(OWNER, [OWNER]) as any,
+    ).getPinActionsFeed(
+      OWNER,
+      'http://localhost:3000/pin/actions',
+      req('Bearer tok'),
+    ) as any;
+
+    expect(feed.entry.map((e: any) => e.id)).toContain('disable-pin');
+  });
+
+  it('drops the owner control when the fixture has no owner to authorise it', () => {
     const feed = new PinController(
       pinService(true) as any,
       undefined as any,
@@ -201,20 +248,52 @@ describe('PinController actions feed', () => {
     expect(cloudEvent.options.data).toEqual({ profile: '12345' });
   });
 
-  // The reset offered here is the owner's, not the profile's own: it asks for
-  // the OWNER's PIN, so the profile looking at its settings cannot use it
-  // alone. Without this the entry would be a one-tap way past a parental lock.
-  it('makes reset ask for the owner pin, not this profile own', () => {
-    const feed = feedFor(true, '12345');
-    const reset: any = feed.entry.find((e: any) => e.id === 'reset-pin');
-    const actions: any[] = reset.extensions.tap_actions.actions;
+  // Two PIN screens in a row asking for two different codes: without naming
+  // them, the person types the wrong one first.
+  it('names whose code each screen wants', () => {
+    const named = new PinController(
+      pinService(true) as any,
+      undefined as any,
+      {
+        ownerId: () => OWNER,
+        nameOf: (id: string) => (id === OWNER ? 'Keith' : 'Abigail'),
+      } as any,
+    ).getManageActionsFeed(
+      'kid',
+      'http://localhost:3000/pin/actions/manage',
+      req('Bearer tok'),
+    ) as any;
 
-    expect(actions[0].type).toBe('pinCode');
-    expect(actions[0].options.cloudEventPayload).toEqual({
-      profile: OWNER,
-      purpose: 'manage',
+    const actions = named.entry[0].extensions.tap_actions.actions;
+
+    expect(actions[0].options.promptText).toBe(
+      "Enter the account owner's PIN (Keith)",
+    );
+    expect(actions[1].options.promptText).toBe('Set a new PIN for Abigail');
+  });
+
+  // The control offered here is the owner's, not the profile's own: it asks
+  // for the OWNER's PIN, so the profile looking at its settings cannot use it
+  // alone. Without this the entry would be a one-tap way past a parental lock.
+  it('asks for the owner pin, then sets a code on this profile', () => {
+    const feed = feedFor(true, '12345');
+    const entry: any = feed.entry.find((e: any) => e.id === 'manage-pin');
+    const actions: any[] = entry.extensions.tap_actions.actions;
+
+    expect(actions[0].options).toEqual({
+      typeMapping: 'parent-lock',
+      flow: 'verify-pin',
+      cloudEventPayload: { profile: OWNER, purpose: 'manage' },
+      promptText: "Enter the account owner's PIN",
     });
-    expect(actions[1].options.data).toEqual({ profile: '12345' });
+
+    // The owner types the new code; the plugin sends it named for the target.
+    expect(actions[1].options).toEqual({
+      typeMapping: 'parent-lock',
+      flow: 'set-pin',
+      cloudEventPayload: { profile: '12345' },
+      promptText: 'Set a new PIN',
+    });
   });
 
   it('asks the service about the profile from the query', () => {
@@ -278,6 +357,9 @@ describe('PinController actions feed, profile from ctx', () => {
     expect(service.hasPin).toHaveBeenCalledWith('a3JVE000007CgIn2AK');
   });
 
+  // The url names whose buttons these are; ctx names who is asking. Here the
+  // owner asks about somebody else, which is the one pairing where the two
+  // differ and the feed is still served.
   it('lets an explicit profile win over ctx', () => {
     const service = { hasPin: jest.fn(() => false) };
 
@@ -288,10 +370,27 @@ describe('PinController actions feed, profile from ctx', () => {
     ).getPinActionsFeed(
       '12345',
       'http://localhost:3000/pin/actions',
-      reqWith({ ctx: ctxParam({ profile: 'from-ctx' }) }),
+      reqWith({ ctx: ctxParam({ profile: OWNER }) }),
     );
 
     expect(service.hasPin).toHaveBeenCalledWith('12345');
+  });
+
+  // BR-12: a child sees the PIN buttons on its own profile and nowhere else.
+  it('serves nothing to a profile asking about somebody else', () => {
+    const service = { hasPin: jest.fn(() => true) };
+
+    const feed = new PinController(
+      service as any,
+      undefined as any,
+      ownerRepo() as any,
+    ).getPinActionsFeed(
+      '12345',
+      'http://localhost:3000/pin/actions',
+      reqWith({ ctx: ctxParam({ profile: 'another-child' }) }),
+    );
+
+    expect(feed.entry).toEqual([]);
   });
 
   it('puts the ctx profile into the action payloads', () => {
@@ -393,8 +492,9 @@ describe('PinController cloud events url', () => {
       'https://zapp-ran-demo.web.app/cloud-events',
     ).getPinActionsFeed('12345', 'http://localhost:3000/pin/actions', req());
 
+    // Disable and forgot; the owner's control sends nothing of its own —
+    // the plugin posts the set event once the code has been typed.
     expect(eventUrls(feed)).toEqual([
-      'https://zapp-ran-demo.web.app/cloud-events',
       'https://zapp-ran-demo.web.app/cloud-events',
       'https://zapp-ran-demo.web.app/cloud-events',
     ]);
@@ -408,7 +508,6 @@ describe('PinController cloud events url', () => {
     );
 
     expect(eventUrls(feed)).toEqual([
-      'http://localhost:3000/cloud-events',
       'http://localhost:3000/cloud-events',
       'http://localhost:3000/cloud-events',
     ]);
@@ -462,11 +561,11 @@ describe('PinController manage actions feed', () => {
     ).toThrow(UnauthorizedException);
   });
 
-  it('offers a single reset entry', () => {
+  it('offers a single entry', () => {
     const feed = feedFor(true);
 
-    expect(feed.entry.map((e: any) => e.id)).toEqual(['reset-pin']);
-    expect(feed.entry[0].title).toBe('Reset PIN');
+    expect(feed.entry.map((e: any) => e.id)).toEqual(['manage-pin']);
+    expect(feed.entry[0].title).toBe('Change PIN');
   });
 
   // Giving a profile its first PIN and replacing one it has are a single
@@ -475,13 +574,12 @@ describe('PinController manage actions feed', () => {
     expect(feedFor(false).entry[0].title).toBe('Set PIN');
   });
 
-  it('proves the owner pin before resetting', () => {
+  it('proves the owner pin before letting them set one', () => {
     const feed = feedFor(true);
 
     expect(actionsOf(feed).map((a: any) => a.type)).toEqual([
       'pinCode',
-      'sendCloudEvent',
-      'showToast',
+      'pinCode',
       'refreshComponent',
     ]);
 
@@ -491,20 +589,24 @@ describe('PinController manage actions feed', () => {
       typeMapping: 'parent-lock',
       flow: 'verify-pin',
       cloudEventPayload: { profile: OWNER, purpose: 'manage' },
+      promptText: "Enter the account owner's PIN",
     });
   });
 
-  it('aims the reset at the target profile, not at the owner', () => {
-    const cloudEvent = actionsOf(feedFor(true))[1];
-
-    expect(cloudEvent.options.type).toBe(CLOUD_EVENT_TYPES.PIN_CODE_RESET);
-    expect(cloudEvent.options.subject).toBe('profile_reset');
-    expect(cloudEvent.options.data).toEqual({ profile: 'kid' });
+  // The requirement is that the owner chooses the code, so the second step is
+  // the set flow aimed at the target — not a reset to something we picked.
+  it('has the owner type a code for the target profile', () => {
+    expect(actionsOf(feedFor(true))[1].options).toEqual({
+      typeMapping: 'parent-lock',
+      flow: 'set-pin',
+      cloudEventPayload: { profile: 'kid' },
+      promptText: 'Set a new PIN',
+    });
   });
 
-  // The requirements limit who authorises a reset, not who can be reset.
+  // The requirements limit who may do this, not whose PIN it may be done to.
   it('offers the same entry for an adult profile', () => {
-    expect(feedFor(true, OWNER, 'adult').entry[0].id).toBe('reset-pin');
+    expect(feedFor(true, OWNER, 'adult').entry[0].id).toBe('manage-pin');
   });
 
   // With nobody holding parental authority there is nothing to offer, and a
@@ -513,12 +615,12 @@ describe('PinController manage actions feed', () => {
     expect(feedFor(true, '').entry).toEqual([]);
   });
 
-  it('says the same thing about email as forgot does', () => {
-    const toast = actionsOf(feedFor(true))[2];
+  // Nothing is mailed: the owner is standing there typing the code.
+  it('sends no cloud event of its own and promises no email', () => {
+    const types = actionsOf(feedFor(true)).map((a: any) => a.type);
 
-    expect(toast.options.message).toBe(
-      'An email to set a new PIN was sent to the account.',
-    );
+    expect(types).not.toContain('sendCloudEvent');
+    expect(types).not.toContain('showToast');
   });
 });
 
@@ -538,14 +640,14 @@ describe('PinController when the owner has no pin', () => {
     ownerRepo() as any,
   );
 
-  const resetActions = (feed: any) =>
+  const managePinActions = (feed: any) =>
     feed.entry
-      .find((e: any) => e.id === 'reset-pin')
+      .find((e: any) => e.id === 'manage-pin')
       .extensions.tap_actions.actions.map((a: any) => a.type);
 
-  // Asking for a PIN that does not exist would not protect anything: the
-  // verify comes back "PIN is not set", and handleActions carries on past an
-  // Error — it stops only on Cancel — so the event would fire anyway.
+  // Asking for a PIN that does not exist protects nothing: the verify comes
+  // back "PIN is not set", and the step the owner actually came for would
+  // never be reached.
   it('drops the verify step from the manage feed', () => {
     const feed = controller.getManageActionsFeed(
       'kid',
@@ -553,11 +655,7 @@ describe('PinController when the owner has no pin', () => {
       req(),
     ) as any;
 
-    expect(resetActions(feed)).toEqual([
-      'sendCloudEvent',
-      'showToast',
-      'refreshComponent',
-    ]);
+    expect(managePinActions(feed)).toEqual(['pinCode', 'refreshComponent']);
   });
 
   it('drops it from the profile own feed too', () => {
@@ -567,11 +665,7 @@ describe('PinController when the owner has no pin', () => {
       req(),
     ) as any;
 
-    expect(resetActions(feed)).toEqual([
-      'sendCloudEvent',
-      'showToast',
-      'refreshComponent',
-    ]);
+    expect(managePinActions(feed)).toEqual(['pinCode', 'refreshComponent']);
   });
 
   it('keeps the verify step once the owner has one', () => {
@@ -587,6 +681,10 @@ describe('PinController when the owner has no pin', () => {
       req(),
     ) as any;
 
-    expect(resetActions(feed)[0]).toBe('pinCode');
+    expect(managePinActions(feed)).toEqual([
+      'pinCode',
+      'pinCode',
+      'refreshComponent',
+    ]);
   });
 });

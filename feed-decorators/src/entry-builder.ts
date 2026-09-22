@@ -101,6 +101,37 @@ export class EntryBuilder<
   }
 
   /**
+   * Turns the entry into a cell that only runs its tap actions.
+   *
+   * A plain cell navigates by its own type **after** its actions have run,
+   * whatever they returned, so an action chain can never stop it. An `action`
+   * cell does not, which is what lets a chain decide. Its link goes with it:
+   * the client opens an action cell's link as a url scheme, and an https link
+   * is a scheme no plugin handles.
+   */
+  asActionCell(): this {
+    delete this.entry.link;
+    this.entry.type = { value: 'action' };
+
+    return this;
+  }
+
+  /**
+   * Marks the entry for the cell style's lock badge.
+   *
+   * The style reads one path — its `lock_badge_data_key` — and treats a
+   * **truthy** value as unlocked, a falsy one as locked, and a missing key as
+   * no badge at all. So an entry says it is locked, says it is unlocked, or
+   * says nothing and wears no badge.
+   *
+   * @param unlocked whether the viewer may open this entry
+   * @param key the extension the cell style is configured to read
+   */
+  setLockBadge(unlocked: boolean, key: string = 'unlocked'): this {
+    return this.addExtension(key, unlocked);
+  }
+
+  /**
    * Add actions using the specific action builder
    */
   addActions(): TActionBuilder {

@@ -120,6 +120,26 @@ export class ProfilesRepository implements OnModuleInit {
   }
 
   /**
+   * What to call a profile in a sentence.
+   *
+   * Empty when the list does not know the profile or it has no title, so a
+   * caller can fall back to wording that names nobody rather than printing a
+   * blank where a name belongs.
+   */
+  /** The profile itself, as the list last saw it. */
+  entryOf(profile: string): ProfileEntry | undefined {
+    return this.getFeed().entry.find(
+      (candidate) => String(candidate.id) === profile,
+    );
+  }
+
+  nameOf(profile: string): string {
+    const title = this.entryOf(profile)?.title;
+
+    return typeof title === 'string' ? title.trim() : '';
+  }
+
+  /**
    * The account owner: the profile whose `master` flag is set.
    *
    * Returns an empty string when there is none, which every caller reads as

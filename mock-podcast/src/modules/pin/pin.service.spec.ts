@@ -14,12 +14,16 @@ let grants: PinGrantService;
 const buildService = (
   persistence: unknown,
   ownerId: string = OWNER,
+  config: Record<string, unknown> = {},
 ): PinService => {
   grants = new PinGrantService();
 
-  return new PinService(persistence as any, grants, {
-    ownerId: () => ownerId,
-  } as any);
+  return new PinService(
+    persistence as any,
+    grants,
+    { ownerId: () => ownerId } as any,
+    { get: (key: string) => config[key] } as any,
+  );
 };
 
 describe('PinService', () => {
@@ -248,6 +252,88 @@ describe('PinService', () => {
     });
   });
 
+  // The requirements put the gate on the screen: one code at the manage
+  // button, nothing asked for again behind it. That is what this server does
+  // by default; the setting below moves the check here instead.
+  describe('checking on the server instead', () => {
+    const strict = async () => {
+      const strictService = buildService(persistence, OWNER, {
+        '@lib/mock-podcast.config.requireOwnerGrantForPinWrites': true,
+      });
+      await strictService.onModuleInit();
+
+      return (type: string, data: Record<string, unknown> = {}) =>
+        strictService.handlePinEvent(type, data);
+    };
+
+    it('refuses to replace a PIN without the owner window', async () => {
+      const callStrict = await strict();
+
+      await callStrict(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
+        profile: OWNER,
+        pin_code: '0000',
+      });
+      await callStrict(CLOUD_EVENT_TYPES.PIN_CODE_SET, { pin_code: '1234' });
+
+      await expect(
+        callStrict(CLOUD_EVENT_TYPES.PIN_CODE_SET, { pin_code: '9999' }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('takes the write once that window is open', async () => {
+      const callStrict = await strict();
+
+      await callStrict(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
+        profile: OWNER,
+        pin_code: '0000',
+      });
+      await callStrict(CLOUD_EVENT_TYPES.PIN_CODE_SET, { pin_code: '1234' });
+      grants.issue(OWNER);
+
+      const ack = await callStrict(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
+        pin_code: '9999',
+      });
+
+      expect(ack.subject).toBe('PIN was successfully set');
+    });
+  });
+
+  // What the default costs, said out loud: the app is the only gate.
+  describe('taking the app at its word', () => {
+    it('replaces a PIN with no grant at all', async () => {
+      await call(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
+        profile: OWNER,
+        pin_code: '0000',
+      });
+      await call(CLOUD_EVENT_TYPES.PIN_CODE_SET, { pin_code: '1234' });
+
+      const ack = await call(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
+        pin_code: '9999',
+      });
+
+      expect(ack.subject).toBe('PIN was successfully set');
+
+      const verified = await call(CLOUD_EVENT_TYPES.PIN_CODE, {
+        pin_code: '9999',
+      });
+      expect(verified.subject).toBe('Valid Pin Code');
+    });
+
+    it('lets any profile replace the account owner code', async () => {
+      await call(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
+        profile: OWNER,
+        pin_code: '0000',
+      });
+
+      const ack = await call(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
+        profile: OWNER,
+        pin_code: '4242',
+      });
+
+      expect(ack.subject).toBe('PIN was successfully set');
+    });
+  });
+
   describe('reset — the owner giving a profile a new pin', () => {
     beforeEach(async () => {
       await call(CLOUD_EVENT_TYPES.PIN_CODE_SET, { pin_code: '1234' });
@@ -261,17 +347,26 @@ describe('PinService', () => {
 
     const openWindow = () => grants.issue(OWNER);
 
-    it('refuses without an owner grant', async () => {
-      await expect(call(CLOUD_EVENT_TYPES.PIN_CODE_RESET)).rejects.toThrow(
+    it('refuses without an owner grant when the server checks', async () => {
+      const strict = buildService(persistence, OWNER, {
+        '@lib/mock-podcast.config.requireOwnerGrantForPinWrites': true,
+      });
+      await strict.onModuleInit();
+      await strict.handlePinEvent(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
+        pin_code: '1234',
+      });
+      await strict.handlePinEvent(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
+        profile: OWNER,
+        pin_code: '0000',
+      });
+
+      await expect(
+        strict.handlePinEvent(CLOUD_EVENT_TYPES.PIN_CODE_RESET, {}),
+      ).rejects.toThrow(
         new ForbiddenException(
           'Account owner authorization is required for this action',
         ),
       );
-
-      const untouched = await call(CLOUD_EVENT_TYPES.PIN_CODE, {
-        pin_code: '1234',
-      });
-      expect(untouched.subject).toBe('Valid Pin Code');
     });
 
     it('puts the profile on the known reset code once authorised', async () => {
@@ -405,11 +500,24 @@ describe('PinService', () => {
       });
     });
 
-    // Setting a first PIN is open; replacing one is what a reset does, and
-    // costs the same authority. Otherwise pin.set.v1 overwrites anyone's PIN.
-    it('refuses without an owner grant', async () => {
+    // Only where the server has been told to do the checking: by default the
+    // gate is the screen, and the event is taken at its word.
+    it('refuses without an owner grant when the server checks', async () => {
+      const strict = buildService(persistence, OWNER, {
+        '@lib/mock-podcast.config.requireOwnerGrantForPinWrites': true,
+      });
+      await strict.onModuleInit();
+      await strict.handlePinEvent(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
+        profile: 111,
+        pin_code: '1234',
+      });
+      await strict.handlePinEvent(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
+        profile: OWNER,
+        pin_code: '0000',
+      });
+
       await expect(
-        call(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
+        strict.handlePinEvent(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
           profile: 111,
           pin_code: '0000',
         }),
@@ -419,10 +527,13 @@ describe('PinService', () => {
         ),
       );
 
-      const untouched = await call(CLOUD_EVENT_TYPES.PIN_CODE, {
-        profile: 111,
-        pin_code: '1234',
-      });
+      const untouched = await strict.handlePinEvent(
+        CLOUD_EVENT_TYPES.PIN_CODE,
+        {
+          profile: 111,
+          pin_code: '1234',
+        },
+      );
       expect(untouched.subject).toBe('Valid Pin Code');
     });
 
@@ -476,11 +587,21 @@ describe('PinService', () => {
     });
 
     it('says so in the log rather than passing silently', async () => {
+      const strict = buildService(persistence, OWNER, {
+        '@lib/mock-podcast.config.requireOwnerGrantForPinWrites': true,
+      });
+      await strict.onModuleInit();
+      await strict.handlePinEvent(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
+        profile: 111,
+        pin_code: '1234',
+      });
       const warn = jest
-        .spyOn((service as any).logger, 'warn')
+        .spyOn((strict as any).logger, 'warn')
         .mockImplementation(() => undefined);
 
-      await call(CLOUD_EVENT_TYPES.PIN_CODE_RESET, { profile: 111 });
+      await strict.handlePinEvent(CLOUD_EVENT_TYPES.PIN_CODE_RESET, {
+        profile: 111,
+      });
 
       expect(warn).toHaveBeenCalledWith(
         expect.stringContaining('has no PIN to prove'),
@@ -490,7 +611,9 @@ describe('PinService', () => {
     // Nobody carrying master is different from an owner without a PIN: there
     // is no authority to drop, so the refusal stands.
     it('still refuses when the fixture names no owner at all', async () => {
-      const ownerless = buildService(persistence, '');
+      const ownerless = buildService(persistence, '', {
+        '@lib/mock-podcast.config.requireOwnerGrantForPinWrites': true,
+      });
       await ownerless.onModuleInit();
       await ownerless.handlePinEvent(CLOUD_EVENT_TYPES.PIN_CODE_SET, {
         profile: 111,

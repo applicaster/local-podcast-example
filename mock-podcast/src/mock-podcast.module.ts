@@ -5,6 +5,7 @@ import { CollectionsModule } from './modules/collections/collections.module';
 import { CloudEventsModule } from './modules/cloud-events/cloud-events.module';
 import { PinModule } from './modules/pin/pin.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
+import { GroupingsModule } from './modules/groupings/groupings.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
     CloudEventsModule,
     PinModule,
     ProfilesModule,
+    GroupingsModule,
   ],
 })
 export class MockPodcastModule {}

@@ -21,6 +21,17 @@ import { Request } from 'express';
  * Returns '' when nothing names a profile. That is the app-wide PIN, used by
  * apps that gate everything behind one code — a mode, not a failure.
  */
+/**
+ * Whether a header value names a profile at all.
+ *
+ * A client whose `user_account.profile` resolved to nothing still sends the
+ * header, carrying the literal "undefined" — which is what an app that has not
+ * been in a profile yet sends on every request. Taking it at face value looks
+ * up a profile named "undefined" and quietly answers about nobody.
+ */
+const isProfileId = (value: string): boolean =>
+  !!value && value !== 'undefined' && value !== 'null';
+
 export function getProfileFromRequest(
   req?: Request,
   explicit?: string,
@@ -32,29 +43,27 @@ export function getProfileFromRequest(
   // The Zapp endpoint declares user_account.profile as an HTTP custom header
   // renamed `profile`, so it rides on every request that endpoint governs —
   // and unlike ctx it is unaffected by anything rewriting the url.
-  const header = req?.headers?.['profile'];
-
-  if (typeof header === 'string' && header) {
-    return header;
-  }
-
+  //
   // Express lowercases header names, so `X-VIEWER-ID` arrives like this.
-  // "undefined" as a literal string is what the client sends when the key
-  // resolved to nothing — treating it as a profile id would look up a
-  // profile named "undefined" and quietly answer about nobody.
-  const viewerId = req?.headers?.['x-viewer-id'];
+  for (const name of ['profile', 'x-viewer-id']) {
+    const value = req?.headers?.[name];
 
-  if (
-    typeof viewerId === 'string' &&
-    viewerId &&
-    viewerId !== 'undefined' &&
-    viewerId !== 'null'
-  ) {
-    return viewerId;
+    if (typeof value === 'string' && isProfileId(value)) {
+      return value;
+    }
   }
 
-  const raw = req?.query?.ctx;
+  return readProfileFromCtx(req?.query?.ctx);
+}
 
+/**
+ * The profile inside the base64 `ctx` query param.
+ *
+ * Exported because the profile form has to read it without the header
+ * fallbacks above: a form is about the profile being edited, and the headers
+ * name the viewer, who is the parent while a child is edited.
+ */
+export function readProfileFromCtx(raw: unknown): string {
   if (typeof raw !== 'string' || !raw) {
     return '';
   }

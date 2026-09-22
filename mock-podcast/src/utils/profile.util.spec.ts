@@ -74,6 +74,24 @@ describe('getProfileFromRequest', () => {
     expect(getProfileFromRequest(reqWith({}, { profile: '' }))).toBe('');
     expect(getProfileFromRequest(reqWith({}, { profile: ['a'] }))).toBe('');
   });
+
+  // An app that has not been in a profile yet still sends the header, carrying
+  // the literal the key resolved to. It names nobody, exactly like no header.
+  it.each([['undefined'], ['null']])(
+    'treats the literal "%s" as no profile',
+    (value) => {
+      expect(getProfileFromRequest(reqWith({}, { profile: value }))).toBe('');
+    },
+  );
+
+  it('falls through to the viewer id when the profile header says nothing', () => {
+    const req = reqWith(
+      {},
+      { profile: 'undefined', 'x-viewer-id': 'a3JVE000007CgIn2AK' },
+    );
+
+    expect(getProfileFromRequest(req)).toBe('a3JVE000007CgIn2AK');
+  });
 });
 
 describe('getProfileFromRequest and X-VIEWER-ID', () => {

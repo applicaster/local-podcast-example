@@ -21,11 +21,11 @@
             }
         },
         {
-            "id": "buttonResetPin",
+            "id": "buttonManagePin",
             "preset": "FormButtonSave",
             "type": "button",
             "options": {
-                "title": "Reset PIN",
+                "title": "Change PIN",
                 "extensions": {
                     "tap_actions": {
                         "actions": [
@@ -37,26 +37,19 @@
                                     "cloudEventPayload": {
                                         "profile": "a3JVE000005wcej2AA",
                                         "purpose": "manage"
-                                    }
+                                    },
+                                    "promptText": "Enter the account owner's PIN (Tester Test)"
                                 }
                             },
                             {
-                                "type": "sendCloudEvent",
+                                "type": "pinCode",
                                 "options": {
-                                    "url": "https://zapp-ran-demo.web.app/cloud-events",
-                                    "type": "com.applicaster.pin.reset.v1",
-                                    "subject": "profile_reset",
-                                    "data": {
+                                    "typeMapping": "parent-lock",
+                                    "flow": "set-pin",
+                                    "cloudEventPayload": {
                                         "profile": "a3JVE000007CgIn2AK"
-                                    }
-                                }
-                            },
-                            {
-                                "type": "showToast",
-                                "options": {
-                                    "message": "An email to set a new PIN was sent to the account.",
-                                    "id": "pin_reset_email_sent",
-                                    "timeout": 3000
+                                    },
+                                    "promptText": "Set a new PIN for Fit Whit"
                                 }
                             }
                         ]

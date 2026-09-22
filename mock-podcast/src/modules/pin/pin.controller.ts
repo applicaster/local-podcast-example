@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Logger,
   Query,
   Req,
   UnauthorizedException,
@@ -16,12 +17,14 @@ import {
 import { CLOUD_EVENT_TYPES } from '../../constants/cloud-event-types.constants';
 import { PinService } from './pin.service';
 import { ProfilesRepository } from '../profiles/profiles.repository';
-import { buildResetActions, RESET_EMAIL_MESSAGE } from './pin.actions';
+import { buildManagePinActions, RESET_EMAIL_MESSAGE } from './pin.actions';
 
 const configModule = '@lib/mock-podcast';
 
 @Controller('pin')
 export class PinController {
+  private readonly logger = new Logger(PinController.name);
+
   constructor(
     private readonly pinService: PinService,
     private readonly configService: ConfigService,
@@ -76,22 +79,72 @@ export class PinController {
 
     const owner = this.profiles.ownerId();
 
+    // Who is asking, as opposed to whose buttons these are. The two are the
+    // same person on a profile's own settings and different people the moment
+    // a parent opens a child's — and a feed that reads only one of them hands
+    // the wrong buttons to the wrong person, working perfectly (BR-12).
+    const viewer = getProfileFromRequest(req);
+
+    if (!this.mayManage(viewer, profileKey, owner)) {
+      this.logger.warn(
+        `Profile "${
+          viewer || '-'
+        }" asked for the PIN actions of "${profileKey}" and is neither that profile nor the account owner — serving nothing`,
+      );
+
+      return this.actionsFeed([]);
+    }
+
     const entry = this.pinService.hasPin(profileKey)
       ? [
           this.pinFlowEntry('change-pin', 'Change PIN', profileKey),
-          this.disableEntry(profileKey, cloudEventsUrl),
+          // The owner's code is what authorises every parental act, so on an
+          // account with anyone to be a parent to, turning it off would leave
+          // the other profiles' PINs unsettable for good (BR-12).
+          ...(this.mayDisable(profileKey, owner)
+            ? [this.disableEntry(profileKey, cloudEventsUrl)]
+            : []),
           // Reset belongs to Manage Profiles and has its own feed below. It
           // is offered here too because the app has no Manage Profiles screen
           // yet, and this is the only surface a tester can reach. It opens no
           // hole: the chain asks for the OWNER's PIN, so the profile looking
           // at its own settings cannot get through it alone.
-          ...(owner
-            ? [this.resetEntry(profileKey, owner, cloudEventsUrl)]
-            : []),
+          ...(owner ? [this.managePinEntry(profileKey, owner, true)] : []),
           this.forgotEntry(profileKey, cloudEventsUrl),
         ]
       : [this.pinFlowEntry('set-pin', 'Set PIN', profileKey)];
 
+    return this.actionsFeed(entry);
+  }
+
+  /**
+   * Whether this feed is the asker's business.
+   *
+   * A profile manages itself; the account owner manages anybody. Anyone else
+   * gets an empty feed rather than a refusal — there is nothing wrong with the
+   * request, there is simply nothing they may do here.
+   *
+   * An unnamed viewer is treated as the profile itself, which is what a
+   * request carrying only `?profile=` means: a test, or an endpoint whose
+   * context key never arrived. Refusing those would break the app-wide PIN
+   * mode, where nobody is anybody in particular.
+   */
+  private mayManage(viewer: string, target: string, owner: string): boolean {
+    return !viewer || viewer === target || viewer === owner;
+  }
+
+  /** Whether this profile's PIN may be turned off at all (BR-12). */
+  private mayDisable(target: string, owner: string): boolean {
+    if (!owner || target !== owner) {
+      return true;
+    }
+
+    // One profile on the account and the rule lifts: there is nobody left to
+    // be a parent to, so the code guards nothing but its own profile.
+    return this.profiles.profileIds().length < 2;
+  }
+
+  private actionsFeed<T>(entry: T[]) {
     return {
       id: 'pin-actions-feed',
       title: 'PIN Actions',
@@ -132,36 +185,36 @@ export class PinController {
       id: 'pin-manage-actions-feed',
       title: 'Manage PIN',
       type: { value: 'pin-actions-feed' },
-      entry: owner
-        ? [
-            this.resetEntry(
-              target,
-              owner,
-              this.cloudEventsUrl(currentRoute, req),
-            ),
-          ]
-        : [],
+      entry: owner ? [this.managePinEntry(target, owner)] : [],
     };
   }
 
   /**
-   * Reset, as one entry of an actions feed. The chain itself is shared with
-   * the profile form — see {@link buildResetActions}.
+   * The owner giving a profile a code, as one entry of an actions feed. The
+   * chain itself is shared with the profile form — see
+   * {@link buildManagePinActions}.
    */
-  private resetEntry(profile: string, owner: string, cloudEventsUrl: string) {
-    const actions = buildResetActions({
+  private managePinEntry(profile: string, owner: string, ownSettings = false) {
+    const actions = buildManagePinActions({
       target: profile,
+      targetName: this.profiles.nameOf(profile),
       owner,
+      ownerName: this.profiles.nameOf(owner),
       ownerHasPin: this.pinService.hasPin(owner),
-      cloudEventsUrl,
     });
 
+    // The requirements treat giving a profile its first PIN and replacing one
+    // it already has as a single parental right, so this is one entry that
+    // renames itself rather than two that behave identically.
+    const title = this.pinService.hasPin(profile) ? 'Change PIN' : 'Set PIN';
+
     return {
-      // The requirements treat giving a profile its first PIN and replacing
-      // one it already has as a single parental right, so this is one entry
-      // that renames itself rather than two that behave identically.
-      id: 'reset-pin',
-      title: this.pinService.hasPin(profile) ? 'Reset PIN' : 'Set PIN',
+      id: 'manage-pin',
+      // On a profile's own settings this sits beside the profile's own Change
+      // PIN, and the two would read identically while asking for different
+      // codes. Manage Profiles is where it belongs; until that screen exists,
+      // say whose code it wants.
+      title: ownSettings ? `${title} (account owner)` : title,
       type: { value: 'action' },
       extensions: { tap_actions: { actions } },
     };

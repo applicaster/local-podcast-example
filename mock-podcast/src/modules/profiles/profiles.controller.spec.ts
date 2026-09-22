@@ -32,6 +32,6 @@ describe('ProfilesController', () => {
 
     await controller().getProfilesFeed(request);
 
-    expect(service.getProfilesFeed).toHaveBeenCalledWith(request);
+    expect(service.getProfilesFeed).toHaveBeenCalledWith(request, undefined);
   });
 });
