@@ -891,8 +891,8 @@ using the session at all.
 > already do (`refreshComponent`), which is why they work on the profile
 > selection screen.
 >
-> So the PIN belongs on a surface of its own: a tab, or a block above the fields
-> on whatever screen the profile page becomes. Until that screen exists this
+> So the PIN belongs on a surface of its own: a block above the fields on the
+> profile page the tile opens. Until that screen exists this
 > button is how a parent reaches a child's PIN at all, and it stays specified
 > for that reason — but nothing new should be built around it.
 
@@ -1172,8 +1172,8 @@ field on this form, not only this one.
 
 **Only if the label goes on the form.** There is no profile page today — a tile
 opens the form — so BR-5 is a choice between putting the label in `properties`
-and building a page for the tile to open instead, which is closer to the tabs in
-BR-6. What follows is the first.
+and building a page for the tile to open instead, which is what the sections in
+BR-6 need anyway. What follows is the first.
 
 When the subject is the account owner, the form opens with a label reading
 **Account Owner**, above the avatar:

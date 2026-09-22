@@ -51,16 +51,13 @@ fetching the screen again, and a form cannot fetch itself. A feed component can,
 PIN actions already do it with `refreshComponent`, which is why they work where they sit
 today.
 
-**What we propose instead**, both from [BR-6](./br-06-profile-page-tabs.md):
+**What we propose instead** ([BR-6](./br-06-profile-page-tabs.md)): the tile opens a
+**profile page** rather than the form — the header, the PIN feed, a way through to the
+form for the fields, and room for a better avatar picker.
 
-- **A tab.** If the form works inside `quick-brick-tabs` — untried, and cheap to find out
-  — the profile page is a tabs screen, and the PIN gets a tab of its own beside Settings.
-- **Or an intermediate profile page**, the tile opening a page rather than the form: the
-  header, the PIN feed, a way through to the form for the fields, and room for a better
-  avatar picker.
-
-Either way the PIN is a feed component on a surface of its own, above the fields rather
-than among them — never a property of the form.
+The PIN is then a feed component on a surface of its own, above the fields rather than
+among them — never a property of the form. Tabs would do as well and are not available
+for this screen today, so the page carries its sections one under another.
 
 **Worked example:** [local-podcast-example
 #3](https://github.com/applicaster/local-podcast-example/pull/3) builds it on our own

@@ -52,11 +52,11 @@ nowhere to be shown until there is a screen other than the form.
 | BR-10 | Date of birth, optional for the owner, 18+ when set | §6, Addition 6 |
 | BR-5 | The "Account Owner" label — a form property returned only on the owner, **if** the label goes on the form at all; the alternative is a profile page, see row 1 below | §6, Addition 7 |
 | NR-2, NR-3, BR-3 | The manage gate: one code at the button, none behind it, and the window that replaces them | §4.4 and §7 |
-| BR-6 | The profile page tabs — theirs to fill, ours to arrange; see row 1 below | — |
+| BR-6 | Comments, Settings and Account Info — theirs to fill, ours to arrange. Tabs are not available for this screen, so they become sections of a profile page; see row 1 below | — |
 | BR-11 | Restrictions by topic: the vocabulary, the list per profile, the topics per item | [Client guide §6](./guide/README.md#content-restrictions-by-topic) |
 | BR-13 | Delete Profile — the button is built; it appears on profiles that may not be deleted, the owner's included | — |
 | BR-13a | **The API accepts a delete it must refuse**, the owner's own profile included, and checks nobody. Deletion works from the app, so this is the only thing in front of it | A Salesforce change owned by Digital Solutions |
-| BR-14 | The Account Info tab — membership and billing are theirs; the tab has nowhere to sit, see row 1 below | — |
+| BR-14 | Account Info — membership and billing are theirs; it has nowhere to sit until the profile page exists, see row 1 below | — |
 
 Nothing here waits on an answer from them. Where the requirements left a choice
 we made it and wrote it down — Favorites is `bookmark`, the endpoint inverts the
@@ -76,7 +76,7 @@ implements is already written down for the backend that will own it.
 
 | # | What |
 |---|---|
-| 1 | **Somewhere other than the form.** Four requirements ask for the same thing and none of them can be met inside the form: the Account Owner header (BR-5), the tabs (BR-6), the PIN controls (BR-12) and the Account Info tab (BR-14). The PIN is the one that makes it unavoidable — the set of buttons changes the instant a code is set, and a form cannot fetch itself again, while a feed component refreshes itself and already does. Two ways: try the form inside `quick-brick-tabs`, which exists and is untried, or build the intermediate profile page the tile opens. Worked example: [local-podcast-example #3](https://github.com/applicaster/local-podcast-example/pull/3) |
+| 1 | **Somewhere other than the form.** Four requirements ask for the same thing and none of them can be met inside the form: the Account Owner header (BR-5), the tabs (BR-6), the PIN controls (BR-12) and the Account Info tab (BR-14). The PIN is the one that makes it unavoidable — the set of buttons changes the instant a code is set, and a form cannot fetch itself again, while a feed component refreshes itself and already does. The way through is the profile page the tile opens, with a way into the form for the fields — tabs would serve as well and are not available for this screen. Worked example: [local-podcast-example #3](https://github.com/applicaster/local-podcast-example/pull/3) |
 | 2 | **A form component that shows text.** Title, subtitle, comment, and nothing else. Nothing text-only renders in the form today: a property whose preset is not in the app's mapping is dropped before it reaches the screen, and no label preset is mapped. One component closes three lines that cannot be shown — the encouragement message (BR-9), the Account Owner label (BR-5) and the "no permission" line (BR-7) |
 | 3 | **Two lines of Zapp.** Point the Manage Profiles component at `…/profiles/manage-entry` instead of its static JSON, registering the url the way `…/pin/actions` is — `user_account.profile` as a required `ctx` key. And give `Profile Manage Screen` (`7d6bf6e2…`, `screen_feed.source` is null) a source: `…/viewer-profiles?mode=manage`, which needs no registration at all since that url is already there. The content type `profiles-manage` is mapped, so `navigateToScreen` resolves as it stands. The first is not requested yet; the second is what stops the gate opening onto an empty screen |
 | 4 | **The app lists one profile, the one in session (BR-4).** No other profile is on screen, so none can be edited and the alert has no moment to appear — both halves of the requirement are absent rather than wrong. The feeds answer the mode on both sides; nothing asks them for it. Giving `Profile Manage Screen` its source is the first half, the screen showing the whole list is the second |

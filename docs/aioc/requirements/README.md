@@ -57,7 +57,7 @@ than from the product.
 | [BR-3 — Manage button under the tiles](./br-03-manage-button.md) | Served, not requested | One button, one label, no PIN, no manage mode. Both labels and both chains are in [spec §4.4](../contract/aioc-pin-feeds-spec.md#44-the-manage-button); a static feed can carry neither. |
 | [BR-4 — Manage mode tile taps](./br-04-manage-mode-tile-taps.md) | Not reachable | The app lists one profile, the one in session. No other profile is on screen, so none can be edited and the alert has no moment to appear. The feeds answer the mode; nothing asks for it. |
 | [BR-5 — Profile page header](./br-05-profile-page-header.md) | Not built | No profile page exists to put a header on. Two routes in the file; the platform side leans to an intermediate page, because the PIN controls cannot live in the form. |
-| [BR-6 — Profile page tabs](./br-06-profile-page-tabs.md) | Not started | The tabs screen exists (`quick-brick-tabs`, used three times); a form inside a tab is untried. The PIN controls go in a tab or above the fields, never in the form. |
+| [BR-6 — Profile page tabs](./br-06-profile-page-tabs.md) | Not started | Tabs are not available for this screen, so Comments, Settings and Account Info become sections of a profile page. The PIN controls go on it too, never in the form. |
 | [BR-7 — Manage screen, child active](./br-07-manage-screen-child.md) | Specified | The form returns the same fields to everyone today, though nothing stops it varying — that is the backend's decision throughout. The three viewer/target cases are in [contract §6, Addition 3](../contract/aioc-pin-feeds-spec.md#addition-3--the-form-differs-by-who-is-looking), and the file shows how the form learns which profile was tapped. |
 | [BR-8 — Manage screen, owner → child](./br-08-manage-screen-owner-child.md) | Specified | The reference server renders the Parental Controls section from `denied_actions`, inverted, and takes its subject from the url. Their form does neither — [contract §6, Additions 1 and 4](../contract/aioc-pin-feeds-spec.md#addition-4--the-parental-controls-section). |
 | [BR-9 — Manage screen, owner → owner](./br-09-manage-screen-owner-owner.md) | Done, except the message | The fields and the missing Parental Controls are the form's to decide. The encouragement line needs a text component the form does not have; one showing title, subtitle and comment is being added. |
@@ -66,7 +66,7 @@ than from the product.
 | [BR-12 — PIN controls](./br-12-pin-controls.md) | Served | Set, Change, Disable, Forgot and the owner's control over another profile all exist, on the profile selection screen. They cannot live in the form, which is where the requirement puts them — see the file for why, and for the two arrangements that work. The reference server follows both visibility rules. |
 | [BR-13 — Delete Profile](./br-13-delete-profile.md) | Partly built | The button works. It is shown on every profile, the owner's included, and deleting the owner goes through — the form has to return it only when the active profile is the owner and the target is not. |
 | [BR-13a — Backend validation for deletion](./br-13a-delete-validation.md) | **Not implemented** | The API accepts what it must refuse: the owner's own profile can be deleted, and nothing checks who is asking. Now that deletion works, this is the only thing in front of it. |
-| [BR-14 — Account Info tab](./br-14-account-info-tab.md) | Not started | Nothing shows membership or billing, and there is no tabbed profile page for a tab to sit in. Same recommendation as BR-5, BR-6 and BR-12: a tab, or the intermediate page. |
+| [BR-14 — Account Info tab](./br-14-account-info-tab.md) | Not started | Nothing shows membership or billing, and there is no profile page for it to sit on. Same recommendation as BR-5, BR-6 and BR-12. |
 
 ## Where a PIN is required
 
@@ -117,8 +117,8 @@ Written plainly, for reading alongside the requirements rather than the code.
   it, so nothing has to change on one day.
 - Adding a profile under the documented conditions (owner only, fewer than eight), and
   deleting one at all.
-- The account owner label, the Account Info tab, and the age check on the owner's date of
-  birth — all three specified, none of them ours to build.
+- The account owner label, Account Info, and the age check on the owner's date of birth —
+  all three specified, none of them ours to build.
 - The "Manage Profiles" journey as described. The reference server serves all of it now —
   the button with its two labels and the PIN in front of it, the tiles in manage mode, the
   message a child sees on someone else's tile — but the app still opens the old static
@@ -140,9 +140,8 @@ restricted-content gate travels, and the `CMS/events` transport, which blocks ev
 that talks to a live backend.
 
 > [!NOTE]
-> The tabs and account info do not exist on our side at all — those screens are the
-> customer's own, and the requirements about them (BR-6, BR-14) are work nobody has
-> started rather than work half-done.
+> The profile page and account info do not exist on our side at all, so the requirements
+> about them (BR-6, BR-14) are work nobody has started rather than work half-done.
 
 ## Related
 

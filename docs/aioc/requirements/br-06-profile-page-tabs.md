@@ -1,23 +1,21 @@
 # BR-6 — Profile page tabs
 
-**Status:** Not started — the app has a tabs screen, untried with a form inside it
+**Status:** Not started — tabs are not available for this screen; the sections become a profile page instead
 
 ## The requirement
 
 > Every profile page shows Comments and Settings. The Account Info tab appears only when
 > the target profile is the owner. There is no separate Restrictions tab.
 
-## What exists
+## Tabs are not available here
 
-A tabbed screen is not new to this app: `quick-brick-tabs` is already used three times —
-*Tab Hub*, *Life Themes Tabs*, and one unused screen. So the container the requirement
-asks for exists and is configured in Zapp like any other screen.
+The app has a tabbed screen — `quick-brick-tabs`, used three times — but not one that can
+hold this. Every tab in use holds a content screen; a form has never been put in one, and
+it is not something we can offer today.
 
-**What has never been tried is a form inside one.** Every tab in use today holds a
-content screen; nobody has put `quick-brick-form-screen` in a tab, and whether it behaves
-there — its own scrolling, its Save, the way it takes a subject — is unknown until it is
-tried. That is the first thing to find out, and it is cheap: point one tab at the profile
-form and open it.
+So the requirement is read for what it asks rather than how it names it: Comments,
+Settings and Account Info are **sections of a profile page**, not tabs of one. Whether
+they later become tabs is a presentation change on a page that already exists.
 
 ## Where the PIN controls go — not in the form
 
@@ -33,32 +31,28 @@ one is set the form is showing the wrong set, and a form has no way to fetch its
 A feed does: the PIN actions already refresh their own component (`refreshComponent`),
 which is why they work on the profile selection screen today.
 
-So the PIN lives on its own surface: **its own tab, or a block at the top of the profile
-page — anywhere but inside the form.** There is a worked example of the arrangement on our
-own server: [local-podcast-example #3](https://github.com/applicaster/local-podcast-example/pull/3).
+So the PIN lives on its own surface: **a block on the profile page, above the fields —
+anywhere but inside the form.** There is a worked example of the arrangement on our own
+server: [local-podcast-example #3](https://github.com/applicaster/local-podcast-example/pull/3).
 
-## Two ways to the same place
+## The profile page
 
-**Try the tabs screen.** If the form works inside a tab, the profile page is a tabs screen
-whose Settings tab is the form as it is today, and the header from
-[BR-5](./br-05-profile-page-header.md) sits above the tab bar. Nothing new is built; the
-pieces are arranged differently.
-
-**Or the intermediate page** from [BR-5](./br-05-profile-page-header.md), option 2, which
-is where the platform side leans: the tile opens a **profile overview** — the header, the
-PIN management feed, a way through to the form for the fields, and possibly the avatar
-picker. Tabs can be added to that page later, or it can stay one screen with sections.
+The tile opens a **profile overview** rather than the form: the header from
+[BR-5](./br-05-profile-page-header.md), the PIN management feed, a way through to the form
+for the fields, and possibly the avatar picker. Account Info
+([BR-14](./br-14-account-info-tab.md)) is a section of the same page, shown only when the
+target is the owner.
 
 The avatar is the other reason for it. On the form it is a horizontal rail, which is a
 poor way to choose from many; the form cannot be broken into steps and has no separate
 picker yet, so a page around it is the only place a better picker could go.
 
-Either way this and BR-5 are one piece of work, and the PIN buttons
+This and BR-5 are one piece of work, and the PIN buttons
 ([BR-12](./br-12-pin-controls.md)) get somewhere of their own to live instead of riding
 inside the form.
 
 ## What the backend supplies
 
 Whether the target is the owner, which the profile list already carries as
-`extensions.master`, and which the form can also state (BR-5). Tab **content** for Account
+`extensions.master`, and which the form can also state (BR-5). The **content** for Account
 Info is membership and billing — [BR-14](./br-14-account-info-tab.md).

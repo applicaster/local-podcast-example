@@ -272,16 +272,15 @@ configuration changes that:
 - **The PIN controls.** The set of buttons a profile gets changes the instant a
   code is set — *Set* before, *Change* and *Delete* after — and a form cannot
   fetch itself again to show the new set. A feed component can, and the PIN
-  actions already do. They need a surface of their own: a tab, or a block above
-  the fields.
+  actions already do. They need a surface of their own — a block on a profile
+  page, above the fields.
 - **Anything text-only,** such as the "Account Owner" header or an explanatory
   line. A property whose preset is not in the app's presets mapping is dropped
   before it reaches the screen, and no label preset is mapped. A component that
   shows a title, a subtitle and a comment is being added for this.
 
-Both point the same way — a profile page around the form, either as a tabbed
-screen or as a page the tile opens with a way through to the form. A worked
-example: [local-podcast-example
+Both point the same way — a profile page the tile opens, with a way through to
+the form for the fields. A worked example: [local-podcast-example
 #3](https://github.com/applicaster/local-podcast-example/pull/3).
 
 ## 5. How to test
