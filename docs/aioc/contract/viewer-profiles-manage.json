@@ -29,44 +29,27 @@
                 "tap_actions": {
                     "actions": [
                         {
-                            "type": "pinCode",
+                            "type": "showAlert",
                             "options": {
-                                "typeMapping": "parent-lock",
-                                "flow": "verify-pin",
-                                "cloudEventPayload": {
-                                    "profile": "a3JVE000005wcej2AA"
-                                }
+                                "title": "Not your profile",
+                                "message": "Only the account owner can manage other profiles.",
+                                "okButtonText": "OK"
                             }
-                        },
-                        {
-                            "options": {
-                                "content": {
-                                    "user_account": {
-                                        "kids": false,
-                                        "profile_selected": true,
-                                        "profile": "a3JVE000005wcej2AA",
-                                        "profile_name": "Tester Test",
-                                        "profile_avatar": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDVjS1I2UUFNLXRodW1iLnBuZw.webp"
-                                    },
-                                    "quick-brick-login-flow": {
-                                        "account_token": "a3JVE000005wcej2AA"
-                                    }
-                                }
-                            },
-                            "type": "sessionStorageSet"
-                        },
-                        {
-                            "options": {
-                                "success": true
-                            },
-                            "type": "finishHook"
                         }
                     ]
                 },
                 "kids": false,
                 "token": "a3JVE000005wcej2AA",
                 "master": 1,
-                "has_pin": true
+                "has_pin": true,
+                "unlocked": false,
+                "form_data": {
+                    "allowComment": false,
+                    "allowChangePicture": true,
+                    "allowChangeName": true,
+                    "allowOfflineDownload": true,
+                    "allowFavorites": true
+                }
             },
             "title": "Tester Test",
             "id": "a3JVE000005wcej2AA",
@@ -102,16 +85,6 @@
                 "tap_actions": {
                     "actions": [
                         {
-                            "type": "pinCode",
-                            "options": {
-                                "typeMapping": "parent-lock",
-                                "flow": "verify-pin",
-                                "cloudEventPayload": {
-                                    "profile": "a3JVE000007CgIn2AK"
-                                }
-                            }
-                        },
-                        {
                             "options": {
                                 "content": {
                                     "user_account": {
@@ -129,17 +102,86 @@
                             "type": "sessionStorageSet"
                         },
                         {
+                            "type": "navigateToScreen",
                             "options": {
-                                "success": true
-                            },
-                            "type": "finishHook"
+                                "typeMapping": "profile-edit",
+                                "navigationAction": "push",
+                                "entry": {
+                                    "media_group": [
+                                        {
+                                            "media_item": [
+                                                {
+                                                    "key": "image_base",
+                                                    "src": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDVjS1RNUUEyLXRodW1iLnBuZw.webp"
+                                                }
+                                            ],
+                                            "type": "image"
+                                        }
+                                    ],
+                                    "extensions": {
+                                        "denied_actions": {
+                                            "playlist": false,
+                                            "offline_download": false,
+                                            "comment": false,
+                                            "change_picture": false,
+                                            "change_name": true,
+                                            "bookmark": false
+                                        },
+                                        "birthdate": "1973-09-09",
+                                        "gender": "Male",
+                                        "username": "Whit",
+                                        "avatar_id": "char:1562",
+                                        "tap_actions": {
+                                            "actions": [
+                                                {
+                                                    "options": {
+                                                        "content": {
+                                                            "user_account": {
+                                                                "kids": false,
+                                                                "profile_selected": true,
+                                                                "profile": "a3JVE000007CgIn2AK"
+                                                            },
+                                                            "quick-brick-login-flow": {
+                                                                "account_token": "a3JVE000007CgIn2AK"
+                                                            }
+                                                        }
+                                                    },
+                                                    "type": "sessionStorageSet"
+                                                },
+                                                {
+                                                    "options": {
+                                                        "success": true
+                                                    },
+                                                    "type": "finishHook"
+                                                }
+                                            ]
+                                        },
+                                        "kids": false,
+                                        "token": "a3JVE000007CgIn2AK",
+                                        "master": 0
+                                    },
+                                    "title": "Fit Whit",
+                                    "id": "a3JVE000007CgIn2AK",
+                                    "type": {
+                                        "value": "profile"
+                                    }
+                                }
+                            }
                         }
                     ]
                 },
                 "kids": false,
                 "token": "a3JVE000007CgIn2AK",
                 "master": 0,
-                "has_pin": true
+                "has_pin": false,
+                "unlocked": true,
+                "form_data": {
+                    "allowComment": true,
+                    "allowChangePicture": true,
+                    "allowChangeName": false,
+                    "allowOfflineDownload": true,
+                    "allowFavorites": true
+                }
             },
             "title": "Fit Whit",
             "id": "a3JVE000007CgIn2AK",
@@ -175,34 +217,27 @@
                 "tap_actions": {
                     "actions": [
                         {
+                            "type": "showAlert",
                             "options": {
-                                "content": {
-                                    "user_account": {
-                                        "kids": true,
-                                        "profile_selected": true,
-                                        "profile": "a3JVE000006XF1d2AG",
-                                        "profile_name": "Renamed Profile",
-                                        "profile_avatar": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0VWgwMDAwMDAwTENYSUEyLXRodW1iLnBuZw.webp"
-                                    },
-                                    "quick-brick-login-flow": {
-                                        "account_token": "a3JVE000006XF1d2AG"
-                                    }
-                                }
-                            },
-                            "type": "sessionStorageSet"
-                        },
-                        {
-                            "options": {
-                                "success": true
-                            },
-                            "type": "finishHook"
+                                "title": "Not your profile",
+                                "message": "Only the account owner can manage other profiles.",
+                                "okButtonText": "OK"
+                            }
                         }
                     ]
                 },
                 "kids": true,
                 "token": "a3JVE000006XF1d2AG",
                 "master": 0,
-                "has_pin": false
+                "has_pin": false,
+                "unlocked": true,
+                "form_data": {
+                    "allowComment": false,
+                    "allowChangePicture": true,
+                    "allowChangeName": true,
+                    "allowOfflineDownload": true,
+                    "allowFavorites": false
+                }
             },
             "title": "Renamed Profile",
             "id": "a3JVE000006XF1d2AG",
@@ -236,34 +271,27 @@
                 "tap_actions": {
                     "actions": [
                         {
+                            "type": "showAlert",
                             "options": {
-                                "content": {
-                                    "user_account": {
-                                        "kids": true,
-                                        "profile_selected": true,
-                                        "profile": "a3JVE000006XEyP2AW",
-                                        "profile_name": "Tester Testing",
-                                        "profile_avatar": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDVjS1FoUUFNLXRodW1iLnBuZw.webp"
-                                    },
-                                    "quick-brick-login-flow": {
-                                        "account_token": "a3JVE000006XEyP2AW"
-                                    }
-                                }
-                            },
-                            "type": "sessionStorageSet"
-                        },
-                        {
-                            "options": {
-                                "success": true
-                            },
-                            "type": "finishHook"
+                                "title": "Not your profile",
+                                "message": "Only the account owner can manage other profiles.",
+                                "okButtonText": "OK"
+                            }
                         }
                     ]
                 },
                 "kids": true,
                 "token": "a3JVE000006XEyP2AW",
                 "master": 0,
-                "has_pin": false
+                "has_pin": false,
+                "unlocked": true,
+                "form_data": {
+                    "allowComment": true,
+                    "allowChangePicture": true,
+                    "allowChangeName": true,
+                    "allowOfflineDownload": true,
+                    "allowFavorites": true
+                }
             },
             "title": "Tester Testing",
             "id": "a3JVE000006XEyP2AW",
@@ -299,34 +327,27 @@
                 "tap_actions": {
                     "actions": [
                         {
+                            "type": "showAlert",
                             "options": {
-                                "content": {
-                                    "user_account": {
-                                        "kids": false,
-                                        "profile_selected": true,
-                                        "profile": "a3JVE000007CxBZ2A0",
-                                        "profile_name": "This Guy",
-                                        "profile_avatar": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDVjS1JrUUFNLXRodW1iLnBuZw.webp"
-                                    },
-                                    "quick-brick-login-flow": {
-                                        "account_token": "a3JVE000007CxBZ2A0"
-                                    }
-                                }
-                            },
-                            "type": "sessionStorageSet"
-                        },
-                        {
-                            "options": {
-                                "success": true
-                            },
-                            "type": "finishHook"
+                                "title": "Not your profile",
+                                "message": "Only the account owner can manage other profiles.",
+                                "okButtonText": "OK"
+                            }
                         }
                     ]
                 },
                 "kids": false,
                 "token": "a3JVE000007CxBZ2A0",
                 "master": 0,
-                "has_pin": false
+                "has_pin": false,
+                "unlocked": true,
+                "form_data": {
+                    "allowComment": true,
+                    "allowChangePicture": true,
+                    "allowChangeName": true,
+                    "allowOfflineDownload": true,
+                    "allowFavorites": true
+                }
             },
             "title": "This Guy",
             "id": "a3JVE000007CxBZ2A0",
@@ -362,34 +383,27 @@
                 "tap_actions": {
                     "actions": [
                         {
+                            "type": "showAlert",
                             "options": {
-                                "content": {
-                                    "user_account": {
-                                        "kids": false,
-                                        "profile_selected": true,
-                                        "profile": "a3JVE000007Cxeb2AC",
-                                        "profile_name": "This Lady",
-                                        "profile_avatar": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDNxMTVsUUFBLXRodW1iLnBuZw.webp"
-                                    },
-                                    "quick-brick-login-flow": {
-                                        "account_token": "a3JVE000007Cxeb2AC"
-                                    }
-                                }
-                            },
-                            "type": "sessionStorageSet"
-                        },
-                        {
-                            "options": {
-                                "success": true
-                            },
-                            "type": "finishHook"
+                                "title": "Not your profile",
+                                "message": "Only the account owner can manage other profiles.",
+                                "okButtonText": "OK"
+                            }
                         }
                     ]
                 },
                 "kids": false,
                 "token": "a3JVE000007Cxeb2AC",
                 "master": 0,
-                "has_pin": false
+                "has_pin": false,
+                "unlocked": true,
+                "form_data": {
+                    "allowComment": true,
+                    "allowChangePicture": true,
+                    "allowChangeName": false,
+                    "allowOfflineDownload": true,
+                    "allowFavorites": true
+                }
             },
             "title": "This Lady",
             "id": "a3JVE000007Cxeb2AC",

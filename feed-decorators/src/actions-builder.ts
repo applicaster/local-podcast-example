@@ -55,12 +55,72 @@ export class ActionsBuilder {
 
   /**
    * Adds a navigateToScreen action to the actions list.
-   * @param opts Options for navigateToScreen (typeMapping required)
+   *
+   * With an `entry`, the client opens that entry on the screen the type maps
+   * to. That is what lets a cell run a chain of its own and still end up where
+   * a plain cell would have gone — a chain the client can stop, unlike the
+   * navigation a plain cell performs regardless.
+   *
+   * @param opts typeMapping required; navigationAction and entry optional
    */
-  navigateToScreen(opts: { typeMapping: string }) {
+  navigateToScreen(opts: {
+    typeMapping: string;
+    navigationAction?: 'push' | 'replace';
+    entry?: Record<string, any>;
+  }) {
     this.actions.push({
       type: 'navigateToScreen',
-      options: { typeMapping: opts.typeMapping },
+      options: {
+        typeMapping: opts.typeMapping,
+        ...(opts.navigationAction
+          ? { navigationAction: opts.navigationAction }
+          : {}),
+        ...(opts.entry ? { entry: opts.entry } : {}),
+      },
+    });
+    return this;
+  }
+
+  /**
+   * Adds a pinCode action, which presents the parent lock screen and runs one
+   * of its flows. The chain stops only if the user backs out: a wrong code
+   * resolves as an error and the chain carries on, so whatever follows must
+   * still be refused by the server on its own terms.
+   *
+   * @param opts typeMapping and flow required; cloudEventPayload names the
+   * profile whose PIN is being handled, without which the event is about the
+   * account-wide PIN
+   */
+  pinCode(opts: {
+    typeMapping: string;
+    flow: 'verify-pin' | 'verify' | 'set-pin' | 'change-pin' | 'reset-pin';
+    navigationAction?: 'push' | 'replace';
+    cloudEventPayload?: Record<string, any>;
+    /** What the screen asks for, instead of the app-wide configured string. */
+    promptText?: string;
+    /** The way out for someone who does not have the code. */
+    forgotText?: string;
+    forgotActions?: Action[];
+  }) {
+    this.actions.push({
+      type: 'pinCode',
+      options: {
+        typeMapping: opts.typeMapping,
+        flow: opts.flow,
+        ...(opts.navigationAction
+          ? { navigationAction: opts.navigationAction }
+          : {}),
+        ...(opts.cloudEventPayload
+          ? { cloudEventPayload: opts.cloudEventPayload }
+          : {}),
+        ...(opts.promptText ? { promptText: opts.promptText } : {}),
+        ...(opts.forgotActions?.length
+          ? {
+              ...(opts.forgotText ? { forgotText: opts.forgotText } : {}),
+              forgotActions: opts.forgotActions,
+            }
+          : {}),
+      },
     });
     return this;
   }
@@ -155,6 +215,28 @@ export class ActionsBuilder {
         title: opts.title,
         okButtonText: opts.okButtonText,
         cancelButtonText: opts.cancelButtonText,
+      },
+    });
+    return this;
+  }
+
+  /**
+   * Adds a showAlert action: one button, because there is nothing to decide.
+   *
+   * Use it wherever the user is only being told something — `confirmDialog`
+   * always renders two buttons, and without a cancel label the second one
+   * comes out blank. Dismissing a notice is not a cancellation, so the action
+   * resolves as a success and the rest of the chain runs.
+   *
+   * @param opts title required; message and okButtonText optional
+   */
+  showAlert(opts: { title: string; message?: string; okButtonText?: string }) {
+    this.actions.push({
+      type: 'showAlert',
+      options: {
+        title: opts.title,
+        ...(opts.message ? { message: opts.message } : {}),
+        ...(opts.okButtonText ? { okButtonText: opts.okButtonText } : {}),
       },
     });
     return this;

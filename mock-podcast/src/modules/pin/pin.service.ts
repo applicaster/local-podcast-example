@@ -9,6 +9,7 @@ import {
 import { CLOUD_EVENT_TYPES } from '../../constants/cloud-event-types.constants';
 import { PinPersistenceService } from './pin.persistence.service';
 import { PinGrantService } from './pin.grant.service';
+import { ConfigService } from '@nestjs/config';
 import { ProfilesRepository } from '../profiles/profiles.repository';
 import { PinAck, PinEventData, PinRecord } from './pin.types';
 
@@ -51,6 +52,8 @@ export const buildPinAck = (subject: string, id: string): PinAck => ({
  * it addresses — the mock cannot tell master from child, and the real
  * relationship lives in a backend it does not have.
  */
+const configModule = '@lib/mock-podcast';
+
 @Injectable()
 export class PinService implements OnModuleInit {
   private readonly logger = new Logger(PinService.name);
@@ -60,7 +63,32 @@ export class PinService implements OnModuleInit {
     private readonly persistence: PinPersistenceService,
     private readonly grants: PinGrantService,
     private readonly profiles: ProfilesRepository,
+    private readonly configService?: ConfigService,
   ) {}
+
+  /**
+   * Whether the server insists on proving who is asking.
+   *
+   * The requirements put the gate on the screen: one code at the manage
+   * button, and nothing asked for again on the screen behind it (NR-3), so a
+   * write arrives with nothing of its own to prove a parent made it. That is
+   * the behaviour this server follows by default, because it is the product
+   * being described.
+   *
+   * `requireOwnerGrantForPinWrites` turns the other way on: replacing a code
+   * then needs the five-minute window a verified owner opens. Worth doing if
+   * the endpoint is reachable by anything other than this app — the screen
+   * cannot vouch for a request it did not make — and worth knowing that with
+   * it off, a child in their own profile can replace the account owner's code
+   * and with it every lock on the account.
+   */
+  private requiresOwnerGrant(): boolean {
+    return (
+      this.configService?.get(
+        `${configModule}.config.requireOwnerGrantForPinWrites`,
+      ) === true
+    );
+  }
 
   async onModuleInit(): Promise<void> {
     this.pins = await this.persistence.loadPins();
@@ -198,6 +226,14 @@ export class PinService implements OnModuleInit {
     const owner = this.profiles.ownerId();
 
     if (owner && this.grants.has(owner)) {
+      return;
+    }
+
+    if (!this.requiresOwnerGrant()) {
+      this.logger.log(
+        `${action} allowed: the requirements put the gate on the screen, so the event is taken at its word. Set requireOwnerGrantForPinWrites to check here instead`,
+      );
+
       return;
     }
 

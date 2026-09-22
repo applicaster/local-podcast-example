@@ -1,0 +1,40 @@
+{
+    "id": "manage-profiles-entry-feed",
+    "title": "Manage Profiles",
+    "type": {
+        "value": "feed"
+    },
+    "entry": [
+        {
+            "id": "manage-profiles",
+            "title": "Manage Profiles",
+            "type": {
+                "value": "action"
+            },
+            "extensions": {
+                "tap_actions": {
+                    "actions": [
+                        {
+                            "type": "pinCode",
+                            "options": {
+                                "typeMapping": "parent-lock",
+                                "flow": "verify-pin",
+                                "cloudEventPayload": {
+                                    "profile": "a3JVE000005wcej2AA",
+                                    "purpose": "manage"
+                                }
+                            }
+                        },
+                        {
+                            "type": "navigateToScreen",
+                            "options": {
+                                "typeMapping": "profiles-manage",
+                                "navigationAction": "push"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

@@ -7,11 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import {
-  CurrentRoute,
-  getProfileFromRequest,
-  isUserLoggedIn,
-} from '../../utils';
+import { CurrentRoute, isUserLoggedIn, readProfileFromCtx } from '../../utils';
 import { ProfilesFormService } from './profiles.form.service';
 
 /**
@@ -20,6 +16,39 @@ import { ProfilesFormService } from './profiles.form.service';
  * A dev override hid the difference locally by replacing the whole url;
  * deployed there was nothing to hide it, and the request 404ed.
  */
+/**
+ * Whose form this is.
+ *
+ * Unlike every other feed here, the answer is **not** the viewer: while a
+ * parent edits a child, the active profile is the parent, and taking it would
+ * quietly point the PIN button at the wrong person — set a code for Abigail,
+ * change the owner's instead.
+ *
+ * So only the request's own url may name the subject. Several spellings are
+ * accepted because the customer's form is theirs and has been seen with more
+ * than one; nothing falls back to a header.
+ */
+const SUBJECT_QUERY_KEYS = ['profile', 'profileId', 'profile_id', 'id'];
+
+function subjectOf(req?: Request, explicit?: string): string {
+  if (explicit) {
+    return explicit;
+  }
+
+  for (const key of SUBJECT_QUERY_KEYS) {
+    const value = req?.query?.[key];
+
+    if (typeof value === 'string' && value && value !== 'undefined') {
+      return value;
+    }
+  }
+
+  // Zapp's own way of putting a context key in a url: an endpoint configured
+  // with `user_account.profile` sends it base64 in `ctx`, which is how the PIN
+  // feeds already receive it. Still the url, so still not the viewer's header.
+  return readProfileFromCtx(req?.query?.ctx);
+}
+
 @Controller('profiles')
 export class ProfilesFormController {
   constructor(
@@ -51,11 +80,7 @@ export class ProfilesFormController {
       );
     }
 
-    return this.formService.getForm(
-      getProfileFromRequest(req, profile),
-      req,
-      this.cloudEventsUrl(currentRoute, req),
-    );
+    return this.formService.getForm(subjectOf(req, profile), req);
   }
 
   /**

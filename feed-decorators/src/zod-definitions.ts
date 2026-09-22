@@ -8,7 +8,9 @@ export const PreferenceEditorOptionsSchema = z.object({
   current_value: z.union([z.string(), z.array(z.string())]).optional(),
   initial_value: z.union([z.string(), z.array(z.string())]).optional(),
 });
-export type PreferenceEditorOptions = z.infer<typeof PreferenceEditorOptionsSchema>;
+export type PreferenceEditorOptions = z.infer<
+  typeof PreferenceEditorOptionsSchema
+>;
 
 export const BehaviorSchema = z.object({
   select_mode: z.enum(['single', 'multi']),
@@ -113,6 +115,21 @@ export const ConfirmDialogActionSchema = z.object({
 });
 export type ConfirmDialogAction = z.infer<typeof ConfirmDialogActionSchema>;
 
+export const ShowAlertActionOptionsSchema = z.object({
+  title: z.string(),
+  message: z.string().optional(),
+  okButtonText: z.string().optional(),
+});
+export type ShowAlertActionOptions = z.infer<
+  typeof ShowAlertActionOptionsSchema
+>;
+
+export const ShowAlertActionSchema = z.object({
+  type: z.literal('showAlert'),
+  options: ShowAlertActionOptionsSchema,
+});
+export type ShowAlertAction = z.infer<typeof ShowAlertActionSchema>;
+
 export const ToggleStorageFlagActionOptionsSchema = z
   .object({
     key: z.string().min(1),
@@ -157,9 +174,7 @@ export const LocalStorageSetActionSchema = z.object({
   type: z.literal('localStorageSet'),
   options: LocalStorageSetActionOptionsSchema,
 });
-export type LocalStorageSetAction = z.infer<
-  typeof LocalStorageSetActionSchema
->;
+export type LocalStorageSetAction = z.infer<typeof LocalStorageSetActionSchema>;
 
 export const SessionStorageSetActionOptionsSchema = z.object({
   content: z.record(z.string(), z.record(z.string(), z.any())),
@@ -213,6 +228,14 @@ export type SwitchLayoutAction = z.infer<typeof SwitchLayoutActionSchema>;
 
 export const NavigateToScreenActionOptionsSchema = z.object({
   typeMapping: z.string().min(1),
+  /** `push` adds to the history, `replace` swaps the current screen. */
+  navigationAction: z.enum(['push', 'replace']).optional(),
+  /**
+   * The entry to navigate with. Given one, the client opens that entry on the
+   * screen the type maps to, which is what lets a cell run a chain and still
+   * end up where a plain cell would have gone.
+   */
+  entry: z.record(z.string(), z.any()).optional(),
 });
 export type NavigateToScreenActionOptions = z.infer<
   typeof NavigateToScreenActionOptionsSchema
@@ -225,6 +248,37 @@ export const NavigateToScreenActionSchema = z.object({
 export type NavigateToScreenAction = z.infer<
   typeof NavigateToScreenActionSchema
 >;
+
+export const PinCodeActionOptionsSchema = z.object({
+  /** Content type of the parent lock screen the action presents. */
+  typeMapping: z.string().min(1),
+  flow: z.enum(['verify-pin', 'verify', 'set-pin', 'change-pin', 'reset-pin']),
+  navigationAction: z.enum(['push', 'replace']).optional(),
+  /**
+   * Merged into the PIN event's `data`, which is how a PIN belongs to a
+   * profile rather than to the account as a whole.
+   */
+  cloudEventPayload: z.record(z.string(), z.any()).optional(),
+  /**
+   * What the parent lock screen asks for, in place of the string configured
+   * for the whole app — the only way a prompt can name the profile whose code
+   * is wanted. Needs the plugin change in Zapp-Frameworks #2857.
+   */
+  promptText: z.string().min(1).optional(),
+  /**
+   * The way off the screen for someone who does not have the code: a label,
+   * and what pressing it should do. Needs Zapp-Frameworks #2858.
+   */
+  forgotText: z.string().min(1).optional(),
+  forgotActions: z.array(z.any()).min(1).optional(),
+});
+export type PinCodeActionOptions = z.infer<typeof PinCodeActionOptionsSchema>;
+
+export const PinCodeActionSchema = z.object({
+  type: z.literal('pinCode'),
+  options: PinCodeActionOptionsSchema,
+});
+export type PinCodeAction = z.infer<typeof PinCodeActionSchema>;
 
 export const SetUILanguageActionOptionsSchema = z.object({
   languageCode: z.string().min(1),
@@ -327,6 +381,7 @@ export const ZappActionSchema = z.union([
   SendCloudEventActionSchema,
   ShowTextInputActionSchema,
   ConfirmDialogActionSchema,
+  ShowAlertActionSchema,
   ToggleStorageFlagActionSchema,
   LocalStorageSetActionSchema,
   SessionStorageSetActionSchema,

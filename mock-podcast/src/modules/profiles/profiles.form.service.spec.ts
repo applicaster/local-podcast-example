@@ -43,7 +43,14 @@ describe('ProfilesFormService', () => {
         ),
       } as any,
       { hasPin: jest.fn((p: string) => pins.includes(p)) } as any,
-      { ownerId: () => owner } as any,
+      {
+        ownerId: () => owner,
+        nameOf: () => '',
+        entryOf: (id: string) => ({
+          id,
+          extensions: { denied_actions: { change_name: true } },
+        }),
+      } as any,
     );
 
     return { service, get };
@@ -52,13 +59,23 @@ describe('ProfilesFormService', () => {
   const req = (headers: Record<string, string>) => ({ headers }) as any;
 
   const propertiesOf = (form: any) => form.body?.properties ?? form.properties;
-  const resetButton = (form: any) =>
-    propertiesOf(form).find((p: any) => p.id === 'buttonResetPin');
+  const pinButton = (form: any) =>
+    propertiesOf(form).find((p: any) => p.id === 'buttonManagePin');
+
+  // The viewer is the parent while a child is edited, so a form that names
+  // nobody gets no button rather than one pointed at whoever is looking.
+  it('serves the form unpatched when no profile is named', async () => {
+    const { service } = build();
+
+    const form = await service.getForm('', req({}));
+
+    expect(pinButton(form)).toBeUndefined();
+  });
 
   it('asks the real backend by default', async () => {
     const { service, get } = build();
 
-    await service.getForm('kid', req({}), 'https://demo/cloud-events');
+    await service.getForm('kid', req({}));
 
     expect(get).toHaveBeenCalledWith(
       expect.stringContaining('Profile form'),
@@ -70,7 +87,7 @@ describe('ProfilesFormService', () => {
   it('uses the configured upstream when there is one', async () => {
     const { service, get } = build({ configured: 'https://other/form' });
 
-    await service.getForm('kid', req({}), 'https://demo/cloud-events');
+    await service.getForm('kid', req({}));
 
     expect(get).toHaveBeenCalledWith(
       expect.anything(),
@@ -82,16 +99,18 @@ describe('ProfilesFormService', () => {
   it('keeps the form the upstream sent', async () => {
     const { service } = build();
 
-    const form = await service.getForm(
-      'kid',
-      req({}),
-      'https://demo/cloud-events',
-    );
+    const form = await service.getForm('kid', req({}));
 
     expect(propertiesOf(form).map((p: any) => p.id)).toEqual([
       'profileImage',
       'displayName',
-      'buttonResetPin',
+      'parentalControlsHeading',
+      'allowComment',
+      'allowChangePicture',
+      'allowChangeName',
+      'allowOfflineDownload',
+      'allowFavorites',
+      'buttonManagePin',
       'buttonSave',
       'buttonCancel',
     ]);
@@ -102,14 +121,10 @@ describe('ProfilesFormService', () => {
   it('puts the button before the form own buttons', async () => {
     const { service } = build();
 
-    const form = await service.getForm(
-      'kid',
-      req({}),
-      'https://demo/cloud-events',
-    );
+    const form = await service.getForm('kid', req({}));
 
     const ids = propertiesOf(form).map((p: any) => p.id);
-    expect(ids.indexOf('buttonResetPin')).toBeLessThan(
+    expect(ids.indexOf('buttonManagePin')).toBeLessThan(
       ids.indexOf('buttonSave'),
     );
   });
@@ -117,37 +132,31 @@ describe('ProfilesFormService', () => {
   it('names the target profile in the reset event', async () => {
     const { service } = build();
 
-    const form = await service.getForm(
-      'kid',
-      req({}),
-      'https://demo/cloud-events',
-    );
-    const actions = resetButton(form).options.extensions.tap_actions.actions;
+    const form = await service.getForm('kid', req({}));
+    const actions = pinButton(form).options.extensions.tap_actions.actions;
 
-    expect(actions.map((a: any) => a.type)).toEqual([
-      'pinCode',
-      'sendCloudEvent',
-      'showToast',
-    ]);
+    expect(actions.map((a: any) => a.type)).toEqual(['pinCode', 'pinCode']);
     expect(actions[0].options.cloudEventPayload).toEqual({
       profile: 'owner',
       purpose: 'manage',
     });
-    expect(actions[1].options.data).toEqual({ profile: 'kid' });
-    expect(actions[1].options.url).toBe('https://demo/cloud-events');
+
+    // The owner types the code; the plugin sends it named for the target.
+    expect(actions[1].options).toEqual({
+      typeMapping: 'parent-lock',
+      flow: 'set-pin',
+      cloudEventPayload: { profile: 'kid' },
+      promptText: 'Set a new PIN',
+    });
   });
 
   // A form shows nothing that depends on a PIN, so there is nothing to
   // re-read once one changes.
-  it('does not refresh the form after a reset', async () => {
+  it('does not refresh the form after the PIN changes', async () => {
     const { service } = build();
 
-    const form = await service.getForm(
-      'kid',
-      req({}),
-      'https://demo/cloud-events',
-    );
-    const actions = resetButton(form).options.extensions.tap_actions.actions;
+    const form = await service.getForm('kid', req({}));
+    const actions = pinButton(form).options.extensions.tap_actions.actions;
 
     expect(actions.map((a: any) => a.type)).not.toContain('refreshComponent');
   });
@@ -155,53 +164,35 @@ describe('ProfilesFormService', () => {
   it('renames itself when the profile has no pin yet', async () => {
     const { service } = build({ pins: ['owner'] });
 
-    const form = await service.getForm(
-      'kid',
-      req({}),
-      'https://demo/cloud-events',
-    );
+    const form = await service.getForm('kid', req({}));
 
-    expect(resetButton(form).options.title).toBe('Set PIN');
+    expect(pinButton(form).options.title).toBe('Set PIN');
   });
 
-  it('says Reset when the profile already has one', async () => {
+  it('says Change when the profile already has one', async () => {
     const { service } = build({ pins: ['owner', 'kid'] });
 
-    const form = await service.getForm(
-      'kid',
-      req({}),
-      'https://demo/cloud-events',
-    );
+    const form = await service.getForm('kid', req({}));
 
-    expect(resetButton(form).options.title).toBe('Reset PIN');
+    expect(pinButton(form).options.title).toBe('Change PIN');
   });
 
   it('drops the verify step when the owner has no pin of their own', async () => {
     const { service } = build({ pins: [] });
 
-    const form = await service.getForm(
-      'kid',
-      req({}),
-      'https://demo/cloud-events',
-    );
-    const actions = resetButton(form).options.extensions.tap_actions.actions;
+    const form = await service.getForm('kid', req({}));
+    const actions = pinButton(form).options.extensions.tap_actions.actions;
 
-    expect(actions.map((a: any) => a.type)).toEqual([
-      'sendCloudEvent',
-      'showToast',
-    ]);
+    expect(actions.map((a: any) => a.type)).toEqual(['pinCode']);
+    expect(actions[0].options.flow).toBe('set-pin');
   });
 
   it('adds no button when nobody could authorise the reset', async () => {
     const { service } = build({ owner: '' });
 
-    const form = await service.getForm(
-      'kid',
-      req({}),
-      'https://demo/cloud-events',
-    );
+    const form = await service.getForm('kid', req({}));
 
-    expect(resetButton(form)).toBeUndefined();
+    expect(pinButton(form)).toBeUndefined();
     expect(propertiesOf(form)).toHaveLength(4);
   });
 
@@ -212,33 +203,62 @@ describe('ProfilesFormService', () => {
       form: { properties: flatProperties() } as any,
     });
 
-    const form: any = await service.getForm(
-      'kid',
-      req({}),
-      'https://demo/cloud-events',
-    );
+    const form: any = await service.getForm('kid', req({}));
 
     expect(form.body).toBeUndefined();
     expect(form.properties.map((p: any) => p.id)).toEqual([
       'profileImage',
       'displayName',
-      'buttonResetPin',
+      'parentalControlsHeading',
+      'allowComment',
+      'allowChangePicture',
+      'allowChangeName',
+      'allowOfflineDownload',
+      'allowFavorites',
+      'buttonManagePin',
       'buttonSave',
       'buttonCancel',
     ]);
   });
 
+  // The section is ours: the customer's form carries an avatar picker and a
+  // display name and nothing about permissions.
+  it('adds the parental controls the customer form has not got', async () => {
+    const { service } = build();
+
+    const form = await service.getForm('kid', req({}));
+    const ids = propertiesOf(form).map((p: any) => p.id);
+
+    expect(ids).toContain('parentalControlsHeading');
+    expect(ids).toContain('allowComment');
+
+    // What each box is set to arrives with the profile entry, not here: the
+    // form declares the field and the entry fills it.
+    const denied = propertiesOf(form).find(
+      (p: any) => p.id === 'allowChangeName',
+    );
+    expect(denied.options).not.toHaveProperty('value');
+  });
+
+  // An owner restricting themselves protects nobody, so the requirement asks
+  // for a nudge towards making a profile per child instead.
+  it('gives the owner a note instead of controls on their own profile', async () => {
+    const { service } = build();
+
+    const form = await service.getForm('owner', req({}));
+    const ids = propertiesOf(form).map((p: any) => p.id);
+
+    expect(ids).toContain('parentalControlsOwnerNote');
+    expect(ids).not.toContain('allowComment');
+  });
+
   it('keeps the wrapper when the upstream used one', async () => {
     const { service } = build();
 
-    const form: any = await service.getForm(
-      'kid',
-      req({}),
-      'https://demo/cloud-events',
-    );
+    const form: any = await service.getForm('kid', req({}));
 
     expect(form.properties).toBeUndefined();
-    expect(form.body.properties).toHaveLength(5);
+    expect(form.body.properties).toHaveLength(11);
   });
 
   // Losing the button is a smaller failure than corrupting a form we did not
@@ -247,11 +267,7 @@ describe('ProfilesFormService', () => {
     const odd = { something: 'else' };
     const { service } = build({ form: odd as any });
 
-    const form = await service.getForm(
-      'kid',
-      req({}),
-      'https://demo/cloud-events',
-    );
+    const form = await service.getForm('kid', req({}));
 
     expect(form).toEqual(odd);
   });

@@ -77,9 +77,7 @@ export interface ToggleStorageFlagOptions {
 
 export interface ToggleStorageFlagAction {
   type:
-    | 'localStorageToggleFlag'
-    | 'sessionStorageToggleFlag'
-    | 'screenToggleFlag';
+    'localStorageToggleFlag' | 'sessionStorageToggleFlag' | 'screenToggleFlag';
   options: ToggleStorageFlagOptions;
 }
 
