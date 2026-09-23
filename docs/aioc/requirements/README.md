@@ -52,7 +52,7 @@ than from the product.
 
 | Doc | Status | In the stand / ours |
 |---|---|---|
-| [BR-1 — Profile selection](./br-01-profile-selection.md) | **Done** | Tiles for every profile; a padlock shows on the ones that have a PIN (`extensions.unlocked`, inverted from `has_pin`, drawn by the cell style). Only the customer's own icon asset is outstanding. |
+| [BR-1 — Profile selection](./br-01-profile-selection.md) | **Done** | Tiles for every profile; a padlock shows on the ones that have a PIN (`extensions.unlocked`, inverted from `has_pin`, drawn by the cell style), with the customer's own padlock image configured in Zapp. |
 | [BR-2 — Add Profile tile](./br-02-add-profile-tile.md) | **Done** | Built on the customer's backend: the tile comes with the profile list and creates through their form. |
 | [BR-3 — Manage button under the tiles](./br-03-manage-button.md) | Served, not requested | One button, one label, no PIN, no manage mode. Both labels and both chains are in [spec §4.4](../contract/aioc-pin-feeds-spec.md#44-the-manage-button); a static feed can carry neither. |
 | [BR-4 — Manage mode tile taps](./br-04-manage-mode-tile-taps.md) | Not reachable | The app lists one profile, the one in session. No other profile is on screen, so none can be edited and the alert has no moment to appear. The feeds answer the mode; nothing asks for it. |
@@ -73,7 +73,7 @@ than from the product.
 | Doc | Status | In the stand / ours |
 |---|---|---|
 | [§4 — PIN matrix](./pin-matrix.md) | Partial | Three rows hold: selecting a protected profile, re-selecting the active one, and restricted play. Two work but are unguarded (add, delete). The rest wait on the manage gate or on screens nobody has built. |
-| [BR-P1 — Restricted play and unlock](./br-p1-restricted-play.md) | **Done** | Gated behind the owner's PIN; `Locked` with a one-button notice when the owner has none. Copy and padlock asset still come from the customer. |
+| [BR-P1 — Restricted play and unlock](./br-p1-restricted-play.md) | **Done** | Gated behind the owner's PIN; `Locked` with a one-button notice when the owner has none. The padlock is configured in Zapp; only the notice copy is still a placeholder. |
 | [BR-P2 — Restricted download](./br-p2-restricted-download.md) | **Not planned** | Downloads are not gated in this iteration, and downloaded content plays without asking. |
 | [BR-P3 — Forgot PIN on every prompt](./br-p3-forgot-pin.md) | Partial | The button is on the PIN screen and both gates supply it. The failure state with the phone number is **deferred** — the client has to branch on failure first. |
 | [BR-P5 — Offline](./br-p5-offline.md) | Not started | Nothing to build — everything here is server-driven, so with no connection there is nothing to render or verify. Never checked on a device. |
