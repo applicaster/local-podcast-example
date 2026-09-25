@@ -15,15 +15,14 @@ import {
   SetUILanguageActionOptionsSchema,
   CompleteHookActionOptionsSchema,
   ShowToastActionOptionsSchema,
+  AddAllToQueueActionOptionsSchema,
 } from './zod-definitions';
 
 const EmptyOptionalSchema = z.object({}).optional();
 const RefreshComponentOptionsSchema = z
   .object({ componentId: z.string().optional() })
   .optional();
-const AddAllToQueueOptionsSchema = z.object({
-  url: z.string().min(1),
-});
+const AddAllToQueueOptionsSchema = AddAllToQueueActionOptionsSchema;
 
 export const actionSchemas: Record<string, z.ZodTypeAny> = {
   openBottomSheet: OpenBottomSheetActionOptionsSchema,

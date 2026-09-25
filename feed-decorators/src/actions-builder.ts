@@ -172,9 +172,13 @@ export class ActionsBuilder {
 
   /**
    * Adds an addAllToQueue action to the actions list.
-   * @param opts Options containing the collection URL
+   * @param opts Options containing the collection URL, optional position, and optional startPlayback flag
    */
-  addAllToQueue(opts: { url: string }) {
+  addAllToQueue(opts: {
+    url: string;
+    position?: 'top' | 'bottom';
+    startPlayback?: boolean;
+  }) {
     this.actions.push({
       type: 'addAllToQueue',
       options: opts,

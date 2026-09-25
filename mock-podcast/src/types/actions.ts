@@ -173,6 +173,8 @@ export interface AddToQueueAction {
 
 export interface AddAllToQueueOptions {
   url: string;
+  position?: 'top' | 'bottom';
+  startPlayback?: boolean;
 }
 
 export interface AddAllToQueueAction {

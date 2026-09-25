@@ -341,11 +341,18 @@ export const AddToQueueActionSchema = z.object({
 });
 export type AddToQueueAction = z.infer<typeof AddToQueueActionSchema>;
 
+export const AddAllToQueueActionOptionsSchema = z.object({
+  url: z.string().min(1),
+  position: z.enum(['top', 'bottom']).optional(),
+  startPlayback: z.boolean().optional(),
+});
+export type AddAllToQueueActionOptions = z.infer<
+  typeof AddAllToQueueActionOptionsSchema
+>;
+
 export const AddAllToQueueActionSchema = z.object({
   type: z.literal('addAllToQueue'),
-  options: z.object({
-    url: z.string().min(1),
-  }),
+  options: AddAllToQueueActionOptionsSchema,
 });
 export type AddAllToQueueAction = z.infer<typeof AddAllToQueueActionSchema>;
 
