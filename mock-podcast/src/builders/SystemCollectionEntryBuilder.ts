@@ -17,15 +17,12 @@ export class SystemCollectionEntryBuilder extends EntryBuilder {
     return this;
   }
 
-  playAll(firstEntry: any) {
+  playAll(baseUrl: string, collectionId: string) {
     const actionBuilder = new ActionsBuilder();
-    actionBuilder.addAction({
-      type: 'navigateToScreen',
-      options: {
-        typeMapping: firstEntry.type.value,
-        navigationAction: 'push',
-        entry: firstEntry,
-      },
+    actionBuilder.addAllToQueue({
+      url: `${baseUrl}/user/collections/${collectionId}`,
+      position: 'top',
+      startPlayback: true,
     });
 
     this.addEntryActionByAlias('play_all', actionBuilder, true);

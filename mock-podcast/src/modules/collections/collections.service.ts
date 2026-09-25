@@ -737,31 +737,7 @@ export class CollectionsService implements OnModuleInit {
 
         // 2. Play All
         if (collection.itemIds.length > 0) {
-          const firstItemId = collection.itemIds[0];
-          const firstEntryArray = this.mediaService.getEntriesForIds(
-            [firstItemId],
-            isLoggedIn,
-          );
-          if (firstEntryArray.length > 0) {
-            const firstEntry = firstEntryArray[0];
-            this.decorateEntriesWithPlaybackSource(
-              [firstEntry],
-              collection.id,
-            );
-            const playNextUrl = this.getPlayNextUrl(
-              collection.id,
-              collection.itemIds,
-              firstItemId,
-              baseUrl,
-            );
-            firstEntry.extensions = {
-              ...firstEntry.extensions,
-              upNextFeed: `${baseUrl}/media/up-next`,
-              ...(playNextUrl ? { play_next_feed_url: playNextUrl } : {}),
-            };
-
-            builder.playAll(firstEntry);
-          }
+          builder.playAll(baseUrl, collection.id);
         }
 
         // 3. Add all to Playlist
