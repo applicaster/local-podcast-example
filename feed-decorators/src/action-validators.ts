@@ -20,8 +20,11 @@ const RefreshComponentOptionsSchema = z
   .object({ componentId: z.string().optional() })
   .optional();
 const AddAllToQueueOptionsSchema = z.object({
-  url: z.string().min(1),
+  url: z.string().min(1).optional(),
+  position: z.enum(['top', 'bottom']).optional(),
+  startPlayback: z.boolean().optional(),
 });
+
 
 export const actionSchemas: Record<string, z.ZodTypeAny> = {
   openBottomSheet: OpenBottomSheetActionOptionsSchema,

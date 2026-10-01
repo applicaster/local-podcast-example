@@ -722,35 +722,11 @@ export class CollectionsService implements OnModuleInit {
         // 1. Add all to Queue
         builder.addAllToQueue(baseUrl, collection.id);
 
-        // 2. Play All
+        // 2. Play All (enqueues collection at top of queue and begins playback)
         if (collection.itemIds.length > 0) {
-          const firstItemId = collection.itemIds[0];
-          const firstEntryArray = this.mediaService.getEntriesForIds(
-            [firstItemId],
-            isLoggedIn,
-          );
-          if (firstEntryArray.length > 0) {
-            const firstEntry = firstEntryArray[0];
-            this.decorateEntriesWithPlaybackSource(
-              [firstEntry],
-              collection.id,
-            );
-            const playNextUrl = this.getPlayNextUrl(
-              collection.id,
-              collection.itemIds,
-              firstItemId,
-              baseUrl,
-            );
-            if (playNextUrl) {
-              firstEntry.extensions = {
-                ...firstEntry.extensions,
-                play_next_feed_url: playNextUrl,
-              };
-            }
-
-            builder.playAll(firstEntry);
-          }
+          builder.playAll(baseUrl, collection.id);
         }
+
 
         // 3. Add all to Playlist
         if (isLoggedIn) {

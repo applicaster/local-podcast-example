@@ -46,17 +46,57 @@ When a user opens an editable playlist or queue screen:
 - **Automatic Event Progression:**
   - On `com.applicaster.video.started.v1`: Updates local queue head or replaces queue with source collection items.
   - On `com.applicaster.video.stopped.v1` (`status: "COMPLETED"`): Automatically removes completed track from local queue.
-- **No Backend Requirement:** Production backends are not required to persist or manage the queue.
+- **No Backend Requirement:** Production backends are not required to persist or manage the queue state machine.
+
+### Pattern D: "Play All" Collection Playback (`addAllToQueue` / `play_all`)
+When a playlist, album, or series provides a "Play All" button:
+- **Feed / Entry Action:** The backend attaches an entry action (alias `"play_all"`) using action type `"addAllToQueue"`.
+- **Options Contract:**
+  - `url`: Feed URL containing the tracks to play (or falls back to `context.entry.content.src`).
+  - `position: "top"`: Inserts all collection items at the head of upcoming playback (after the current track).
+  - `startPlayback: true`: Instructs the client engine to set the first track as active and immediately navigate to the audio player screen (`navigateToScreen`).
+- **Example Payload:**
+  ```json
+  {
+    "type": "addAllToQueue",
+    "options": {
+      "url": "https://api.example.com/collections/123.json",
+      "position": "top",
+      "startPlayback": true
+    }
+  }
+  ```
+
+### Pattern E: Dynamic Queue Continuation (`extensions.upNextFeed`)
+When an audio track plays and reaches the tail of the active queue:
+- **Entry Extension:** The backend decorates the playable entry with `extensions.upNextFeed` (or `extensions.up_next_feed`) pointing to a feed URL.
+- **Dynamic Resolution:** When the player reaches the last queued track, QuickBrick's `QueueManager` fetches this feed URL and automatically resolves and appends the returned entries to the upcoming queue without interrupting playback.
+- **Contextual Adaptation:** Backends can return remaining playlist tracks, algorithmic recommendations, or show next-episodes dynamically based on playback context.
+- **Example Payload:**
+  ```json
+  {
+    "id": "episode_42",
+    "title": "Episode 42: The Deep Dive",
+    "type": { "value": "audio" },
+    "content": { "src": "https://cdn.example.com/audio/ep42.mp3" },
+    "extensions": {
+      "upNextFeed": "https://api.example.com/shows/podcast-1/up-next?current_id=episode_42"
+    }
+  }
+  ```
 
 ---
 
 ## 3. Quick Reference for Developers
 
-| Feature / UI Mode | Feed Extension | Required Entry Actions | Client Behavior |
+| Feature / UI Mode | Feed / Entry Extension | Required Action(s) | Client Behavior |
 | :--- | :--- | :--- | :--- |
 | **Playlist Selection Sheet** | `"role": "collection_selector"` | `add_to_playlist`, `remove_from_playlist` | Renders multi-select checkboxes based on `behavior.current_selection`. |
 | **Editable Track List** | `"role": "dynamic_collection"` (`operations: "remove,reorder"`) | `alias: "remove_item"`, `alias: "reorder_item"` | Injects swipe-to-delete & drag handles. Executes entry actions on user interaction. |
 | **Editable Playlists Screen** | `"role": "dynamic_collection"` (`operations: "add,remove,reorder"`) | `alias: "remove_item"`, `events.add` | Renders "+ Create Playlist" button in header & trash icons on playlist rows. |
+| **Play All (Collection)** | N/A (Standard Collection / Feed) | `alias: "play_all"` (`type: "addAllToQueue"`, `startPlayback: true`) | Enqueues all items at top of queue and begins immediate playback of first track. |
+| **Queue Autoplay / UpNext** | `extensions.upNextFeed` (on audio entry) | N/A (Automatic tail-of-queue fetch) | Resolves feed dynamically at queue end and seamlessly appends upcoming tracks. |
+
 
 ---
 

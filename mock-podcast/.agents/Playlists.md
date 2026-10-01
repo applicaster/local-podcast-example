@@ -36,8 +36,9 @@ This section defines the business rules, capabilities, and behaviors of the play
     *   **Edit Playlist:** Entry action (`alias: "edit"`) triggers an `openBottomSheet` action with header `"Edit Playlist"` and `itemsUrl` set to `${baseUrl}/user/collections/${id}?editable=true`. This returns a feed declared with `role: "dynamic_collection"` and `dynamic_collection_options: { postUrl, operations: "remove,reorder" }`, allowing the client bottom sheet renderer to manage items dynamically.
     *   **Edit Name:** Entry action (`alias: "edit_name"`) triggers `showTextInput` with UI labels (`headerTitle`, `inputLabel`, `defaultValue`, `buttonLabel`) and a `sendCloudEvent` action to launch the client rename workflow (`com.applicaster.collection.rename.v1`).
     *   **Delete Playlist:** Tapping this deletes the custom playlist entirely (emits `com.applicaster.collection.delete.v1` Cloud Event).
-    *   **Add all to Queue:** Non-queue playlists (both system and custom user playlists) expose an action to bulk-add all their tracks to the back of the active playback queue.
-    *   **Play All:** Non-queue playlists with tracks expose an action (`alias: "play_all"`) to start playing the first track of the playlist and chain subsequent tracks via `play_next_feed_url`.
+    *   **Add all to Queue:** Non-queue playlists (both system and custom user playlists) expose an action to bulk-add all their tracks to the back of the active playback queue (`addAllToQueue` with `{ position: "bottom", startPlayback: false }`).
+    *   **Play All:** Non-queue playlists with tracks expose an action (`alias: "play_all"`): Dispatches `addAllToQueue` with `{ position: "top", startPlayback: true, url: "<feed_url>" }`. This enqueues all collection tracks at the head of the upcoming queue and immediately launches playback of the first track.
+
     *   **Add to Playlist (Add all to Playlist):** Non-queue playlists expose an action (`alias: "add_to_playlist"`) to open the playlist selector sheet (`itemsUrl: ${baseUrl}/user/collections?collection_id=${id}`), enabling users to bulk-add all tracks from this collection into another target playlist (`com.applicaster.collection.add.collection.v1`).
 
 ### B. Item Membership (Adding & Removing Tracks)
@@ -49,13 +50,16 @@ This section defines the business rules, capabilities, and behaviors of the play
 *   **One-Tap Toggle:** Within the selection sheet, tapping a playlist that doesn't contain the track will add it. Tapping a playlist that already contains the track will instantly remove it, reloading selection states immediately via Cloud Events.
 *   **Collection Reordering:** Collection item reordering allows custom order modifications via `com.applicaster.collection.reorder.v1`.
 
-### C. Active Queue Lifecycle & Playback Progression (Local Client Logic)
+### C. Active Queue Lifecycle, Continuation & Playback Progression (Local Client Logic)
 
 > [!IMPORTANT]
 > **Queue is Completely Local (No Server Implementation Required):** The active playback Queue is **completely local** to the client application and is managed entirely in client-side memory/storage by the app renderer. **There does not need to be any server-side backend implementation for the Queue.** While the `mock-podcast` reference server includes a mock `/system/collections` Queue and logs playback events for demonstration and testing purposes, production servers are NOT required to implement queue storage, queue endpoints, or queue progression logic.
 
 The Queue updates dynamically based on playback events (`started`, `stopped`) and handles playback progression:
 
+*   **Dynamic UpNext Feed (`extensions.upNextFeed`):**
+    *   To support automated queue continuation (e.g., remaining playlist tracks, podcast series autoplay, algorithmic recommendations), backend feeds attach `extensions.upNextFeed` (or `extensions.up_next_feed`) to playable audio entries.
+    *   When playback advances to the tail of the active queue, QuickBrick's `QueueManager` fetches this feed dynamically via HTTP/Pipes and resolves and appends the returned entries to the upcoming queue without interrupting audio playback.
 *   **Playback Started Event (`started` / `com.applicaster.video.started.v1`):**
     *   The event conveys the source collection from which playback was initiated (`sourceCollectionId`).
     *   **Case A (Playback from Queue):** If playback is initiated from the Queue itself, the local client removes the "head" of the queue (all items preceding the first occurrence of the started item).
