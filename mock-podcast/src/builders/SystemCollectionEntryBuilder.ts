@@ -29,6 +29,7 @@ export class SystemCollectionEntryBuilder extends EntryBuilder {
     return this;
   }
 
+
   addAllToPlaylist(baseUrl: string, collectionId: string) {
     const actionBuilder = new ActionsBuilder();
     actionBuilder.addAction({

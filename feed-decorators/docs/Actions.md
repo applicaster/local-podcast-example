@@ -163,6 +163,85 @@ Navigates to the screen that associated with type provided in `typeMapping`. Rec
 }
 ```
 
+## Queue & Playback Actions
+
+### addToQueue
+
+Adds the current entry (`context.entry`) to the manual **Next in Queue** section.
+
+#### Options:
+* `position` (optional, `"top" | "bottom"`, default `"bottom"`): Where to insert the entry in **Next in Queue**.
+* `startPlayback` (optional, boolean, default `false`): When `true`, starts playing the entry immediately.
+
+```json
+{
+  "type": "addToQueue",
+  "options": {
+    "position": "bottom"
+  }
+}
+```
+
+Can be paired with `showToast` in an entry action:
+
+```json
+{
+  "alias": "add_to_queue",
+  "actions": [
+    {
+      "type": "addToQueue",
+      "options": {}
+    },
+    {
+      "type": "showToast",
+      "options": {
+        "message": "Added to queue"
+      }
+    }
+  ]
+}
+```
+
+### addAllToQueue (Play All & Bulk Enqueue)
+
+Resolves a collection or playlist feed and enqueues all playable entries into the local playback queue. Supports initiating immediate playback ("Play All").
+
+#### Options:
+* `url` (optional, string): The feed URL containing the collection/playlist items to fetch and enqueue. If omitted, falls back to `context.entry.content.src`.
+* `target` (optional, `"manual" | "auto"`, default `"manual"`): Queue section to enqueue into (**Next in Queue** vs **Next Up**).
+* `position` (optional, `"top" | "bottom"`, default `"bottom"`):
+  * `"bottom"`: Appends all fetched items to the end of the target queue section.
+  * `"top"`: Inserts all fetched items at the head of the target queue section (immediately following the currently playing track).
+* `startPlayback` (optional, boolean, default `false`):
+  * When `true`, starts playing the first item of the enqueued collection immediately and loads remaining tracks according to `target`, implementing **"Play All"**.
+
+#### Examples:
+
+**1. Bulk Add Collection to Queue ("Add All to Queue"):**
+```json
+{
+  "type": "addAllToQueue",
+  "options": {
+    "url": "https://api.example.com/playlists/favorites.json",
+    "position": "bottom",
+    "startPlayback": false
+  }
+}
+```
+
+**2. Play All Collection ("Play All"):**
+```json
+{
+  "type": "addAllToQueue",
+  "options": {
+    "url": "https://api.example.com/playlists/favorites.json",
+    "position": "top",
+    "startPlayback": true
+  }
+}
+```
+
+
 ## Screen scoped actions
 
 Note that unlike storage, screen state is not persistent and will be lost when the screen is closed, and does not have namespace.
@@ -946,45 +1025,3 @@ We will introduce ActionsApplierContext context. If it's not provided, actions a
 If context exists (i.e. we are inside PreferencesScreen and the actions array has a Delayed flag), the actions array will be submitted to the context with component ID instead of action executor (we can basically have root context implementation that applies immediately, and just override it on the stack, or use pure JS approach).
 ActionsApplierContext will keep track of the submitted actions and also replace actions submitted by the component, if the component will send a new action set (so we do not accumulate actions from one component when the user changes selection multiple times).
 When there are accumulated actions, the Apply button will be active.
-
----
-
-# Queue Actions
-
-### addToQueue
-
-Adds the current entry to the manual **Next in Queue** section.
-
-Options:
-- `position` *(optional)*: `"top" | "bottom"` (defaults to `"bottom"`).
-
-```json
-{
-  "type": "addToQueue",
-  "options": {
-    "position": "bottom"
-  }
-}
-```
-
-### addAllToQueue
-
-Resolves a collection feed URL and enqueues all playable entries into the local queue.
-
-Options:
-- `url`: Collection feed URL to resolve.
-- `target` *(optional)*: `"manual" | "auto"` (defaults to `"manual"`).
-- `position` *(optional)*: `"top" | "bottom"` (defaults to `"bottom"`).
-- `startPlayback` *(optional)*: `boolean` (when `true`, starts playing the first entry immediately and loads remaining tracks according to `target`).
-
-```json
-{
-  "type": "addAllToQueue",
-  "options": {
-    "url": "https://api.example.com/user/collections/col_1",
-    "target": "auto",
-    "position": "bottom",
-    "startPlayback": true
-  }
-}
-```

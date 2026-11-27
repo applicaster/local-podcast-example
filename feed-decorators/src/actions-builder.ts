@@ -173,7 +173,7 @@ export class ActionsBuilder {
 
   /**
    * Adds an addAllToQueue action to the actions list.
-   * @param opts Options containing the collection URL and queue placement behavior
+   * @param opts Options containing the collection URL and queue placement behavior.
    */
   addAllToQueue(opts: {
     url?: string;

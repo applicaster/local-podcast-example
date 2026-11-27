@@ -367,6 +367,7 @@ export const AddAllToQueueActionSchema = z.object({
 });
 export type AddAllToQueueAction = z.infer<typeof AddAllToQueueActionSchema>;
 
+
 export const ShowToastStyleSchema = z.object({
   backgroundColor: z.string().optional(),
   color: z.string().optional(),
