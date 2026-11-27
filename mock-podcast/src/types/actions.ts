@@ -166,13 +166,19 @@ export interface RefreshComponentAction {
   options?: RefreshComponentOptions;
 }
 
+export interface AddToQueueOptions {
+  position?: 'top' | 'bottom';
+  startPlayback?: boolean;
+}
+
 export interface AddToQueueAction {
   type: 'addToQueue';
-  options?: Record<string, never>;
+  options?: AddToQueueOptions;
 }
 
 export interface AddAllToQueueOptions {
-  url: string;
+  url?: string;
+  target?: 'manual' | 'auto';
   position?: 'top' | 'bottom';
   startPlayback?: boolean;
 }

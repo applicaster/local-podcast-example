@@ -167,12 +167,18 @@ Navigates to the screen that associated with type provided in `typeMapping`. Rec
 
 ### addToQueue
 
-Appends the current entry (`context.entry`) to the end of the client's active playback queue.
+Adds the current entry (`context.entry`) to the manual **Next in Queue** section.
+
+#### Options:
+* `position` (optional, `"top" | "bottom"`, default `"bottom"`): Where to insert the entry in **Next in Queue**.
+* `startPlayback` (optional, boolean, default `false`): When `true`, starts playing the entry immediately.
 
 ```json
 {
   "type": "addToQueue",
-  "options": {}
+  "options": {
+    "position": "bottom"
+  }
 }
 ```
 
@@ -198,15 +204,16 @@ Can be paired with `showToast` in an entry action:
 
 ### addAllToQueue (Play All & Bulk Enqueue)
 
-Enqueues all items from a collection or playlist feed into the active playback queue. Supports initiating immediate playback ("Play All").
+Resolves a collection or playlist feed and enqueues all playable entries into the local playback queue. Supports initiating immediate playback ("Play All").
 
 #### Options:
 * `url` (optional, string): The feed URL containing the collection/playlist items to fetch and enqueue. If omitted, falls back to `context.entry.content.src`.
+* `target` (optional, `"manual" | "auto"`, default `"manual"`): Queue section to enqueue into (**Next in Queue** vs **Next Up**).
 * `position` (optional, `"top" | "bottom"`, default `"bottom"`):
-  * `"bottom"`: Appends all fetched items to the end of the upcoming queue.
-  * `"top"`: Inserts all fetched items at the head of the upcoming queue (immediately following the currently playing track).
+  * `"bottom"`: Appends all fetched items to the end of the target queue section.
+  * `"top"`: Inserts all fetched items at the head of the target queue section (immediately following the currently playing track).
 * `startPlayback` (optional, boolean, default `false`):
-  * When `true`, automatically begins playing the first item of the enqueued collection and navigates to the player screen (`navigateToScreen`), implementing the standard **"Play All"** behavior.
+  * When `true`, starts playing the first item of the enqueued collection immediately and loads remaining tracks according to `target`, implementing **"Play All"**.
 
 #### Examples:
 

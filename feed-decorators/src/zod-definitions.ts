@@ -335,14 +335,25 @@ export const RefreshComponentActionSchema = z.object({
     })
     .optional(),
 });
+export const AddToQueueActionOptionsSchema = z
+  .object({
+    position: z.enum(['top', 'bottom']).optional(),
+    startPlayback: z.boolean().optional(),
+  })
+  .optional();
+export type AddToQueueActionOptions = z.infer<
+  typeof AddToQueueActionOptionsSchema
+>;
+
 export const AddToQueueActionSchema = z.object({
   type: z.literal('addToQueue'),
-  options: z.object({}).optional(),
+  options: AddToQueueActionOptionsSchema,
 });
 export type AddToQueueAction = z.infer<typeof AddToQueueActionSchema>;
 
 export const AddAllToQueueActionOptionsSchema = z.object({
   url: z.string().min(1).optional(),
+  target: z.enum(['manual', 'auto']).optional(),
   position: z.enum(['top', 'bottom']).optional(),
   startPlayback: z.boolean().optional(),
 });

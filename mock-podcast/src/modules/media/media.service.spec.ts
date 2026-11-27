@@ -71,5 +71,35 @@ describe('MediaService', () => {
     expect(feed.entry.length).toBeGreaterThan(0);
     expect(feed.entry.every((e) => e.type.value === 'audio')).toBe(true);
     expect(feed.entry[0].extensions?.entry_action).toBeDefined();
+    expect(feed.entry[0].extensions?.upNextFeed).toBe(
+      `http://localhost:3000/media/up-next?seedItemId=${encodeURIComponent(feed.entry[0].id)}`,
+    );
+  });
+
+  it('excludes seedItemId and wraps around when seeding up-next feed', () => {
+    const defaultFeed = service.getUpNextFeed('http://localhost:3000', true);
+    const seedId = defaultFeed.entry[0].id;
+
+    const seededFeed = service.getUpNextFeed(
+      'http://localhost:3000',
+      true,
+      seedId,
+    );
+
+    expect(seededFeed.entry.length).toBeGreaterThan(0);
+    expect(seededFeed.entry.some((e) => e.id === seedId)).toBe(false);
+    expect(seededFeed.entry[0].id).toBe(defaultFeed.entry[1].id);
+    expect(seededFeed.entry[0].extensions?.upNextFeed).toBe(
+      `http://localhost:3000/media/up-next?seedItemId=${encodeURIComponent(seededFeed.entry[0].id)}`,
+    );
+  });
+
+  it('decorates radio feed entries with parameterized upNextFeed when baseUrl is provided', () => {
+    const feed = service.getRadioFeed('http://localhost:3000', true);
+    const first = feed.entry[0];
+
+    expect(first.extensions?.upNextFeed).toBe(
+      `http://localhost:3000/media/up-next?seedItemId=${encodeURIComponent(first.id)}`,
+    );
   });
 });

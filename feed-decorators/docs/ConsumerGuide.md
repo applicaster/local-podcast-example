@@ -69,10 +69,21 @@ When a playlist, album, or series provides a "Play All" button:
   }
   ```
 
-### Pattern E: Dynamic Queue Continuation (`extensions.upNextFeed`)
-When an audio track plays and reaches the tail of the active queue:
-- **Entry Extension:** The backend decorates playlist items (or the terminal entry) with `extensions.upNextFeed` (or snake_case `up_next_feed`). While decorating only the terminal entry is supported, decorating all items in a playlist ensures that queue chaining remains resilient even if the user dynamically reorders tracks or deletes items from the queue.
-- **Object-Driven DataSource:** `upNextFeed` can be either a feed URL string or a Pipes DataSource object supporting custom mapping, headers, query parameters, or POST body:
+### Pattern E: Continuous Playback & Dynamic Queue Continuation (`upNextFeed` & `collection_up_next_feed`)
+To populate **Next Up** when starting a track from a collection and avoid abrupt playback stoppage when an album or playlist finishes:
+- **Collection Continuation (`collection_up_next_feed`):** Decorate items inside a collection with `extensions.collection_up_next_feed` pointing to the remaining tracks after that item (e.g. `GET /user/collections/:id/up-next?afterItemId=<id>`). When the listener taps a track directly, `queue-action` resolves this feed to populate the **Next Up** (`auto`) section without overwriting their manually queued **Next in Queue** items:
+  ```json
+  {
+    "id": "track_1",
+    "title": "Episode 1",
+    "extensions": {
+      "collection_up_next_feed": "https://api.example.com/user/collections/col_1/up-next?afterItemId=track_1",
+      "upNextFeed": "https://api.example.com/media/up-next?seedItemId=track_1"
+    }
+  }
+  ```
+- **Recommendation Fallback (`upNextFeed`):** Decorate playlist items (or the terminal entry) with `extensions.upNextFeed` (or snake_case `up_next_feed`). Decorating all items ensures queue chaining remains resilient even if the user dynamically reorders tracks or deletes items from the queue.
+- **Object-Driven DataSource:** Both `upNextFeed` and `collection_up_next_feed` can also be Pipes DataSource objects supporting custom mapping, headers, query parameters, or POST body:
   ```json
   {
     "extensions": {
@@ -84,11 +95,10 @@ When an audio track plays and reaches the tail of the active queue:
     }
   }
   ```
-- **Dynamic Resolution (`queue-action`):**
-  1. The client `QueueManager` monitors playback events.
-  2. When the user starts playing the last entry in the active queue, the manager detects `isLastElement(entry)` and extracts `extensions.upNextFeed`.
-  3. The manager resolves the Pipes feed via its pluggable `FeedResolver` and appends the returned recommendation tracks into the active queue (`addAllToQueue`) without interrupting playback.
-  4. Deduplication ensures each slot only triggers resolution once.
+- **Client Queue Integration (`queue-action`):**
+  1. On direct track start, if `extensions.collection_up_next_feed` is present, `QueueManager` resolves it and sets **Next Up** (`autoItems`), preserving any existing **Next in Queue** (`manualItems`).
+  2. When the user starts playing the last entry in the active queue (or a standalone track without `collection_up_next_feed`), `QueueManager` resolves `extensions.upNextFeed` and appends the returned recommendation tracks into **Next Up** without interrupting playback.
+  3. Deduplication ensures each slot only triggers resolution once.
 
 ---
 
@@ -100,7 +110,8 @@ When an audio track plays and reaches the tail of the active queue:
 | **Editable Track List** | `"role": "dynamic_collection"` (`operations: "remove,reorder"`) | `alias: "remove_item"`, `alias: "reorder_item"` | Injects swipe-to-delete & drag handles. Executes entry actions on user interaction. |
 | **Editable Playlists Screen** | `"role": "dynamic_collection"` (`operations: "add,remove,reorder"`) | `alias: "remove_item"`, `events.add` | Renders "+ Create Playlist" button in header & trash icons on playlist rows. |
 | **Play All (Collection)** | N/A (Standard Collection / Feed) | `alias: "play_all"` (`type: "addAllToQueue"`, `startPlayback: true`) | Enqueues all items at top of queue and begins immediate playback of first track. |
-| **Queue Autoplay / UpNext** | `entry.extensions.upNextFeed` | N/A (Automatic tail-of-queue fetch) | Resolves feed dynamically at queue end and seamlessly appends upcoming tracks. |
+| **Collection Direct-Play Continuation** | `entry.extensions.collection_up_next_feed` | N/A (automatic queue population) | Resolves Pipes feed on track start and populates **Next Up** (`auto`) while keeping **Next in Queue** (`manual`). |
+| **Queue Autoplay / UpNext** | `entry.extensions.upNextFeed` | N/A (Automatic tail-of-queue fetch) | Resolves feed dynamically at queue end and appends recommendation tracks to **Next Up**. |
 
 ---
 

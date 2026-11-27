@@ -216,5 +216,45 @@ describe('ActionsBuilder + Zod validation', () => {
       expect(validateActionPayload(action.type, action.options)).toBe(true);
     }
   });
+
+  it('should build and validate addToQueue action with optional position', () => {
+    const defaultAction = new ActionsBuilder().addToQueue().build()[0];
+    const topAction = new ActionsBuilder()
+      .addToQueue({ position: 'top' })
+      .build()[0];
+
+    expect(defaultAction).toEqual({ type: 'addToQueue', options: {} });
+    expect(validateActionPayload('addToQueue', defaultAction?.options)).toBe(
+      true,
+    );
+
+    expect(topAction).toEqual({
+      type: 'addToQueue',
+      options: { position: 'top' },
+    });
+    expect(validateActionPayload('addToQueue', topAction?.options)).toBe(true);
+  });
+
+  it('should build and validate addAllToQueue action with target, position, and startPlayback', () => {
+    const action = new ActionsBuilder()
+      .addAllToQueue({
+        url: 'http://localhost:3000/user/collections/system_gsc',
+        target: 'auto',
+        position: 'bottom',
+        startPlayback: true,
+      })
+      .build()[0];
+
+    expect(action).toEqual({
+      type: 'addAllToQueue',
+      options: {
+        url: 'http://localhost:3000/user/collections/system_gsc',
+        target: 'auto',
+        position: 'bottom',
+        startPlayback: true,
+      },
+    });
+    expect(validateActionPayload('addAllToQueue', action?.options)).toBe(true);
+  });
 });
 

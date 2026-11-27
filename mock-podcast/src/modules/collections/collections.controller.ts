@@ -99,6 +99,29 @@ export class CollectionsController {
   }
 
   /**
+   * GET /user/collections/:id/up-next?afterItemId=<id>
+   *
+   * Retrieves remaining playable items in collection `:id` after `afterItemId`,
+   * optionally padded at the tail with recommendations when fewer than 5 items remain.
+   */
+  @Get(':id/up-next')
+  getCollectionUpNext(
+    @Param('id') id: string,
+    @Query('afterItemId') afterItemId?: string,
+    @CurrentRoute() baseUrl?: string,
+    @Req() req?: Request,
+  ) {
+    const cleanBaseUrl = this.extractBaseUrl(baseUrl, req);
+    const loggedIn = isUserLoggedIn(req);
+    return this.collectionsService.getCollectionUpNextFeed(
+      id,
+      afterItemId,
+      cleanBaseUrl,
+      loggedIn,
+    );
+  }
+
+  /**
    * GET /user/collections/:id
    * 
    * Retrieves a single collection feed by ID.

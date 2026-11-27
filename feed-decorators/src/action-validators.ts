@@ -15,6 +15,7 @@ import {
   SetUILanguageActionOptionsSchema,
   CompleteHookActionOptionsSchema,
   ShowToastActionOptionsSchema,
+  AddToQueueActionOptionsSchema,
   AddAllToQueueActionOptionsSchema,
 } from './zod-definitions';
 
@@ -45,7 +46,7 @@ export const actionSchemas: Record<string, z.ZodTypeAny> = {
   completeFTUE: EmptyOptionalSchema,
   completeHook: CompleteHookActionOptionsSchema.optional(),
   refreshComponent: RefreshComponentOptionsSchema,
-  addToQueue: EmptyOptionalSchema,
+  addToQueue: AddToQueueActionOptionsSchema,
   addAllToQueue: AddAllToQueueOptionsSchema,
   showToast: ShowToastActionOptionsSchema,
 };

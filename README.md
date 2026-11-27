@@ -47,11 +47,11 @@ Client-to-server and client-to-state mutations use standardized JSON Cloud Event
 > [!IMPORTANT]
 > **No Server Implementation Required for Queue:** In production Zapp applications, the active playback **Queue is completely local** and managed entirely by the client app in local state/storage. **There does not need to be any server-side implementation for the Queue.** While this example `mock-podcast` server includes a mock `/system/collections` Queue and logs playback events (`started` / `stopped`) for testing and demonstration purposes, production servers do not need to build, store, or manage the Queue.
 
-### D. Continuous Playback Chaining (`upNextFeed`)
-To prevent playback from stopping when reaching the end of an album or playlist:
-*   **Feed Decoration (`upNextFeed`)**: The backend decorates playlist entries (or the terminal entry) with `extensions.upNextFeed = "http://<host>:<port>/media/up-next"` (or a Pipes DataSource object). Decorating all playlist entries ensures queue chaining remains resilient even if the user dynamically reorders tracks or deletes the tail item in their queue.
-*   **Client Queue Integration**: When the client player begins playing the last item, the `queue-action` plugin resolves the feed via Pipes and appends the returned recommendation entries to the end of the queue.
-*   **Reference Recommendation Endpoint**: `mock-podcast` provides `GET /media/up-next` returning 5 curated recommendation audio tracks.
+### D. Continuous Playback Chaining (`upNextFeed` & `collection_up_next_feed`)
+To prevent playback from stopping when reaching the end of an album, playlist, or standalone track:
+*   **Recommendation Chaining (`upNextFeed`)**: The backend decorates entries with `extensions.upNextFeed = "http://<host>:<port>/media/up-next?seedItemId=<id>"` (or a Pipes DataSource object). Decorating all playlist entries ensures queue chaining remains resilient even if the user dynamically reorders tracks or deletes the tail item in their queue.
+*   **Direct Play Collection Continuation (`collection_up_next_feed`)**: Collection entries also carry `extensions.collection_up_next_feed = "http://<host>:<port>/user/collections/<id>/up-next?afterItemId=<id>"`. When a user starts direct playback of a track inside a collection, the client `queue-action` plugin resolves this feed to populate **Next Up** (`autoItems`) with the remaining collection tracks (padded to 5 items with recommendations when fewer remain).
+*   **Reference Endpoints**: `mock-podcast` provides `GET /user/collections/:id/up-next?afterItemId=<id>` for remaining collection tracks + recommendation padding, and `GET /media/up-next?seedItemId=<id>` returning 5 curated recommendation audio tracks excluding the seed track.
 
 
 ---

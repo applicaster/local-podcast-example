@@ -12,12 +12,33 @@ describe('CollectionsService', () => {
         media_item: [{ key: 'image_base', src: null }],
       },
     ],
-    extensions: {},
+    extensions: {} as Record<string, any>,
   });
 
   const mediaService = {
     getEntriesForIds: jest.fn((ids: string[]) =>
       ids.map((id) => createAudioEntry(id)),
+    ),
+    getUpNextEntries: jest.fn(
+      (
+        baseUrl?: string,
+        _isLoggedIn = true,
+        _seedItemId?: string,
+        excludeIds: string[] = [],
+        limit = 5,
+      ) => {
+        const pool = ['rec_1', 'rec_2', 'rec_3', 'rec_4', 'rec_5', 'rec_6'];
+        return pool
+          .filter((id) => !excludeIds.includes(id))
+          .slice(0, limit)
+          .map((id) => {
+            const entry = createAudioEntry(id);
+            if (baseUrl) {
+              entry.extensions.upNextFeed = `${baseUrl}/media/up-next?seedItemId=${id}`;
+            }
+            return entry;
+          });
+      },
     ),
   };
 
@@ -234,8 +255,8 @@ describe('CollectionsService', () => {
     });
   });
 
-  describe('upNextFeed decoration', () => {
-    it('sets upNextFeed on all items in a collection feed to support queue reordering', async () => {
+  describe('upNextFeed and collection_up_next_feed decoration', () => {
+    it('sets collection_up_next_feed and parameterized upNextFeed on all items in a collection feed', async () => {
       const playlist = await service.createCollection('Playlist with UpNext');
       await service.addItemToCollection(playlist.id, 'retro');
       await service.addItemToCollection(playlist.id, 'slay');
@@ -248,19 +269,85 @@ describe('CollectionsService', () => {
 
       expect(feed.entry).toHaveLength(2);
       expect(feed.entry[0].extensions?.upNextFeed).toBe(
-        'http://localhost:3000/media/up-next',
+        'http://localhost:3000/media/up-next?seedItemId=retro',
+      );
+      expect(feed.entry[0].extensions?.collection_up_next_feed).toBe(
+        `http://localhost:3000/user/collections/${playlist.id}/up-next?afterItemId=retro`,
       );
       expect(feed.entry[1].extensions?.upNextFeed).toBe(
-        'http://localhost:3000/media/up-next',
+        'http://localhost:3000/media/up-next?seedItemId=slay',
+      );
+      expect(feed.entry[1].extensions?.collection_up_next_feed).toBe(
+        `http://localhost:3000/user/collections/${playlist.id}/up-next?afterItemId=slay`,
       );
     });
 
-    it('sets upNextFeed on all items and play_next_feed_url for non-last items in getPlayNextFeed', async () => {
+    it('returns remaining collection items in order after afterItemId', async () => {
+      const feed = service.getCollectionUpNextFeed(
+        'system_gsc',
+        'gsc_cherrygrove_city',
+        'http://localhost:3000',
+      );
+
+      expect(feed.entry.map((e) => e.id)).toEqual([
+        'gsc_pokemon_center',
+        'gsc_azalea_town',
+        'gsc_goldenrod_city',
+        'gsc_national_park',
+        'gsc_ecruteak_city',
+      ]);
+      expect(feed.entry[0].extensions?.['continue-watching']).toEqual({
+        sourceCollectionId: 'system_gsc',
+      });
+      expect(feed.entry[0].extensions?.upNextFeed).toBe(
+        'http://localhost:3000/media/up-next?seedItemId=gsc_pokemon_center',
+      );
+    });
+
+    it('pads tail with recommendations when fewer than 5 collection items remain', () => {
+      const feed = service.getCollectionUpNextFeed(
+        'system_gsc',
+        'gsc_goldenrod_city',
+        'http://localhost:3000',
+      );
+
+      expect(feed.entry.map((e) => e.id)).toEqual([
+        'gsc_national_park',
+        'gsc_ecruteak_city',
+        'rec_1',
+        'rec_2',
+        'rec_3',
+      ]);
+    });
+
+    it('returns up-next recommendations when afterItemId is the last item in collection', () => {
+      const feed = service.getCollectionUpNextFeed(
+        'system_gsc',
+        'gsc_ecruteak_city',
+        'http://localhost:3000',
+      );
+
+      expect(feed.entry.map((e) => e.id)).toEqual([
+        'rec_1',
+        'rec_2',
+        'rec_3',
+        'rec_4',
+        'rec_5',
+      ]);
+    });
+
+    it('throws NotFoundException when collection does not exist for up-next', () => {
+      expect(() =>
+        service.getCollectionUpNextFeed('missing-col', 'retro'),
+      ).toThrow('not found');
+    });
+
+    it('sets parameterized upNextFeed, collection_up_next_feed, and play_next_feed_url in getPlayNextFeed', async () => {
       const playlist = await service.createCollection('Sequential Playlist');
       await service.addItemToCollection(playlist.id, 'retro');
       await service.addItemToCollection(playlist.id, 'slay');
 
-      // First item: should have play_next_feed_url AND upNextFeed
+      // First item: should have play_next_feed_url, collection_up_next_feed, and upNextFeed
       const firstFeed = service.getPlayNextFeed(
         playlist.id,
         'retro',
@@ -269,19 +356,25 @@ describe('CollectionsService', () => {
       expect(firstFeed.entry[0].extensions?.play_next_feed_url).toContain(
         `/user/collections/${playlist.id}/play_next/slay`,
       );
+      expect(firstFeed.entry[0].extensions?.collection_up_next_feed).toBe(
+        `http://localhost:3000/user/collections/${playlist.id}/up-next?afterItemId=retro`,
+      );
       expect(firstFeed.entry[0].extensions?.upNextFeed).toBe(
-        'http://localhost:3000/media/up-next',
+        'http://localhost:3000/media/up-next?seedItemId=retro',
       );
 
-      // Last item: should have upNextFeed and no play_next_feed_url
+      // Last item: should have upNextFeed and collection_up_next_feed, and no play_next_feed_url
       const lastFeed = service.getPlayNextFeed(
         playlist.id,
         'slay',
         'http://localhost:3000',
       );
       expect(lastFeed.entry[0].extensions?.play_next_feed_url).toBeUndefined();
+      expect(lastFeed.entry[0].extensions?.collection_up_next_feed).toBe(
+        `http://localhost:3000/user/collections/${playlist.id}/up-next?afterItemId=slay`,
+      );
       expect(lastFeed.entry[0].extensions?.upNextFeed).toBe(
-        'http://localhost:3000/media/up-next',
+        'http://localhost:3000/media/up-next?seedItemId=slay',
       );
     });
 
