@@ -17,6 +17,7 @@ describe('Controllers Authorization Checks', () => {
     })),
     createCollection: jest.fn((name) => ({ id: 'new-col', name })),
     deleteCollection: jest.fn((id) => ({ deleted: true, id })),
+    getCollectionUpNextFeed: jest.fn(() => ({ entry: [{ id: 'gsc_route_29' }] })),
   };
 
   const mockCloudEventsService: any = {
@@ -28,6 +29,9 @@ describe('Controllers Authorization Checks', () => {
       entry: isLoggedIn
         ? [{ id: 'radio-1', actions: ['add_to_playlist', 'add_to_queue'] }]
         : [{ id: 'radio-1', actions: ['add_to_queue'] }],
+    })),
+    getUpNextFeed: jest.fn((baseUrl, isLoggedIn, seedItemId) => ({
+      entry: [{ id: seedItemId ? 'next-1' : 'default-1' }],
     })),
   };
 
@@ -57,6 +61,23 @@ describe('Controllers Authorization Checks', () => {
         false,
       );
       expect(res.entry).toEqual([]);
+    });
+
+    it('passes afterItemId to getCollectionUpNextFeed on GET /user/collections/:id/up-next', () => {
+      const authReq = { headers: { authorization: 'Bearer my-token' } } as any;
+      collectionsController.getCollectionUpNext(
+        'system_gsc',
+        'gsc_elm_lab',
+        undefined,
+        authReq,
+      );
+
+      expect(mockCollectionsService.getCollectionUpNextFeed).toHaveBeenCalledWith(
+        'system_gsc',
+        'gsc_elm_lab',
+        'https://localhost:3000',
+        true,
+      );
     });
 
     it('returns user collections for GET /user/collections when authenticated', () => {
@@ -149,6 +170,19 @@ describe('Controllers Authorization Checks', () => {
       expect(mockMediaService.getRadioFeed).toHaveBeenCalledWith(
         'https://localhost:3000',
         true,
+      );
+    });
+
+    it('passes seedItemId to getUpNextFeed for GET /media/up-next', () => {
+      const authReq = {
+        headers: { authorization: 'Bearer valid-token' },
+      } as any;
+      mediaController.getUpNextFeed('gsc_title_screen', undefined, authReq);
+
+      expect(mockMediaService.getUpNextFeed).toHaveBeenCalledWith(
+        'https://localhost:3000',
+        true,
+        'gsc_title_screen',
       );
     });
   });

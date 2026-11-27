@@ -104,17 +104,23 @@ export class ActionsBuilder {
 
   /**
    * Adds an addToQueue action to the actions list.
+   * @param opts Optional insertion position ('top' | 'bottom')
    */
-  addToQueue() {
-    this.actions.push({ type: 'addToQueue', options: {} });
+  addToQueue(opts?: { position?: 'top' | 'bottom' }) {
+    this.actions.push({ type: 'addToQueue', options: opts || {} });
     return this;
   }
 
   /**
    * Adds an addAllToQueue action to the actions list.
-   * @param opts Options containing the collection URL
+   * @param opts Options containing the collection URL and queue placement behavior
    */
-  addAllToQueue(opts: { url: string }) {
+  addAllToQueue(opts: {
+    url: string;
+    target?: 'manual' | 'auto';
+    position?: 'top' | 'bottom';
+    startPlayback?: boolean;
+  }) {
     this.actions.push({
       type: 'addAllToQueue',
       options: opts,

@@ -1,4 +1,4 @@
-import { Controller, Get, Req } from '@nestjs/common';
+import { Controller, Get, Query, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { CurrentRoute, isUserLoggedIn } from '../../utils';
 import { MediaService } from './media.service';
@@ -33,12 +33,13 @@ export class MediaController {
    */
   @Get('up-next')
   getUpNextFeed(
+    @Query('seedItemId') seedItemId?: string,
     @CurrentRoute() baseUrl?: string,
     @Req() req?: Request,
   ) {
     const cleanBaseUrl = this.extractBaseUrl(baseUrl, req);
     const loggedIn = isUserLoggedIn(req);
-    return this.mediaService.getUpNextFeed(cleanBaseUrl, loggedIn);
+    return this.mediaService.getUpNextFeed(cleanBaseUrl, loggedIn, seedItemId);
   }
 
   private extractBaseUrl(baseUrl?: string, req?: Request): string | undefined {

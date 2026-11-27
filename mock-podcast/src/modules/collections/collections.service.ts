@@ -27,6 +27,7 @@ import { UserCollectionEntryBuilder } from '../../builders/UserCollectionEntryBu
 @Injectable()
 export class CollectionsService implements OnModuleInit {
   private static readonly CLOUD_EVENTS_PATH = '/cloud-events';
+  private static readonly COLLECTION_UP_NEXT_MIN_ITEMS = 5;
   private static readonly DEFAULT_PLAYLIST_PREFIX = 'Playlist #';
   private static readonly YOUR_COLLECTIONS_TITLE = 'Your Collections';
   private static readonly CREATE_COLLECTION_TITLE = 'Create collection';
@@ -232,17 +233,19 @@ export class CollectionsService implements OnModuleInit {
     this.decorateEntriesWithPlaybackSource(entries, collection.id);
 
     if (baseUrl) {
+      this.decorateEntriesWithUpNextFeeds(entries, baseUrl, collection.id);
       const playNextUrl = this.getPlayNextUrl(
         collection.id,
         collection.itemIds,
         itemId,
         baseUrl,
       );
-      entries[0].extensions = {
-        ...entries[0].extensions,
-        upNextFeed: `${baseUrl}/media/up-next`,
-        ...(playNextUrl ? { play_next_feed_url: playNextUrl } : {}),
-      };
+      if (playNextUrl) {
+        entries[0].extensions = {
+          ...entries[0].extensions,
+          play_next_feed_url: playNextUrl,
+        };
+      }
     }
 
     return {
@@ -250,6 +253,57 @@ export class CollectionsService implements OnModuleInit {
       type: { value: 'feed' },
       title: entries[0].title,
       entry: entries,
+      extensions: {},
+    };
+  }
+
+  getCollectionUpNextFeed(
+    collectionId: string,
+    afterItemId?: string,
+    baseUrl?: string,
+    isLoggedIn = true,
+  ): Feed {
+    const collection = this.findCollectionByIdOrAlias(collectionId);
+    if (!collection) {
+      throw new NotFoundException(`Collection ${collectionId} was not found`);
+    }
+
+    let remainingIds: string[] = [];
+    if (afterItemId) {
+      const idx = collection.itemIds.indexOf(afterItemId);
+      remainingIds = idx !== -1 ? collection.itemIds.slice(idx + 1) : [];
+    } else {
+      remainingIds = [...collection.itemIds];
+    }
+
+    const remainingEntries = this.mediaService.getEntriesForIds(
+      remainingIds,
+      isLoggedIn,
+    );
+    this.decorateEntriesWithPlaybackSource(remainingEntries, collection.id);
+
+    if (baseUrl) {
+      this.decorateEntriesWithUpNextFeeds(remainingEntries, baseUrl);
+    }
+
+    const neededRecommendations =
+      CollectionsService.COLLECTION_UP_NEXT_MIN_ITEMS - remainingEntries.length;
+    const recommendations =
+      neededRecommendations > 0
+        ? this.mediaService.getUpNextEntries(
+            baseUrl,
+            isLoggedIn,
+            afterItemId || remainingIds[remainingIds.length - 1],
+            [afterItemId, ...remainingIds].filter((v): v is string => Boolean(v)),
+            neededRecommendations,
+          )
+        : [];
+
+    return {
+      id: randomUUID(),
+      type: { value: 'feed' },
+      title: collection.name,
+      entry: [...remainingEntries, ...recommendations],
       extensions: {},
     };
   }
@@ -303,12 +357,7 @@ export class CollectionsService implements OnModuleInit {
     this.decorateEntriesWithPlaybackSource(entries, collection.id);
 
     if (baseUrl) {
-      entries.forEach((entry) => {
-        entry.extensions = {
-          ...(entry.extensions ?? {}),
-          upNextFeed: `${baseUrl}/media/up-next`,
-        };
-      });
+      this.decorateEntriesWithUpNextFeeds(entries, baseUrl, collection.id);
     }
 
     const isEditMode = editable || action === 'remove_item';
@@ -554,6 +603,25 @@ export class CollectionsService implements OnModuleInit {
     }`;
   }
 
+  private decorateEntriesWithUpNextFeeds(
+    entries: Entry[],
+    baseUrl: string,
+    collectionId?: string,
+  ): void {
+    entries.forEach((entry) => {
+      const encodedId = encodeURIComponent(entry.id);
+      entry.extensions = {
+        ...(entry.extensions ?? {}),
+        upNextFeed: `${baseUrl}/media/up-next?seedItemId=${encodedId}`,
+        ...(collectionId
+          ? {
+              collection_up_next_feed: `${baseUrl}/user/collections/${collectionId}/up-next?afterItemId=${encodedId}`,
+            }
+          : {}),
+      };
+    });
+  }
+
   private decorateEntriesWithPlaybackSource(
     entries: Entry[],
     sourceCollectionId: string,
@@ -743,17 +811,23 @@ export class CollectionsService implements OnModuleInit {
               [firstEntry],
               collection.id,
             );
+            this.decorateEntriesWithUpNextFeeds(
+              [firstEntry],
+              baseUrl,
+              collection.id,
+            );
             const playNextUrl = this.getPlayNextUrl(
               collection.id,
               collection.itemIds,
               firstItemId,
               baseUrl,
             );
-            firstEntry.extensions = {
-              ...firstEntry.extensions,
-              upNextFeed: `${baseUrl}/media/up-next`,
-              ...(playNextUrl ? { play_next_feed_url: playNextUrl } : {}),
-            };
+            if (playNextUrl) {
+              firstEntry.extensions = {
+                ...firstEntry.extensions,
+                play_next_feed_url: playNextUrl,
+              };
+            }
 
             builder.playAll(firstEntry);
           }
