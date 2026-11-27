@@ -143,5 +143,214 @@ describe('CollectionsService', () => {
         }),
       );
     });
+
+    it('puts confirmDialog before delete_collection on user playlists', async () => {
+      const playlist = await service.createCollection('Morning Mix');
+      const feed = service.getCollectionsFeed(
+        undefined,
+        'http://localhost:3000',
+      );
+      const entry = feed.entry.find((item) => item.id === playlist.id);
+      const deleteAction = entry?.extensions?.entry_action?.find(
+        (action: { button?: { alias?: string } }) =>
+          action.button?.alias === 'delete_collection',
+      );
+
+      expect(deleteAction?.dismiss_on_action).toBe(false);
+      expect(
+        deleteAction?.actions?.map((action: { type: string }) => action.type),
+      ).toEqual([
+        'confirmDialog',
+        'dismissBottomSheet',
+        'sendCloudEvent',
+        'refreshComponent',
+      ]);
+      expect(deleteAction?.actions?.[0]?.options?.message).toContain(
+        'Morning Mix',
+      );
+    });
+
+    it('does not add delete_collection on system collections', () => {
+      const feed = service.getCollectionsFeed(
+        undefined,
+        'http://localhost:3000',
+      );
+      const systemEntries = feed.entry.filter(
+        (item) => item.extensions?.is_system === true,
+      );
+
+      expect(systemEntries.length).toBeGreaterThan(0);
+
+      for (const entry of systemEntries) {
+        const deleteAction = entry.extensions?.entry_action?.find(
+          (action: { button?: { alias?: string } }) =>
+            action.button?.alias === 'delete_collection',
+        );
+
+        expect(deleteAction).toBeUndefined();
+      }
+    });
+
+    it('bulk selector tap_actions add collection, toast, then dismiss', async () => {
+      const target = await service.createCollection('Morning Mix');
+      const feed = service.getCollectionsFeed(
+        undefined,
+        'http://localhost:3000',
+        'system_gsc',
+      );
+      const row = feed.entry.find((entry) => entry.id === target.id);
+      const types = row?.extensions?.tap_actions?.actions?.map(
+        (action: { type: string }) => action.type,
+      );
+
+      expect(feed.extensions?.role).toBe('collection_selector');
+      expect(feed.extensions?.behavior).toEqual({
+        select_mode: 'none',
+        current_selection: [],
+      });
+      expect(feed.entry.find((entry) => entry.id === 'system_gsc')).toBeUndefined();
+      expect(types).toEqual([
+        'sendCloudEvent',
+        'showToast',
+        'refreshComponent',
+        'dismissBottomSheet',
+      ]);
+
+      const toast = row?.extensions?.tap_actions?.actions?.find(
+        (action: { type: string }) => action.type === 'showToast',
+      );
+      expect(toast?.options?.message).toBe('Added to playlist');
+
+      const event = row?.extensions?.tap_actions?.actions?.find(
+        (action: { type: string }) => action.type === 'sendCloudEvent',
+      );
+      expect(event?.options?.type).toBe(
+        'com.applicaster.collection.add.collection.v1',
+      );
+      expect(event?.options?.data).toEqual({
+        collectionId: target.id,
+        sourceCollectionId: 'system_gsc',
+      });
+    });
+  });
+
+  describe('upNextFeed decoration', () => {
+    it('sets upNextFeed on all items in a collection feed to support queue reordering', async () => {
+      const playlist = await service.createCollection('Playlist with UpNext');
+      await service.addItemToCollection(playlist.id, 'retro');
+      await service.addItemToCollection(playlist.id, 'slay');
+
+      const feed = service.getCollectionFeedById(
+        playlist.id,
+        undefined,
+        'http://localhost:3000',
+      );
+
+      expect(feed.entry).toHaveLength(2);
+      expect(feed.entry[0].extensions?.upNextFeed).toBe(
+        'http://localhost:3000/media/up-next',
+      );
+      expect(feed.entry[1].extensions?.upNextFeed).toBe(
+        'http://localhost:3000/media/up-next',
+      );
+    });
+
+    it('sets upNextFeed on all items and play_next_feed_url for non-last items in getPlayNextFeed', async () => {
+      const playlist = await service.createCollection('Sequential Playlist');
+      await service.addItemToCollection(playlist.id, 'retro');
+      await service.addItemToCollection(playlist.id, 'slay');
+
+      // First item: should have play_next_feed_url AND upNextFeed
+      const firstFeed = service.getPlayNextFeed(
+        playlist.id,
+        'retro',
+        'http://localhost:3000',
+      );
+      expect(firstFeed.entry[0].extensions?.play_next_feed_url).toContain(
+        `/user/collections/${playlist.id}/play_next/slay`,
+      );
+      expect(firstFeed.entry[0].extensions?.upNextFeed).toBe(
+        'http://localhost:3000/media/up-next',
+      );
+
+      // Last item: should have upNextFeed and no play_next_feed_url
+      const lastFeed = service.getPlayNextFeed(
+        playlist.id,
+        'slay',
+        'http://localhost:3000',
+      );
+      expect(lastFeed.entry[0].extensions?.play_next_feed_url).toBeUndefined();
+      expect(lastFeed.entry[0].extensions?.upNextFeed).toBe(
+        'http://localhost:3000/media/up-next',
+      );
+    });
+
+    it('dispatches addAllToQueue at top with startPlayback when system collection has only one item', () => {
+      const singleItemCollection = {
+        id: 'single_item_sys',
+        name: 'Single System',
+        itemIds: ['slay'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isSystem: true,
+      };
+
+      const entry = (service as any).toFeedEntry(
+        singleItemCollection,
+        'http://localhost:3000/events',
+        undefined,
+        'http://localhost:3000',
+        false,
+      );
+
+      const playAllActionWrapper = entry.extensions?.entry_action?.find(
+        (ea: any) => ea.button?.alias === 'play_all',
+      );
+      expect(playAllActionWrapper).toBeDefined();
+
+      const playAllAction = playAllActionWrapper.actions?.find(
+        (a: any) => a.type === 'addAllToQueue',
+      );
+      expect(playAllAction).toBeDefined();
+      expect(playAllAction.options).toEqual({
+        url: 'http://localhost:3000/user/collections/single_item_sys',
+        position: 'top',
+        startPlayback: true,
+      });
+    });
+
+    it('dispatches addAllToQueue at top with startPlayback when system collection has multiple items', () => {
+      const multiItemCollection = {
+        id: 'multi_item_sys',
+        name: 'Multi System',
+        itemIds: ['slay', 'gsc_title_screen'],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isSystem: true,
+      };
+
+      const entry = (service as any).toFeedEntry(
+        multiItemCollection,
+        'http://localhost:3000/events',
+        undefined,
+        'http://localhost:3000',
+        false,
+      );
+
+      const playAllActionWrapper = entry.extensions?.entry_action?.find(
+        (ea: any) => ea.button?.alias === 'play_all',
+      );
+      expect(playAllActionWrapper).toBeDefined();
+
+      const playAllAction = playAllActionWrapper.actions?.find(
+        (a: any) => a.type === 'addAllToQueue',
+      );
+      expect(playAllAction).toBeDefined();
+      expect(playAllAction.options).toEqual({
+        url: 'http://localhost:3000/user/collections/multi_item_sys',
+        position: 'top',
+        startPlayback: true,
+      });
+    });
   });
 });

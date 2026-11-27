@@ -40,4 +40,10 @@ export class UserCollectionAODItemBuilder extends EntryBuilder {
     this.addEntryActionByAlias('add_to_queue', actionBuilder, true);
     return this;
   }
+
+  setUpNextFeed(feed?: string | Record<string, any>) {
+    const target = feed || `${this.baseUrl}/media/up-next`;
+    super.setUpNextFeed(target);
+    return this;
+  }
 }

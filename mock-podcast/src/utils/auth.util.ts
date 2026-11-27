@@ -1,22 +1,26 @@
 import { Request } from 'express';
 
-export function isUserLoggedIn(req?: Request): boolean {
+export function getBearerToken(req?: Request): string | undefined {
   if (!req || !req.headers) {
-    return false;
+    return undefined;
   }
 
   const authHeader = req.headers['authorization'];
   if (!authHeader) {
-    return false;
+    return undefined;
   }
 
   const authStr = Array.isArray(authHeader) ? authHeader[0] : authHeader;
   const trimmed = authStr.trim();
 
   if (!trimmed.toLowerCase().startsWith('bearer ')) {
-    return false;
+    return undefined;
   }
 
   const token = trimmed.slice(7).trim();
-  return token.length > 0;
+  return token.length > 0 ? token : undefined;
+}
+
+export function isUserLoggedIn(req?: Request): boolean {
+  return getBearerToken(req) !== undefined;
 }

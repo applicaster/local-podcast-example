@@ -1,0 +1,35 @@
+{
+    "id": "pin-actions-feed",
+    "title": "PIN Actions",
+    "type": {
+        "value": "pin-actions-feed"
+    },
+    "entry": [
+        {
+            "id": "set-pin",
+            "title": "Set PIN",
+            "type": {
+                "value": "action"
+            },
+            "extensions": {
+                "tap_actions": {
+                    "actions": [
+                        {
+                            "type": "pinCode",
+                            "options": {
+                                "typeMapping": "parent-lock",
+                                "flow": "set-pin",
+                                "cloudEventPayload": {
+                                    "profile": "profile-without-a-pin"
+                                }
+                            }
+                        },
+                        {
+                            "type": "refreshComponent"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

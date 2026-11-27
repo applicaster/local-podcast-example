@@ -3,6 +3,7 @@ import {
   OpenBottomSheetActionOptionsSchema,
   ShowTextInputActionOptionsSchema,
   ConfirmDialogActionOptionsSchema,
+  ShowAlertActionOptionsSchema,
   SendCloudEventActionOptionsSchema,
   ToggleStorageFlagActionOptionsSchema,
   LocalStorageSetActionOptionsSchema,
@@ -10,26 +11,25 @@ import {
   ScreenSetVariableActionOptionsSchema,
   SwitchLayoutActionOptionsSchema,
   NavigateToScreenActionOptionsSchema,
+  PinCodeActionOptionsSchema,
   SetUILanguageActionOptionsSchema,
   CompleteHookActionOptionsSchema,
   ShowToastActionOptionsSchema,
+  AddAllToQueueActionOptionsSchema,
 } from './zod-definitions';
 
 const EmptyOptionalSchema = z.object({}).optional();
 const RefreshComponentOptionsSchema = z
   .object({ componentId: z.string().optional() })
   .optional();
-const AddAllToQueueOptionsSchema = z.object({
-  url: z.string().min(1).optional(),
-  position: z.enum(['top', 'bottom']).optional(),
-  startPlayback: z.boolean().optional(),
-});
+const AddAllToQueueOptionsSchema = AddAllToQueueActionOptionsSchema;
 
 
 export const actionSchemas: Record<string, z.ZodTypeAny> = {
   openBottomSheet: OpenBottomSheetActionOptionsSchema,
   showTextInput: ShowTextInputActionOptionsSchema,
   confirmDialog: ConfirmDialogActionOptionsSchema,
+  showAlert: ShowAlertActionOptionsSchema,
   localStorageToggleFlag: ToggleStorageFlagActionOptionsSchema,
   sessionStorageToggleFlag: ToggleStorageFlagActionOptionsSchema,
   screenToggleFlag: ToggleStorageFlagActionOptionsSchema,
@@ -40,6 +40,7 @@ export const actionSchemas: Record<string, z.ZodTypeAny> = {
   appRestart: EmptyOptionalSchema,
   switchLayout: SwitchLayoutActionOptionsSchema,
   navigateToScreen: NavigateToScreenActionOptionsSchema,
+  pinCode: PinCodeActionOptionsSchema,
   setUILanguage: SetUILanguageActionOptionsSchema,
   completeFTUE: EmptyOptionalSchema,
   completeHook: CompleteHookActionOptionsSchema.optional(),

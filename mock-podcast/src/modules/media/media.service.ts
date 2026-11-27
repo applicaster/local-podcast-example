@@ -128,6 +128,31 @@ export class MediaService {
   }
 
   /**
+   * Get Up Next recommendation feed
+   */
+  getUpNextFeed(baseUrl?: string, isLoggedIn = true): Feed {
+    const upNextItems = this.playlistItems.slice(0, 5);
+    const entries: Entry[] = upNextItems.map((item) => {
+      const entry = this.radioItemToEntry(item, 'audio', baseUrl, isLoggedIn);
+      if (baseUrl) {
+        entry.extensions = {
+          ...(entry.extensions ?? {}),
+          upNextFeed: `${baseUrl}/media/up-next`,
+        };
+      }
+      return entry;
+    });
+
+    return {
+      id: this.generateUUID(),
+      type: { value: 'feed' },
+      title: 'Up Next',
+      entry: entries,
+      extensions: {},
+    };
+  }
+
+  /**
    * Convert RadioItem to Feed Entry
    */
   private radioItemToEntry(

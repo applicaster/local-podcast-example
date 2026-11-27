@@ -411,17 +411,21 @@ Triggers a text input bottom sheet/dialog to create or edit text (e.g. playlist 
 
 Shows a confirmation dialog with provided message and title. If the user confirms, next action in the array will be executed. If the user cancels, execution chain will be cancelled without generating error.
 
+Used before destructive playlist removal (`alias: "delete_collection"`). Keep `dismiss_on_action: false` so the actions sheet stays open behind the dialog. Cancel leaves the sheet; Confirm continues to `dismissBottomSheet` and `sendCloudEvent`.
+
 ```
 {
   "type": "confirmDialog",
   "options": {
-    "message": "Region will be changed to UK. Are you sure you want to continue?",
-    "title": "Region change",
-    "okButtonText": "Yes",
-    "cancelButtonText": "No"
+    "title": "Delete Playlist?",
+    "message": "Are you sure you want to delete Morning Mix? This action can't be undone.",
+    "okButtonText": "Delete",
+    "cancelButtonText": "Cancel"
   }
 }
 ```
+
+The Playlist Experience plugin overwrites these strings from Studio localizations (`playlist_experience_delete_confirm_*`).
 
 ## First time user experience plugin actions
 
@@ -587,7 +591,45 @@ Passing `selector` to generated behavior is not currently supported.
 
 ### collection_selector
 
-Used for feeds where the user selects items or collections (e.g., choice lists or playlist selection). Works with a `behavior` block defining `select_mode` (`single` | `multi`) and `current_selection`.
+Used for feeds where the user selects items or collections (e.g., choice lists or playlist selection). Works with a `behavior` block defining `select_mode` (`single` | `multi` | `none`) and `current_selection`.
+
+Track add/remove (`GET /user/collections?item_id=<id>`) uses `select_mode: "multi"` with `current_selection` highlighting membership.
+
+Add-all-to-playlist / merge (`GET /user/collections?collection_id=<id>`) uses `select_mode: "none"`. Each target row's `tap_actions` run:
+
+```json
+{
+  "tap_actions": {
+    "actions": [
+      {
+        "type": "sendCloudEvent",
+        "options": {
+          "url": "https://server.com/cloud-events",
+          "type": "com.applicaster.collection.add.collection.v1",
+          "subject": "add_collection_to_collection",
+          "data": {
+            "collectionId": "playlist-1",
+            "sourceCollectionId": "system_gsc"
+          }
+        }
+      },
+      {
+        "type": "showToast",
+        "options": {
+          "message": "Added to playlist"
+        }
+      },
+      {
+        "type": "refreshComponent"
+      },
+      {
+        "type": "dismissBottomSheet",
+        "options": {}
+      }
+    ]
+  }
+}
+```
 
 ```json
 {

@@ -195,5 +195,26 @@ describe('ActionsBuilder + Zod validation', () => {
       expect(validateActionPayload(action.type, action.options)).toBe(true);
     }
   });
+
+  it('should build and validate addAllToQueue action with position: top and startPlayback: true', () => {
+    const actions = new ActionsBuilder()
+      .addAllToQueue({
+        url: 'http://localhost:3000/user/collections/col-1',
+        position: 'top',
+        startPlayback: true,
+      })
+      .build();
+    const action = actions[0];
+    expect(action).toBeDefined();
+    if (action) {
+      expect(action.type).toBe('addAllToQueue');
+      expect(action.options).toEqual({
+        url: 'http://localhost:3000/user/collections/col-1',
+        position: 'top',
+        startPlayback: true,
+      });
+      expect(validateActionPayload(action.type, action.options)).toBe(true);
+    }
+  });
 });
 

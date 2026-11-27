@@ -1,0 +1,117 @@
+{
+    "properties": [
+        {
+            "id": "profileImage",
+            "type": "singleSelect",
+            "preset": "FormAvatarPicker",
+            "options": {
+                "title": "Choose Avatar",
+                "itemsFeedURL": "https://api-qa.aio.focusonthefamily.com/CMS/avatars"
+            }
+        },
+        {
+            "id": "displayName",
+            "type": "textInput",
+            "preset": "FormTextInput",
+            "options": {
+                "title": "Display Name",
+                "required": false,
+                "minLength": 2,
+                "maxLength": 25
+            }
+        },
+        {
+            "id": "buttonManagePin",
+            "preset": "FormButtonSave",
+            "type": "button",
+            "options": {
+                "title": "Change PIN",
+                "extensions": {
+                    "tap_actions": {
+                        "actions": [
+                            {
+                                "type": "pinCode",
+                                "options": {
+                                    "typeMapping": "parent-lock",
+                                    "flow": "verify-pin",
+                                    "cloudEventPayload": {
+                                        "profile": "a3JVE000005wcej2AA",
+                                        "purpose": "manage"
+                                    },
+                                    "promptText": "Enter the account owner's PIN (Tester Test)"
+                                }
+                            },
+                            {
+                                "type": "pinCode",
+                                "options": {
+                                    "typeMapping": "parent-lock",
+                                    "flow": "set-pin",
+                                    "cloudEventPayload": {
+                                        "profile": "a3JVE000007CgIn2AK"
+                                    },
+                                    "promptText": "Set a new PIN for Fit Whit"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "id": "buttonSave",
+            "type": "button",
+            "preset": "FormButtonSave",
+            "options": {
+                "title": "Save",
+                "extensions": {
+                    "tap_actions": {
+                        "actions": [
+                            {
+                                "type": "validateForm"
+                            },
+                            {
+                                "type": "postForm",
+                                "options": {
+                                    "data": {
+                                        "form_data": "@{screen/}"
+                                    },
+                                    "inflateData": true,
+                                    "subject": "profile_update",
+                                    "type": "com.applicaster.post.data.v1",
+                                    "url": "https://api-qa.aio.focusonthefamily.com/CMS/events"
+                                }
+                            },
+                            {
+                                "type": "navigateToScreen",
+                                "options": {
+                                    "typeMapping": "home-screen"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "id": "buttonCancel",
+            "type": "button",
+            "preset": "FormButtonCancel",
+            "options": {
+                "title": "Cancel",
+                "extensions": {
+                    "tap_actions": {
+                        "actions": [
+                            {
+                                "type": "goBack",
+                                "options": {
+                                    "fallbackToHome": true,
+                                    "backToTop": false
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+}

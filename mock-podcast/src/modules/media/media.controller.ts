@@ -24,6 +24,23 @@ export class MediaController {
     return this.mediaService.getRadioFeed(cleanBaseUrl, loggedIn);
   }
 
+  /**
+   * GET /media/up-next
+   * 
+   * Returns an Up Next recommendations feed for continuous queue chaining.
+   * 
+   * @returns Standard Zapp DSP Feed with up next audio entries.
+   */
+  @Get('up-next')
+  getUpNextFeed(
+    @CurrentRoute() baseUrl?: string,
+    @Req() req?: Request,
+  ) {
+    const cleanBaseUrl = this.extractBaseUrl(baseUrl, req);
+    const loggedIn = isUserLoggedIn(req);
+    return this.mediaService.getUpNextFeed(cleanBaseUrl, loggedIn);
+  }
+
   private extractBaseUrl(baseUrl?: string, req?: Request): string | undefined {
     if (!baseUrl && !req) {
       return undefined;

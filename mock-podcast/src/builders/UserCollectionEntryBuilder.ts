@@ -74,8 +74,19 @@ export class UserCollectionEntryBuilder extends SystemCollectionEntryBuilder {
     return this;
   }
 
-  deleteCollection(cloudEventsUrl: string, collectionId: string) {
+  deleteCollection(
+    cloudEventsUrl: string,
+    collectionId: string,
+    collectionName: string,
+  ) {
     const actionBuilder = new ActionsBuilder()
+      .confirmDialog({
+        title: 'Delete Playlist?',
+        message: `Are you sure you want to delete ${collectionName}? This action can't be undone.`,
+        okButtonText: 'Delete',
+        cancelButtonText: 'Cancel',
+      })
+      .addAction({ type: 'dismissBottomSheet' })
       .sendCloudEvent({
         url: cloudEventsUrl,
         type: CLOUD_EVENT_TYPES.COLLECTION_DELETE,
@@ -84,7 +95,7 @@ export class UserCollectionEntryBuilder extends SystemCollectionEntryBuilder {
       })
       .refreshComponent();
 
-    this.addEntryActionByAlias('delete_collection', actionBuilder, true);
+    this.addEntryActionByAlias('delete_collection', actionBuilder, false);
     return this;
   }
 }

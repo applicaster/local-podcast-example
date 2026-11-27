@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import { isUserLoggedIn } from './auth.util';
+import { isUserLoggedIn, getBearerToken } from './auth.util';
 
 describe('isUserLoggedIn', () => {
   it('returns false when req or req.headers is undefined', () => {
@@ -30,5 +30,15 @@ describe('isUserLoggedIn', () => {
   it('handles case-insensitive Bearer prefix', () => {
     const req = { headers: { authorization: 'bearer my-token-123' } } as any;
     expect(isUserLoggedIn(req)).toBe(true);
+  });
+});
+
+describe('getBearerToken', () => {
+  const reqWith = (authorization?: string) =>
+    ({ headers: authorization ? { authorization } : {} }) as any;
+
+  it('extracts the token regardless of header case', () => {
+    expect(getBearerToken(reqWith('bearer tok'))).toBe('tok');
+    expect(getBearerToken(reqWith('Bearer tok'))).toBe('tok');
   });
 });

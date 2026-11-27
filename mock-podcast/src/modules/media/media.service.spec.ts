@@ -62,4 +62,14 @@ describe('MediaService', () => {
     expect(entryActions).toHaveLength(1);
     expect(entryActions?.[0]?.button?.alias).toBe('add_to_queue');
   });
+
+  it('returns up-next feed with audio entries and correct structure', () => {
+    const feed = service.getUpNextFeed('http://localhost:3000', true);
+
+    expect(feed.type.value).toBe('feed');
+    expect(feed.title).toBe('Up Next');
+    expect(feed.entry.length).toBeGreaterThan(0);
+    expect(feed.entry.every((e) => e.type.value === 'audio')).toBe(true);
+    expect(feed.entry[0].extensions?.entry_action).toBeDefined();
+  });
 });

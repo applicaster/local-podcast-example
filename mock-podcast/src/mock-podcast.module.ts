@@ -3,6 +3,9 @@ import { ConfigModule } from '@nestjs/config';
 import { MediaModule } from './modules/media/media.module';
 import { CollectionsModule } from './modules/collections/collections.module';
 import { CloudEventsModule } from './modules/cloud-events/cloud-events.module';
+import { PinModule } from './modules/pin/pin.module';
+import { ProfilesModule } from './modules/profiles/profiles.module';
+import { GroupingsModule } from './modules/groupings/groupings.module';
 
 @Module({
   imports: [
@@ -22,7 +25,9 @@ import { CloudEventsModule } from './modules/cloud-events/cloud-events.module';
     MediaModule,
     CollectionsModule,
     CloudEventsModule,
+    PinModule,
+    ProfilesModule,
+    GroupingsModule,
   ],
 })
 export class MockPodcastModule {}
-

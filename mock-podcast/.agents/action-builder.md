@@ -115,7 +115,7 @@ const entry = new EntryBuilder<UserCollectionAODItemBuilder>(builder)
 export class UserCollectionEntryBuilder extends SystemCollectionEntryBuilder {
   editCollection(baseUrl: string, collectionId: string, collectionName: string) { ... }
   editName(cloudEventsUrl: string, collectionId: string, collectionName: string) { ... }
-  deleteCollection(cloudEventsUrl: string, collectionId: string) { ... }
+  deleteCollection(cloudEventsUrl: string, collectionId: string, collectionName: string) { ... }
 }
 ```
 

@@ -1,0 +1,371 @@
+{
+  "entry": [
+    {
+      "media_group": [
+        {
+          "media_item": [
+            {
+              "key": "image_base",
+              "src": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDVjS1I2UUFNLXRodW1iLnBuZw.webp"
+            }
+          ],
+          "type": "image"
+        }
+      ],
+      "extensions": {
+        "denied_actions": {
+          "playlist": false,
+          "offline_download": false,
+          "comment": true,
+          "change_picture": false,
+          "change_name": false,
+          "bookmark": false
+        },
+        "birthdate": "2000-05-31",
+        "gender": "Male",
+        "username": "Big Test",
+        "avatar_id": "char:1741",
+        "email": "aio.api.gateway.test@fotf.org",
+        "tap_actions": {
+          "actions": [
+            {
+              "options": {
+                "content": {
+                  "user_account": {
+                    "kids": false,
+                    "profile_selected": true,
+                    "profile": "a3JVE000005wcej2AA"
+                  },
+                  "quick-brick-login-flow": {
+                    "account_token": "a3JVE000005wcej2AA"
+                  }
+                }
+              },
+              "type": "sessionStorageSet"
+            },
+            {
+              "options": {
+                "success": true
+              },
+              "type": "finishHook"
+            }
+          ]
+        },
+        "kids": false,
+        "token": "a3JVE000005wcej2AA",
+        "master": 1
+      },
+      "title": "Tester Test",
+      "id": "a3JVE000005wcej2AA",
+      "type": {
+        "value": "profile"
+      }
+    },
+    {
+      "media_group": [
+        {
+          "media_item": [
+            {
+              "key": "image_base",
+              "src": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDVjS1RNUUEyLXRodW1iLnBuZw.webp"
+            }
+          ],
+          "type": "image"
+        }
+      ],
+      "extensions": {
+        "denied_actions": {
+          "playlist": false,
+          "offline_download": false,
+          "comment": false,
+          "change_picture": false,
+          "change_name": true,
+          "bookmark": false
+        },
+        "birthdate": "1973-09-09",
+        "gender": "Male",
+        "username": "Whit",
+        "avatar_id": "char:1562",
+        "tap_actions": {
+          "actions": [
+            {
+              "options": {
+                "content": {
+                  "user_account": {
+                    "kids": false,
+                    "profile_selected": true,
+                    "profile": "a3JVE000007CgIn2AK"
+                  },
+                  "quick-brick-login-flow": {
+                    "account_token": "a3JVE000007CgIn2AK"
+                  }
+                }
+              },
+              "type": "sessionStorageSet"
+            },
+            {
+              "options": {
+                "success": true
+              },
+              "type": "finishHook"
+            }
+          ]
+        },
+        "kids": false,
+        "token": "a3JVE000007CgIn2AK",
+        "master": 0
+      },
+      "title": "Fit Whit",
+      "id": "a3JVE000007CgIn2AK",
+      "type": {
+        "value": "profile"
+      }
+    },
+    {
+      "media_group": [
+        {
+          "media_item": [
+            {
+              "key": "image_base",
+              "src": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0VWgwMDAwMDAwTENYSUEyLXRodW1iLnBuZw.webp"
+            }
+          ],
+          "type": "image"
+        }
+      ],
+      "extensions": {
+        "denied_actions": {
+          "playlist": false,
+          "offline_download": false,
+          "comment": true,
+          "change_picture": false,
+          "change_name": false,
+          "bookmark": true
+        },
+        "birthdate": "2000-09-09",
+        "gender": "Male",
+        "username": "ne722696",
+        "avatar_id": "char:1713",
+        "tap_actions": {
+          "actions": [
+            {
+              "options": {
+                "content": {
+                  "user_account": {
+                    "kids": true,
+                    "profile_selected": true,
+                    "profile": "a3JVE000006XF1d2AG"
+                  },
+                  "quick-brick-login-flow": {
+                    "account_token": "a3JVE000006XF1d2AG"
+                  }
+                }
+              },
+              "type": "sessionStorageSet"
+            },
+            {
+              "options": {
+                "success": true
+              },
+              "type": "finishHook"
+            }
+          ]
+        },
+        "kids": true,
+        "token": "a3JVE000006XF1d2AG",
+        "master": 0
+      },
+      "title": "Renamed Profile",
+      "id": "a3JVE000006XF1d2AG",
+      "type": {
+        "value": "profile"
+      }
+    },
+    {
+      "media_group": [
+        {
+          "media_item": [
+            {
+              "key": "image_base",
+              "src": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDVjS1FoUUFNLXRodW1iLnBuZw.webp"
+            }
+          ],
+          "type": "image"
+        }
+      ],
+      "extensions": {
+        "denied_actions": {
+          "playlist": false,
+          "offline_download": false,
+          "comment": false,
+          "change_picture": false,
+          "change_name": false,
+          "bookmark": false
+        },
+        "username": "te552304",
+        "avatar_id": "char:1653",
+        "tap_actions": {
+          "actions": [
+            {
+              "options": {
+                "content": {
+                  "user_account": {
+                    "kids": true,
+                    "profile_selected": true,
+                    "profile": "a3JVE000006XEyP2AW"
+                  },
+                  "quick-brick-login-flow": {
+                    "account_token": "a3JVE000006XEyP2AW"
+                  }
+                }
+              },
+              "type": "sessionStorageSet"
+            },
+            {
+              "options": {
+                "success": true
+              },
+              "type": "finishHook"
+            }
+          ]
+        },
+        "kids": true,
+        "token": "a3JVE000006XEyP2AW",
+        "master": 0
+      },
+      "title": "Tester Testing",
+      "id": "a3JVE000006XEyP2AW",
+      "type": {
+        "value": "profile"
+      }
+    },
+    {
+      "media_group": [
+        {
+          "media_item": [
+            {
+              "key": "image_base",
+              "src": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDVjS1JrUUFNLXRodW1iLnBuZw.webp"
+            }
+          ],
+          "type": "image"
+        }
+      ],
+      "extensions": {
+        "denied_actions": {
+          "playlist": false,
+          "offline_download": false,
+          "comment": false,
+          "change_picture": false,
+          "change_name": false,
+          "bookmark": false
+        },
+        "birthdate": "2010-09-09",
+        "gender": "Male",
+        "username": "ThisGuy",
+        "avatar_id": "char:1621",
+        "tap_actions": {
+          "actions": [
+            {
+              "options": {
+                "content": {
+                  "user_account": {
+                    "kids": false,
+                    "profile_selected": true,
+                    "profile": "a3JVE000007CxBZ2A0"
+                  },
+                  "quick-brick-login-flow": {
+                    "account_token": "a3JVE000007CxBZ2A0"
+                  }
+                }
+              },
+              "type": "sessionStorageSet"
+            },
+            {
+              "options": {
+                "success": true
+              },
+              "type": "finishHook"
+            }
+          ]
+        },
+        "kids": false,
+        "token": "a3JVE000007CxBZ2A0",
+        "master": 0
+      },
+      "title": "This Guy",
+      "id": "a3JVE000007CxBZ2A0",
+      "type": {
+        "value": "profile"
+      }
+    },
+    {
+      "media_group": [
+        {
+          "media_item": [
+            {
+              "key": "image_base",
+              "src": "https://api-qa.aio.focusonthefamily.com/CMS/images/square/aHR0cHM6Ly9kZXYtY2x1YmNvbnRlbnQucGFudGhlb25zaXRlLmlvL3dwLWNvbnRlbnQvdXBsb2Fkcy8yMDI2LzA0L2NoYXItYTJ0NFcwMDAwMDNxMTVsUUFBLXRodW1iLnBuZw.webp"
+            }
+          ],
+          "type": "image"
+        }
+      ],
+      "extensions": {
+        "denied_actions": {
+          "playlist": false,
+          "offline_download": false,
+          "comment": false,
+          "change_picture": false,
+          "change_name": true,
+          "bookmark": false
+        },
+        "birthdate": "1985-09-09",
+        "gender": "Female",
+        "username": "ThisLady",
+        "avatar_id": "char:658",
+        "tap_actions": {
+          "actions": [
+            {
+              "options": {
+                "content": {
+                  "user_account": {
+                    "kids": false,
+                    "profile_selected": true,
+                    "profile": "a3JVE000007Cxeb2AC"
+                  },
+                  "quick-brick-login-flow": {
+                    "account_token": "a3JVE000007Cxeb2AC"
+                  }
+                }
+              },
+              "type": "sessionStorageSet"
+            },
+            {
+              "options": {
+                "success": true
+              },
+              "type": "finishHook"
+            }
+          ]
+        },
+        "kids": false,
+        "token": "a3JVE000007Cxeb2AC",
+        "master": 0
+      },
+      "title": "This Lady",
+      "id": "a3JVE000007Cxeb2AC",
+      "type": {
+        "value": "profile"
+      }
+    }
+  ],
+  "title": "Viewer Profiles",
+  "id": "viewer-profiles",
+  "type": {
+    "value": "feed"
+  },
+  "extensions": {
+    "self_url": "https://api-qa.aio.focusonthefamily.com/CMS/profiles/select"
+  }
+}

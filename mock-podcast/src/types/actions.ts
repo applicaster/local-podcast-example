@@ -77,9 +77,7 @@ export interface ToggleStorageFlagOptions {
 
 export interface ToggleStorageFlagAction {
   type:
-    | 'localStorageToggleFlag'
-    | 'sessionStorageToggleFlag'
-    | 'screenToggleFlag';
+    'localStorageToggleFlag' | 'sessionStorageToggleFlag' | 'screenToggleFlag';
   options: ToggleStorageFlagOptions;
 }
 
@@ -175,6 +173,8 @@ export interface AddToQueueAction {
 
 export interface AddAllToQueueOptions {
   url: string;
+  position?: 'top' | 'bottom';
+  startPlayback?: boolean;
 }
 
 export interface AddAllToQueueAction {

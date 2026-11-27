@@ -6,6 +6,12 @@ export type SelectMode = 'single' | 'multi';
 export interface ZappEntry {
   id?: string;
   type?: any;
+  /**
+   * Where the entry points. A cell of type `action` has its link opened as a
+   * url scheme rather than followed, which is why {@link EntryBuilder.asActionCell}
+   * drops it.
+   */
+  link?: Record<string, any>;
   extensions?: Record<string, any>;
 }
 
@@ -200,7 +206,6 @@ export function buildCollectionSelectorFeed(
     entry: opts.entries || feed.entry || [],
   } as ZappFeed;
 }
-
 
 // // Sample service using the decorator
 // export function buildValidatedPreferenceFeed(

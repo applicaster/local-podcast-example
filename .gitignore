@@ -65,3 +65,6 @@ Thumbs.db
 .next/
 .nuxt/
 
+
+# Runtime PIN state written by mock-podcast — cleartext PINs, never commit
+mock-podcast/data/pins.json

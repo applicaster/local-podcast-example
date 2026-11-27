@@ -26,9 +26,11 @@ This guide explains how frontend applications, QuickBrick renderers, and API con
 ### Pattern A: Multi-Select Playlist Choice Lists (`role: "collection_selector"`)
 When a user opens an "Add to Playlist" sheet or track selector modal:
 - **Feed Extension:** The backend decorates the feed with `"role": "collection_selector"`.
-- **Selection Behavior:** Includes a `behavior` block defining `select_mode` (`"single"` | `"multi"`) and `current_selection` (array of collection IDs that currently contain the track).
+- **Selection Behavior:** Includes a `behavior` block defining `select_mode` (`"single"` | `"multi"` | `"none"`) and `current_selection`.
 - **Client Rendering:** QuickBrick multi-select list components inspect `current_selection` to render pre-selected checkboxes/switches without client-side state mapping.
-- **Entry Actions:** Tapping a collection item executes the entry action (`com.applicaster.collection.add.v1` or `com.applicaster.collection.remove.v1`) to toggle membership.
+- **Entry Actions:**
+  - Track add/remove (`GET /user/collections?item_id=<id>`): `select_mode: "multi"`. Tapping a collection executes `com.applicaster.collection.add.v1` or `com.applicaster.collection.remove.v1`.
+  - Add all to playlist (`GET /user/collections?collection_id=<id>`): `select_mode: "none"`. Tapping a target collection runs `com.applicaster.collection.add.collection.v1`, then `showToast` (`"Added to playlist"`), then `refreshComponent`, then `dismissBottomSheet`.
 
 ### Pattern B: Interactive Editable Lists (`role: "dynamic_collection"`)
 When a user opens an editable playlist or queue screen:
@@ -69,21 +71,24 @@ When a playlist, album, or series provides a "Play All" button:
 
 ### Pattern E: Dynamic Queue Continuation (`extensions.upNextFeed`)
 When an audio track plays and reaches the tail of the active queue:
-- **Entry Extension:** The backend decorates the playable entry with `extensions.upNextFeed` (or `extensions.up_next_feed`) pointing to a feed URL.
-- **Dynamic Resolution:** When the player reaches the last queued track, QuickBrick's `QueueManager` fetches this feed URL and automatically resolves and appends the returned entries to the upcoming queue without interrupting playback.
-- **Contextual Adaptation:** Backends can return remaining playlist tracks, algorithmic recommendations, or show next-episodes dynamically based on playback context.
-- **Example Payload:**
+- **Entry Extension:** The backend decorates playlist items (or the terminal entry) with `extensions.upNextFeed` (or snake_case `up_next_feed`). While decorating only the terminal entry is supported, decorating all items in a playlist ensures that queue chaining remains resilient even if the user dynamically reorders tracks or deletes items from the queue.
+- **Object-Driven DataSource:** `upNextFeed` can be either a feed URL string or a Pipes DataSource object supporting custom mapping, headers, query parameters, or POST body:
   ```json
   {
-    "id": "episode_42",
-    "title": "Episode 42: The Deep Dive",
-    "type": { "value": "audio" },
-    "content": { "src": "https://cdn.example.com/audio/ep42.mp3" },
     "extensions": {
-      "upNextFeed": "https://api.example.com/shows/podcast-1/up-next?current_id=episode_42"
+      "upNextFeed": {
+        "source": "https://api.example.com/recommendations",
+        "mapping": "custom_pipes_mapping",
+        "headers": { "Authorization": "Bearer <token>" }
+      }
     }
   }
   ```
+- **Dynamic Resolution (`queue-action`):**
+  1. The client `QueueManager` monitors playback events.
+  2. When the user starts playing the last entry in the active queue, the manager detects `isLastElement(entry)` and extracts `extensions.upNextFeed`.
+  3. The manager resolves the Pipes feed via its pluggable `FeedResolver` and appends the returned recommendation tracks into the active queue (`addAllToQueue`) without interrupting playback.
+  4. Deduplication ensures each slot only triggers resolution once.
 
 ---
 
@@ -95,8 +100,7 @@ When an audio track plays and reaches the tail of the active queue:
 | **Editable Track List** | `"role": "dynamic_collection"` (`operations: "remove,reorder"`) | `alias: "remove_item"`, `alias: "reorder_item"` | Injects swipe-to-delete & drag handles. Executes entry actions on user interaction. |
 | **Editable Playlists Screen** | `"role": "dynamic_collection"` (`operations: "add,remove,reorder"`) | `alias: "remove_item"`, `events.add` | Renders "+ Create Playlist" button in header & trash icons on playlist rows. |
 | **Play All (Collection)** | N/A (Standard Collection / Feed) | `alias: "play_all"` (`type: "addAllToQueue"`, `startPlayback: true`) | Enqueues all items at top of queue and begins immediate playback of first track. |
-| **Queue Autoplay / UpNext** | `extensions.upNextFeed` (on audio entry) | N/A (Automatic tail-of-queue fetch) | Resolves feed dynamically at queue end and seamlessly appends upcoming tracks. |
-
+| **Queue Autoplay / UpNext** | `entry.extensions.upNextFeed` | N/A (Automatic tail-of-queue fetch) | Resolves feed dynamically at queue end and seamlessly appends upcoming tracks. |
 
 ---
 
