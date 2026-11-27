@@ -118,28 +118,6 @@ Displays a toast notification on the screen.
 }
 ```
 
-### addAllToQueue
-
-Fetches a playlist or album feed from a URL and enqueues all entries into the playback queue.
-
-#### Options:
-*   `url` (**required**, string): The feed URL to fetch tracks from.
-*   `position` (optional, `"top"` | `"bottom"`): Determines where the items are inserted into the queue. Defaults to `"bottom"`. Passing `"top"` inserts the items at the head of the upcoming queue (immediately after the currently playing track if active).
-*   `startPlayback` (optional, boolean): If `true`, sets the first item of the enqueued feed as the active playing track and immediately initiates playback (Now Playing). The remaining items become the upcoming queue.
-
-#### Example (Play All at top of queue):
-
-```json
-{
-  "type": "addAllToQueue",
-  "options": {
-    "url": "https://server.com/user/collections/123",
-    "position": "top",
-    "startPlayback": true
-  }
-}
-```
-
 ### appRestart
 
 Performs application hot restart. **Must be the last action in the list**.
@@ -968,3 +946,45 @@ We will introduce ActionsApplierContext context. If it's not provided, actions a
 If context exists (i.e. we are inside PreferencesScreen and the actions array has a Delayed flag), the actions array will be submitted to the context with component ID instead of action executor (we can basically have root context implementation that applies immediately, and just override it on the stack, or use pure JS approach).
 ActionsApplierContext will keep track of the submitted actions and also replace actions submitted by the component, if the component will send a new action set (so we do not accumulate actions from one component when the user changes selection multiple times).
 When there are accumulated actions, the Apply button will be active.
+
+---
+
+# Queue Actions
+
+### addToQueue
+
+Adds the current entry to the manual **Next in Queue** section.
+
+Options:
+- `position` *(optional)*: `"top" | "bottom"` (defaults to `"bottom"`).
+
+```json
+{
+  "type": "addToQueue",
+  "options": {
+    "position": "bottom"
+  }
+}
+```
+
+### addAllToQueue
+
+Resolves a collection feed URL and enqueues all playable entries into the local queue.
+
+Options:
+- `url`: Collection feed URL to resolve.
+- `target` *(optional)*: `"manual" | "auto"` (defaults to `"manual"`).
+- `position` *(optional)*: `"top" | "bottom"` (defaults to `"bottom"`).
+- `startPlayback` *(optional)*: `boolean` (when `true`, starts playing the first entry immediately and loads remaining tracks according to `target`).
+
+```json
+{
+  "type": "addAllToQueue",
+  "options": {
+    "url": "https://api.example.com/user/collections/col_1",
+    "target": "auto",
+    "position": "bottom",
+    "startPlayback": true
+  }
+}
+```

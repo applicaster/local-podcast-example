@@ -108,5 +108,17 @@ describe('EntryBuilder upNextFeed', () => {
 
     expect(entry.extensions?.upNextFeed).toEqual(dataSource);
   });
+
+  it('should set collection_up_next_feed extension with string URL or object', () => {
+    const entry = new EntryBuilder(new ActionsBuilder(), { id: 'track-3' })
+      .setCollectionUpNextFeed(
+        'https://example.com/user/collections/col-1/up-next?afterItemId=track-3',
+      )
+      .build();
+
+    expect(entry.extensions?.collection_up_next_feed).toBe(
+      'https://example.com/user/collections/col-1/up-next?afterItemId=track-3',
+    );
+  });
 });
 

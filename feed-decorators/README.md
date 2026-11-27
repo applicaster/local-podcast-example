@@ -49,10 +49,15 @@ const entry = new EntryBuilder(actions, {
   .build();
 ```
 
-### Chaining with `setUpNextFeed`
+### Chaining with `setUpNextFeed` & `setCollectionUpNextFeed`
 ```typescript
-// Attach an upNextFeed URL or DataSource object to playlist items (or the terminal item)
-entryBuilder.setUpNextFeed('https://api.example.com/media/up-next');
+// Attach an upNextFeed URL or DataSource object for end-of-queue recommendations
+entryBuilder.setUpNextFeed('https://api.example.com/media/up-next?seedItemId=track_1');
+
+// Attach a collection continuation feed so direct play populates remaining collection tracks into Next Up
+entryBuilder.setCollectionUpNextFeed(
+  'https://api.example.com/user/collections/col_1/up-next?afterItemId=track_1'
+);
 
 // Or with full Pipes DataSource configuration
 entryBuilder.setUpNextFeed({
@@ -60,6 +65,18 @@ entryBuilder.setUpNextFeed({
   mapping: 'custom_mapping',
   headers: { Authorization: 'Bearer <token>' },
 });
+```
+
+### Queue Actions (`addToQueue` & `addAllToQueue`)
+```typescript
+const queueActions = new ActionsBuilder()
+  .addToQueue({ position: 'bottom' })
+  .addAllToQueue({
+    url: 'https://api.example.com/user/collections/col_1',
+    target: 'auto', // 'manual' | 'auto'
+    position: 'bottom', // 'top' | 'bottom'
+    startPlayback: false,
+  });
 ```
 
 ---

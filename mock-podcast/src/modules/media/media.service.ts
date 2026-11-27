@@ -111,9 +111,16 @@ export class MediaService {
       return this.defaultFeedCaches.get(cacheKey) as Feed;
     }
 
-    const entries: Entry[] = this.radioData.map((radio) =>
-        this.radioItemToEntry(radio, 'audio', baseUrl, isLoggedIn),
-    );
+    const entries: Entry[] = this.radioData.map((radio) => {
+      const entry = this.radioItemToEntry(radio, 'audio', baseUrl, isLoggedIn);
+      if (baseUrl) {
+        entry.extensions = {
+          ...(entry.extensions ?? {}),
+          upNextFeed: `${baseUrl}/media/up-next?seedItemId=${encodeURIComponent(entry.id)}`,
+        };
+      }
+      return entry;
+    });
 
     const feed: Feed = {
       id: this.generateUUID(),
@@ -128,20 +135,64 @@ export class MediaService {
   }
 
   /**
-   * Get Up Next recommendation feed
+   * Build Up Next recommendation entries seeded after `seedItemId`, excluding blocked IDs.
    */
-  getUpNextFeed(baseUrl?: string, isLoggedIn = true): Feed {
-    const upNextItems = this.playlistItems.slice(0, 5);
-    const entries: Entry[] = upNextItems.map((item) => {
+  getUpNextEntries(
+    baseUrl?: string,
+    isLoggedIn = true,
+    seedItemId?: string,
+    excludeIds: string[] = [],
+    limit = 5,
+  ): Entry[] {
+    if (limit <= 0) {
+      return [];
+    }
+
+    const seedIndex = seedItemId
+      ? this.playlistItems.findIndex((item) => item.id === seedItemId)
+      : -1;
+    const rotated =
+      seedIndex !== -1
+        ? [
+            ...this.playlistItems.slice(seedIndex + 1),
+            ...this.playlistItems.slice(0, seedIndex + 1),
+          ]
+        : this.playlistItems;
+
+    const blockedIds = new Set(
+      [seedItemId, ...excludeIds].filter((id): id is string => Boolean(id)),
+    );
+    const upNextItems = rotated
+      .filter((item) => !blockedIds.has(item.id))
+      .slice(0, limit);
+
+    return upNextItems.map((item) => {
       const entry = this.radioItemToEntry(item, 'audio', baseUrl, isLoggedIn);
       if (baseUrl) {
         entry.extensions = {
           ...(entry.extensions ?? {}),
-          upNextFeed: `${baseUrl}/media/up-next`,
+          upNextFeed: `${baseUrl}/media/up-next?seedItemId=${encodeURIComponent(item.id)}`,
         };
       }
       return entry;
     });
+  }
+
+  /**
+   * Get Up Next recommendation feed
+   */
+  getUpNextFeed(
+    baseUrl?: string,
+    isLoggedIn = true,
+    seedItemId?: string,
+  ): Feed {
+    const entries = this.getUpNextEntries(
+      baseUrl,
+      isLoggedIn,
+      seedItemId,
+      [],
+      5,
+    );
 
     return {
       id: this.generateUUID(),

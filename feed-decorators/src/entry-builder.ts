@@ -132,6 +132,18 @@ export class EntryBuilder<
   }
 
   /**
+   * Sets the `collection_up_next_feed` entry extension (`entry.extensions.collection_up_next_feed`) on this entry.
+   *
+   * Attached to items inside a collection (album, playlist, series) so the client queue manager
+   * can load all remaining collection items after the selected item when starting direct playback.
+   *
+   * @param feed - Collection continuation feed URL string or Pipes DataSource configuration object.
+   */
+  setCollectionUpNextFeed(feed: string | Record<string, any>): this {
+    return this.addExtension('collection_up_next_feed', feed);
+  }
+
+  /**
    * Add actions using the specific action builder
    */
   addActions(): TActionBuilder {
