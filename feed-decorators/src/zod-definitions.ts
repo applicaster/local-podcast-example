@@ -342,7 +342,7 @@ export const AddToQueueActionSchema = z.object({
 export type AddToQueueAction = z.infer<typeof AddToQueueActionSchema>;
 
 export const AddAllToQueueActionOptionsSchema = z.object({
-  url: z.string().min(1),
+  url: z.string().min(1).optional(),
   position: z.enum(['top', 'bottom']).optional(),
   startPlayback: z.boolean().optional(),
 });
@@ -355,6 +355,7 @@ export const AddAllToQueueActionSchema = z.object({
   options: AddAllToQueueActionOptionsSchema,
 });
 export type AddAllToQueueAction = z.infer<typeof AddAllToQueueActionSchema>;
+
 
 export const ShowToastStyleSchema = z.object({
   backgroundColor: z.string().optional(),

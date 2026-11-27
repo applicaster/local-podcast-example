@@ -118,28 +118,6 @@ Displays a toast notification on the screen.
 }
 ```
 
-### addAllToQueue
-
-Fetches a playlist or album feed from a URL and enqueues all entries into the playback queue.
-
-#### Options:
-*   `url` (**required**, string): The feed URL to fetch tracks from.
-*   `position` (optional, `"top"` | `"bottom"`): Determines where the items are inserted into the queue. Defaults to `"bottom"`. Passing `"top"` inserts the items at the head of the upcoming queue (immediately after the currently playing track if active).
-*   `startPlayback` (optional, boolean): If `true`, sets the first item of the enqueued feed as the active playing track and immediately initiates playback (Now Playing). The remaining items become the upcoming queue.
-
-#### Example (Play All at top of queue):
-
-```json
-{
-  "type": "addAllToQueue",
-  "options": {
-    "url": "https://server.com/user/collections/123",
-    "position": "top",
-    "startPlayback": true
-  }
-}
-```
-
 ### appRestart
 
 Performs application hot restart. **Must be the last action in the list**.
@@ -184,6 +162,78 @@ Navigates to the screen that associated with type provided in `typeMapping`. Rec
   }
 }
 ```
+
+## Queue & Playback Actions
+
+### addToQueue
+
+Appends the current entry (`context.entry`) to the end of the client's active playback queue.
+
+```json
+{
+  "type": "addToQueue",
+  "options": {}
+}
+```
+
+Can be paired with `showToast` in an entry action:
+
+```json
+{
+  "alias": "add_to_queue",
+  "actions": [
+    {
+      "type": "addToQueue",
+      "options": {}
+    },
+    {
+      "type": "showToast",
+      "options": {
+        "message": "Added to queue"
+      }
+    }
+  ]
+}
+```
+
+### addAllToQueue (Play All & Bulk Enqueue)
+
+Enqueues all items from a collection or playlist feed into the active playback queue. Supports initiating immediate playback ("Play All").
+
+#### Options:
+* `url` (optional, string): The feed URL containing the collection/playlist items to fetch and enqueue. If omitted, falls back to `context.entry.content.src`.
+* `position` (optional, `"top" | "bottom"`, default `"bottom"`):
+  * `"bottom"`: Appends all fetched items to the end of the upcoming queue.
+  * `"top"`: Inserts all fetched items at the head of the upcoming queue (immediately following the currently playing track).
+* `startPlayback` (optional, boolean, default `false`):
+  * When `true`, automatically begins playing the first item of the enqueued collection and navigates to the player screen (`navigateToScreen`), implementing the standard **"Play All"** behavior.
+
+#### Examples:
+
+**1. Bulk Add Collection to Queue ("Add All to Queue"):**
+```json
+{
+  "type": "addAllToQueue",
+  "options": {
+    "url": "https://api.example.com/playlists/favorites.json",
+    "position": "bottom",
+    "startPlayback": false
+  }
+}
+```
+
+**2. Play All Collection ("Play All"):**
+```json
+{
+  "type": "addAllToQueue",
+  "options": {
+    "url": "https://api.example.com/playlists/favorites.json",
+    "position": "top",
+    "startPlayback": true
+  }
+}
+```
+
 
 ## Screen scoped actions
 

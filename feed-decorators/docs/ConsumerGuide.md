@@ -48,21 +48,31 @@ When a user opens an editable playlist or queue screen:
 - **Automatic Event Progression:**
   - On `com.applicaster.video.started.v1`: Updates local queue head or replaces queue with source collection items.
   - On `com.applicaster.video.stopped.v1` (`status: "COMPLETED"`): Automatically removes completed track from local queue.
-- **No Backend Requirement:** Production backends are not required to persist or manage the queue.
+- **No Backend Requirement:** Production backends are not required to persist or manage the queue state machine.
 
-### Pattern D: Continuous Playback Chaining (`upNextFeed`)
-To avoid abrupt playback stoppage when an album or playlist finishes:
-- **Backend Feed Decoration:** The backend decorates playlist items (or the terminal entry) with `extensions.upNextFeed` (or snake_case `up_next_feed`). While decorating only the terminal entry is supported, decorating all items in a playlist ensures that queue chaining remains resilient even if the user dynamically reorders tracks or deletes items from the queue:
+### Pattern D: "Play All" Collection Playback (`addAllToQueue` / `play_all`)
+When a playlist, album, or series provides a "Play All" button:
+- **Feed / Entry Action:** The backend attaches an entry action (alias `"play_all"`) using action type `"addAllToQueue"`.
+- **Options Contract:**
+  - `url`: Feed URL containing the tracks to play (or falls back to `context.entry.content.src`).
+  - `position: "top"`: Inserts all collection items at the head of upcoming playback (after the current track).
+  - `startPlayback: true`: Instructs the client engine to set the first track as active and immediately navigate to the audio player screen (`navigateToScreen`).
+- **Example Payload:**
   ```json
   {
-    "id": "track_last",
-    "title": "Final Track",
-    "extensions": {
-      "upNextFeed": "https://api.example.com/media/up-next"
+    "type": "addAllToQueue",
+    "options": {
+      "url": "https://api.example.com/collections/123.json",
+      "position": "top",
+      "startPlayback": true
     }
   }
   ```
-- **Object-Driven DataSource:** `upNextFeed` can also be a Pipes DataSource object supporting custom mapping, headers, query parameters, or POST body:
+
+### Pattern E: Dynamic Queue Continuation (`extensions.upNextFeed`)
+When an audio track plays and reaches the tail of the active queue:
+- **Entry Extension:** The backend decorates playlist items (or the terminal entry) with `extensions.upNextFeed` (or snake_case `up_next_feed`). While decorating only the terminal entry is supported, decorating all items in a playlist ensures that queue chaining remains resilient even if the user dynamically reorders tracks or deletes items from the queue.
+- **Object-Driven DataSource:** `upNextFeed` can be either a feed URL string or a Pipes DataSource object supporting custom mapping, headers, query parameters, or POST body:
   ```json
   {
     "extensions": {
@@ -74,22 +84,23 @@ To avoid abrupt playback stoppage when an album or playlist finishes:
     }
   }
   ```
-- **Client Queue Integration (`queue-action`):**
-  1. The client QueueManager monitors playback events.
+- **Dynamic Resolution (`queue-action`):**
+  1. The client `QueueManager` monitors playback events.
   2. When the user starts playing the last entry in the active queue, the manager detects `isLastElement(entry)` and extracts `extensions.upNextFeed`.
-  3. The manager resolves the Pipes feed via its pluggable `FeedResolver` and appends the returned recommendation tracks into the active queue (`addAllToQueue`).
+  3. The manager resolves the Pipes feed via its pluggable `FeedResolver` and appends the returned recommendation tracks into the active queue (`addAllToQueue`) without interrupting playback.
   4. Deduplication ensures each slot only triggers resolution once.
 
 ---
 
 ## 3. Quick Reference for Developers
 
-| Feature / UI Mode | Feed / Entry Extension | Required Entry Actions | Client Behavior |
+| Feature / UI Mode | Feed / Entry Extension | Required Action(s) | Client Behavior |
 | :--- | :--- | :--- | :--- |
 | **Playlist Selection Sheet** | `"role": "collection_selector"` | `add_to_playlist`, `remove_from_playlist` | Renders multi-select checkboxes based on `behavior.current_selection`. |
 | **Editable Track List** | `"role": "dynamic_collection"` (`operations: "remove,reorder"`) | `alias: "remove_item"`, `alias: "reorder_item"` | Injects swipe-to-delete & drag handles. Executes entry actions on user interaction. |
 | **Editable Playlists Screen** | `"role": "dynamic_collection"` (`operations: "add,remove,reorder"`) | `alias: "remove_item"`, `events.add` | Renders "+ Create Playlist" button in header & trash icons on playlist rows. |
-| **Continuous Playback** | `entry.extensions.upNextFeed` | N/A (automatic queue progression) | Resolves Pipes feed and appends recommendation tracks to active queue upon starting final item. |
+| **Play All (Collection)** | N/A (Standard Collection / Feed) | `alias: "play_all"` (`type: "addAllToQueue"`, `startPlayback: true`) | Enqueues all items at top of queue and begins immediate playback of first track. |
+| **Queue Autoplay / UpNext** | `entry.extensions.upNextFeed` | N/A (Automatic tail-of-queue fetch) | Resolves feed dynamically at queue end and seamlessly appends upcoming tracks. |
 
 ---
 

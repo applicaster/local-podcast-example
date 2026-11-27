@@ -735,10 +735,11 @@ export class CollectionsService implements OnModuleInit {
         // 1. Add all to Queue
         builder.addAllToQueue(baseUrl, collection.id);
 
-        // 2. Play All
+        // 2. Play All (enqueues collection at top of queue and begins playback)
         if (collection.itemIds.length > 0) {
           builder.playAll(baseUrl, collection.id);
         }
+
 
         // 3. Add all to Playlist
         if (isLoggedIn) {

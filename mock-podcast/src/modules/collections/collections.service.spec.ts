@@ -285,7 +285,7 @@ describe('CollectionsService', () => {
       );
     });
 
-    it('sets upNextFeed on embedded playAll entry when system collection has only one item', () => {
+    it('dispatches addAllToQueue at top with startPlayback when system collection has only one item', () => {
       const singleItemCollection = {
         id: 'single_item_sys',
         name: 'Single System',
@@ -309,18 +309,17 @@ describe('CollectionsService', () => {
       expect(playAllActionWrapper).toBeDefined();
 
       const playAllAction = playAllActionWrapper.actions?.find(
-        (a: any) => a.type === 'navigateToScreen',
+        (a: any) => a.type === 'addAllToQueue',
       );
       expect(playAllAction).toBeDefined();
-      expect(playAllAction.options.entry.extensions?.upNextFeed).toBe(
-        'http://localhost:3000/media/up-next',
-      );
-      expect(
-        playAllAction.options.entry.extensions?.play_next_feed_url,
-      ).toBeUndefined();
+      expect(playAllAction.options).toEqual({
+        url: 'http://localhost:3000/user/collections/single_item_sys',
+        position: 'top',
+        startPlayback: true,
+      });
     });
 
-    it('sets both play_next_feed_url and upNextFeed on embedded playAll entry when system collection has multiple items', () => {
+    it('dispatches addAllToQueue at top with startPlayback when system collection has multiple items', () => {
       const multiItemCollection = {
         id: 'multi_item_sys',
         name: 'Multi System',
@@ -344,15 +343,14 @@ describe('CollectionsService', () => {
       expect(playAllActionWrapper).toBeDefined();
 
       const playAllAction = playAllActionWrapper.actions?.find(
-        (a: any) => a.type === 'navigateToScreen',
+        (a: any) => a.type === 'addAllToQueue',
       );
       expect(playAllAction).toBeDefined();
-      expect(
-        playAllAction.options.entry.extensions?.play_next_feed_url,
-      ).toBeDefined();
-      expect(playAllAction.options.entry.extensions?.upNextFeed).toBe(
-        'http://localhost:3000/media/up-next',
-      );
+      expect(playAllAction.options).toEqual({
+        url: 'http://localhost:3000/user/collections/multi_item_sys',
+        position: 'top',
+        startPlayback: true,
+      });
     });
   });
 });
